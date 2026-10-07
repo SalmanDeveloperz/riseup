@@ -24,7 +24,8 @@ struct AppBackground: View {
                 endRadius: 420
             )
             RadialGradient(
-                colors: [Theme.Colors.neonPurple.opacity(0.30), .clear],
+                colors: [Theme.Colors.neonBlue.opacity(0.30), .clear],
+//              colors: [Theme.Colors.neonPink.opacity(0.30), .clear],
                 center: .bottomTrailing,
                 startRadius: 0,
                 endRadius: 480
@@ -46,7 +47,7 @@ extension View {
 }
 
 #Preview {
-    Text("Hello RiseUp")
+    Text("Helloo RiseUp")
         .font(.riseLargeTitle)
         .foregroundStyle(Theme.Colors.textPrimary)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

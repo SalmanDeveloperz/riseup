@@ -19,8 +19,8 @@ import Foundation
 import Observation
 import SwiftData
 
-@Observable
-final class AppDependencies {
+@Observable         //use observable when values of ViewModel change, and we're required to update the value of UI
+final class AppDependencies {   //use final for really final and stopping to use this class for inheritence
     let modelContainer: ModelContainer
     let alarmRepository: AlarmRepository
     let alarmScheduler: any AlarmScheduling
