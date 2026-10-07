@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  RiseUp extra Info.plist keys.
+
+  Most Info.plist keys are set in Build Settings ("INFOPLIST_KEY_..."), and
+  Xcode generates the final Info.plist. Only keys Xcode does NOT support as
+  build settings live here. Xcode merges this file with the generated one.
+
+  WHY this file is in /Config and not /Alarm: everything inside /Alarm is
+  automatically copied into the app as a resource. A plist there would be
+  copied twice and break the build.
+-->
+<plist version="1.0">
+<dict>
+	<!-- Text shown in the system "Allow RiseUp to schedule alarms?" popup (AlarmKit). -->
+	<key>NSAlarmKitUsageDescription</key>
+	<string>RiseUp schedules your alarms so they ring on time, even in Silent mode or when the app is closed.</string>
+</dict>
+</plist>
