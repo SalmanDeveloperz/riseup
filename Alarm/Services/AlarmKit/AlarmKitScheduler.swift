@@ -57,9 +57,19 @@ final class AlarmKitScheduler: AlarmScheduling {
         }
     }
 
+    /// IDs of alarms whose `schedule(_:)` call hasn't finished yet.
+    private var alarmIDsBeingScheduled: Set<UUID> = []
+
     // MARK: - Scheduling
 
     func schedule(_ alarm: WakeAlarm) async throws {
+        // Mark "busy" until this function ends, whether it succeeds or throws.
+        // ← READ BY: isScheduling(_:) → AlarmListViewModel's reconcile step skips busy alarms.
+        // LEARN: `defer` runs when the function exits, even through an error, so the
+        // ID can never get stuck in the set.
+        alarmIDsBeingScheduled.insert(alarm.id)
+        defer { alarmIDsBeingScheduled.remove(alarm.id) }
+
         // Start clean: remove any older version of this alarm (main + backups).
         cancel(alarm)
         guard alarm.isEnabled else { return }
@@ -69,6 +79,10 @@ final class AlarmKitScheduler: AlarmScheduling {
         if alarm.hasMissions {
             try await scheduleBackupChain(for: alarm, afterDate: .now)
         }
+    }
+
+    func isScheduling(_ alarm: WakeAlarm) -> Bool {
+        alarmIDsBeingScheduled.contains(alarm.id)
     }
 
     func cancel(_ alarm: WakeAlarm) {

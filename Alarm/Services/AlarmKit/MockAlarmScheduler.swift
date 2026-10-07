@@ -38,4 +38,7 @@ final class MockAlarmScheduler: AlarmScheduling {
     }
 
     func scheduledSystemAlarmIDs() -> Set<UUID> { scheduledIDs }
+
+    /// The fake schedules instantly, so it's never "in the middle" of scheduling.
+    func isScheduling(_ alarm: WakeAlarm) -> Bool { false }
 }
