@@ -23,15 +23,17 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | Spike experiments A–E on a real iPhone → `docs/SPIKE_RESULTS.md` | ⬜ | |
 | Decide final bundle ID (currently `com.testProject.Alarm`) | ⬜ | Must be final before App Groups (Phase 4) / App Store |
 
-## Phase 1 — Alarms core
+## Phase 1 — Alarms core  ·  branch `phase-1-foundation` (stacked on `phase-0-foundation`)
 | # | Screen / item | Status |
 |---|---|---|
-| 6 | Alarm List (countdown header, glowing cards, toggle, swipe delete, + button) | ⬜ |
+| 6 | Alarm List (countdown header, glowing cards, toggle, swipe delete, + button) | 🟡 brief: `docs/screens/06-alarm-list.md` |
+| — | `AlarmRepository` as single source of truth + `AlarmRow` snapshots (fixes 2 crashes) | 🟡 |
+| — | Reconcile database ↔ iOS when the list appears (+ race-condition guard `isScheduling`) | 🟡 |
 | 8 | Alarm Editor (time wheel, repeat days, label, snooze, sound, missions row) | ⬜ |
 | 13 | Sound Picker (categories, preview, volume) | ⬜ |
 | 7 | Quick Alarm sheet | ⬜ |
 | 30 | Lock screen / Dynamic Island alarm UI (widget extension, polished) | ⬜ |
-| — | Re-sync all alarms with AlarmKit on app launch | ⬜ |
+| — | Re-sync all alarms with AlarmKit on app launch (move reconcile into `AlarmSyncService`, also cancel orphan system alarms) | ⬜ |
 
 ## Phase 2 — Ringing flow + first missions
 | # | Screen / item | Status |
@@ -41,7 +43,9 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | 10 | Mission Settings (math / typing / shake) | ⬜ |
 | 15a–c | Math, Typing, Shake missions | ⬜ |
 | 16 | Success screen | ⬜ |
-| — | Open ringing screen automatically if an alarm is alerting when the app opens | ⬜ |
+| — | Open ringing screen automatically if an alarm is alerting when the app opens (spike: alarms "ring" forever until stopped) | ⬜ |
+| — | Mission lock: while backups are ringing, block switching off / deleting / editing that alarm | ⬜ |
+| — | Replace RingingPlaceholder's live `WakeAlarm` with a snapshot (same crash class as Bug 2) | ⬜ |
 | — | `WakeRecord` model (SchemaV2 + migration) | ⬜ |
 
 ## Phase 3 — Remaining missions
@@ -94,6 +98,10 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 ---
 
 ## Changes from the original plan (and why)
+- Phase 1 branch is stacked on `phase-0-foundation` (not `main`), because Phase 0 isn't merged yet and
+  Phase 1 needs its code. After Phase 0 merges, retarget the Phase 1 PR to `main`.
+- Views get value snapshots (`AlarmRow`), never `@Model` objects; `AlarmRepository` owns the live list.
+  (Learned from two crashes; see `docs/HOW_IT_WORKS.md` Part 4.)
 - Model is named `WakeAlarm`, not `Alarm`: Apple's AlarmKit already has `Alarm`.
 - Backup alarm IDs are *calculated* from the alarm ID, not stored, so there's no `backupChainIDs` field. Nothing can go out of sync.
 - `ScreenFactory` instead of a "RouteView"; typed route arrays instead of `NavigationPath` (easier to inspect).
