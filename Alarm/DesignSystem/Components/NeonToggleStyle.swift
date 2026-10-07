@@ -11,10 +11,17 @@ import SwiftUI
 
 /// Custom switch: grey when off, sunrise gradient + glow when on.
 struct NeonToggleStyle: ToggleStyle {
+    /// LEARN: `.labelsHidden()` on a Toggle sets this environment value. Apple's own
+    /// switch reads it automatically, but a custom style must check it itself.
+    /// ← SET BY: AlarmCardView (`.labelsHidden()`), where only the switch should show.
+    @Environment(\.labelsVisibility) private var labelsVisibility
+
     func makeBody(configuration: Configuration) -> some View {
         HStack {
-            configuration.label
-            Spacer(minLength: Theme.Spacing.sm)
+            if labelsVisibility != .hidden {
+                configuration.label
+                Spacer(minLength: Theme.Spacing.sm)
+            }
 
             // The switch itself, drawn by hand: a capsule track with a circle knob.
             ZStack(alignment: configuration.isOn ? .trailing : .leading) {
@@ -30,12 +37,15 @@ struct NeonToggleStyle: ToggleStyle {
                     .padding(3)
                     .shadow(radius: 2)
             }
+            // LEARN: `.animation(_:value:)` animates whenever `isOn` changes, no matter WHO
+            // changed it. WHY not `withAnimation` in the tap: on the Alarm List the new
+            // value arrives a moment later from the ViewModel (async), outside that
+            // animation, and the knob would jump instead of sliding.
+            .animation(.spring(duration: 0.25), value: configuration.isOn)
             .onTapGesture {
                 // LEARN: `configuration.isOn` is a Binding. Toggling it updates
                 // whatever state the screen gave to `Toggle(isOn:)`.
-                withAnimation(.spring(duration: 0.25)) {
-                    configuration.isOn.toggle()
-                }
+                configuration.isOn.toggle()
             }
             // LEARN: `.sensoryFeedback` plays a light haptic "tick" whenever the value
             // changes. It's SwiftUI's modern replacement for UIImpactFeedbackGenerator.

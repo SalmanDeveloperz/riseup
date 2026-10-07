@@ -13,6 +13,17 @@
 //    2. add a `case` here that builds its View + ViewModel
 //    3. call `coordinator.something()` from another ViewModel to navigate to it
 //
+//  CONNECTIONS:
+//    ← CREATED BY: RootView.body (a new, cheap factory value on every redraw)
+//    ← GETS ITS TOOLS FROM: AppDependencies (repository, scheduler) + AppCoordinator,
+//                           both read from the SwiftUI environment in RootView
+//    → BUILDS: every screen + its ViewModel, handing each ViewModel only the tools it needs
+//
+//  WHY a new ViewModel is created on every RootView redraw but the screen keeps the first one:
+//  each screen stores its ViewModel in `@State`, and `@State` keeps its FIRST value for
+//  the screen's whole life. Extra ViewModels built later are simply thrown away. They're
+//  cheap because their `init` only stores references and does no loading.
+//
 
 import SwiftUI
 
@@ -30,13 +41,15 @@ struct ScreenFactory {
     func makeRoot(for tab: AppTab) -> some View {
         switch tab {
         case .alarms:
-            ComingSoonView(
-                title: "Alarms",
-                systemImage: AppTab.alarms.systemImage,
-                phase: 1,
-                message: "Your alarm list with glowing cards, a countdown to the next alarm and quick alarms.",
-                showsLiveClock: true
-            )
+            // Screen #6, Alarm List. Its ViewModel gets:
+            //   repository  → to read/save/delete WakeAlarms
+            //   scheduler   → to turn system alarms on/off
+            //   coordinator → to open the editor
+            AlarmListView(viewModel: AlarmListViewModel(
+                repository: dependencies.alarmRepository,
+                scheduler: dependencies.alarmScheduler,
+                coordinator: coordinator
+            ))
         case .morning:
             ComingSoonView(
                 title: "Morning",
@@ -61,6 +74,25 @@ struct ScreenFactory {
 
     // MARK: - Pushed screens
 
+    /// Screens pushed in the Alarms tab.
+    /// ← CALLED BY: RootView's `.navigationDestination(for: AlarmsRoute.self)`
+    @ViewBuilder
+    func makeScreen(for route: AlarmsRoute) -> some View {
+        switch route {
+        case .editor(let alarmID):
+            // TEMPORARY: the real Alarm Editor (Screen #8) is the next Phase 1 chunk.
+            // This placeholder proves the navigation path works end-to-end.
+            ComingSoonView(
+                title: alarmID == nil ? "New Alarm" : "Edit Alarm",
+                systemImage: "slider.horizontal.3",
+                phase: 1,
+                message: "The Alarm Editor is the next Phase 1 step: time wheel, repeat days, label, sound and missions."
+            )
+        }
+    }
+
+    /// Screens pushed in the Settings tab.
+    /// ← CALLED BY: RootView's `.navigationDestination(for: SettingsRoute.self)`
     @ViewBuilder
     func makeScreen(for route: SettingsRoute) -> some View {
         switch route {

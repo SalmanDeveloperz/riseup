@@ -46,6 +46,15 @@ protocol AlarmScheduling: AnyObject {
     /// for repeating alarms, arms a fresh chain for the next occurrence.
     func missionCompleted(for alarm: WakeAlarm) async throws
 
-    /// IDs of every alarm currently scheduled with the system (main + backups). For debugging.
+    /// IDs of every alarm currently scheduled with the system (main + backups).
+    /// ← USED BY: AlarmListViewModel's reconcile step, and the AlarmKit Lab.
     func scheduledSystemAlarmIDs() -> Set<UUID>
+
+    /// True while `schedule(alarm)` is still running for this alarm.
+    ///
+    /// WHY: scheduling takes a moment (several calls into iOS). During that time the alarm
+    /// is already "on" in our database but not yet in iOS's list. Code that compares the
+    /// two (the reconcile step) must skip it, or it would wrongly switch the alarm off.
+    /// See "race condition" in docs/HOW_IT_WORKS.md.
+    func isScheduling(_ alarm: WakeAlarm) -> Bool
 }

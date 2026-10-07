@@ -21,7 +21,7 @@ struct SettingsHomePlaceholderView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                Text("The full Settings screen arrives in Phase 4.")
+                Text("The full Settings screen arrives in Phase 4!")
                     .font(.riseBody)
                     .foregroundStyle(Theme.Colors.textSecondary)
 

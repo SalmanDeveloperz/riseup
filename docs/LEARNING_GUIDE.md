@@ -70,3 +70,16 @@ A glossary of every concept used in the code, with **where to see it**. Search t
 | Repository | One place for database code | `AlarmRepository.swift` |
 | Dependency Injection | Swap real/fake services | `AppDependencies.swift` |
 | Design tokens | Change the look in one file | `Theme.swift` |
+
+## System design (learned while building the Alarm List)
+Full stories in `docs/HOW_IT_WORKS.md` Part 4.
+
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Single source of truth | One owner holds the data; everyone else reads it, nobody keeps a copy | `AlarmRepository.alarms`, `AlarmListViewModel.rows` |
+| Value snapshot (view state) | Views get plain structs copied from the database objects, so they can never touch a deleted object | `AlarmRow.swift` |
+| Computed property chaining | `rows` → `repository.alarms` → each alarm; Observation tracks the whole chain | `AlarmListViewModel.rows` |
+| Race condition | Two async jobs interleave at `await`, and one sees half-finished work | `AlarmKitScheduler.isScheduling`, reconcile loop |
+| Reconcile / sync | Compare two systems (our DB vs iOS) and fix the differences | `AlarmListViewModel.reconcileWithSystemAlarms` |
+| Optimistic update + rollback | Change the UI first, undo it if the real work fails | `AlarmListViewModel.setEnabled` |
+| The 5 connection mechanisms | Environment, init injection, closures, observation, bindings | `HOW_IT_WORKS.md` Part 1 |

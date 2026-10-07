@@ -21,9 +21,16 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
 - Call `AlarmManager.shared` directly at each use (don't store it): Swift 6 Sendable rule.
 - Use `Theme.*` tokens and DesignSystem components; no raw colours/numbers in screens.
 - Pure value types (enums/structs without UI) are marked `nonisolated`.
+- **Single source of truth:** `AlarmRepository.alarms` is the live list (refreshed inside every write).
+  ViewModels read it through computed properties and never keep their own copy.
+- **Views receive value snapshots** (e.g. `AlarmRow`, `NextAlarmInfo`), never `@Model` objects.
+  Actions come back with an ID; the ViewModel looks up the live object. (A deleted @Model read by a View crashes.)
+- Code that compares our database with iOS must skip alarms where `scheduler.isScheduling(alarm)` (race condition).
 
 ## Comment conventions (required in every file)
-- File header: what the file is, its LAYER, who uses it, what DATA it touches.
+- File header: what the file is, its LAYER, what DATA it touches, and a **CONNECTIONS** block:
+  `← CREATED BY / OWNED BY / CALLED BY / USED BY` and `→ CALLS / NAVIGATES / READS/WRITES`.
+- At call sites that cross a layer, add a short arrow comment, e.g. `// → coordinator.showAlarmEditor → editor is pushed`.
 - `///` doc comments on types and non-trivial methods. `// MARK: -` sections.
 - `// LEARN:` explains a Swift/SwiftUI concept where it is used (beginner level, plain English).
 - `// TRY:` a safe change Salman can make to experiment.
@@ -31,6 +38,9 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
 
 ## Workflow
 - One branch per phase (`phase-N-name`), one commit per screen. Build must have **zero warnings**.
-- For each screen: write `docs/screens/NN-name.md` brief → build → update `docs/ROADMAP.md` status.
+- Commit messages: plain, no `Co-Authored-By` or any Claude/AI attribution (Salman's explicit request).
+- Never commit Salman's own uncommitted experiments unless asked; leave them in the working tree.
+- For each screen: write `docs/screens/NN-name.md` brief (with a connection map) → build → update
+  `docs/ROADMAP.md` status → add new traces/lessons to `docs/HOW_IT_WORKS.md`.
 - Verify alarms on a real iPhone (locked, silent, app killed). The Simulator is for UI only.
 - Build check: `xcodebuild -scheme Alarm -destination 'generic/platform=iOS Simulator' build`

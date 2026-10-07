@@ -43,11 +43,11 @@ struct DesignGalleryView: View {
 
                 section("Typography") {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        Text("Large Title").font(.riseLargeTitle)
-                        Text("Title").font(.riseTitle)
-                        Text("Headline").font(.riseHeadline)
-                        Text("Body text reads like this.").font(.riseBody)
-                        Text("Caption text").font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
+                        Text("Large Title!").font(.riseLargeTitle)
+                        Text("Title!").font(.riseTitle)
+                        Text("Headline!").font(.riseHeadline)
+                        Text("Body text reads like this!").font(.riseBody)
+                        Text("Caption text!").font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
                     }
                     .foregroundStyle(Theme.Colors.textPrimary)
                 }

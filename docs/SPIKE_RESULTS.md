@@ -12,6 +12,8 @@ Open the app → **Settings → Developer → AlarmKit Lab**.
 | Main alarm + 5 backups scheduled; Lab list updates live | ✅ |
 | System picked our custom tone (`spike_beep.caf`) as the alarm sound (seen in system log) | ✅ (verify by ear on device) |
 | Ringing alarm visible on an **unlocked** screen | ❌ Nothing appeared, because the app has no widget extension (system log: "Reloading descriptors for 0 extensions"). → Create `RiseUpWidgets` first |
+| How long does an unanswered alarm stay "alerting"? (2026-10-07) | ⚠️ **Forever.** Lab alarms from the day before were still `RINGING` 23 h later. → Phase 2 must open the Ringing screen automatically on launch when an alarm is alerting, and stop it there. |
+| When the alarm fires, iOS moves the open app to the background | ✅ observed (expected for a system alarm alert) |
 
 ## Experiments to run on the iPhone
 For each one, write what happened. Lab log lines can be long-pressed to copy.

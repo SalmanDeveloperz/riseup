@@ -14,6 +14,20 @@
 //      → it asks `.navigationDestination` which view to show
 //      → ScreenFactory builds AlarmLabView + its ViewModel
 //
+//  CONNECTIONS:
+//    ← CREATED BY: RiseUpApp (the first and only view RiseUpApp shows)
+//    ← READS:      AppDependencies + AppCoordinator from the environment (injected by RiseUpApp)
+//                  AlarmLaunchRouter.shared (written by StartMissionIntent)
+//    → BINDS:      coordinator.selectedTab  ↔ TabView
+//                  coordinator.alarmsPath   ↔ Alarms tab NavigationStack
+//                  coordinator.settingsPath ↔ Settings tab NavigationStack
+//                  coordinator.fullScreen   ↔ fullScreenCover
+//    → ASKS:       ScreenFactory to build every screen
+//
+//  LEARN: "Binding" here means two-way. When code changes `coordinator.alarmsPath`,
+//  the stack pushes/pops. When the USER taps the back button, SwiftUI removes the last
+//  element from `coordinator.alarmsPath` for us. Both sides always agree.
+//
 
 import SwiftUI
 
@@ -32,7 +46,13 @@ struct RootView: View {
 
         TabView(selection: $coordinator.selectedTab) {
             Tab(AppTab.alarms.title, systemImage: AppTab.alarms.systemImage, value: AppTab.alarms) {
-                NavigationStack { factory.makeRoot(for: .alarms) }
+                // Root = Alarm List. Pushed screens (editor…) come from coordinator.alarmsPath.
+                NavigationStack(path: $coordinator.alarmsPath) {
+                    factory.makeRoot(for: .alarms)
+                        .navigationDestination(for: AlarmsRoute.self) { route in
+                            factory.makeScreen(for: route)
+                        }
+                }
             }
 
             Tab(AppTab.morning.title, systemImage: AppTab.morning.systemImage, value: AppTab.morning) {
