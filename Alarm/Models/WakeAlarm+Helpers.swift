@@ -35,6 +35,32 @@ extension WakeAlarm {
     var displayTitle: String {
         label.isEmpty ? "Alarm" : label
     }
+
+    /// Short text describing when the alarm repeats: "Once", "Every day", "Weekdays",
+    /// "Weekends", or a list like "Mon, Wed, Fri".
+    ///
+    /// ← USED BY: AlarmCardView (subtitle under the time)
+    var repeatSummary: String {
+        let days = repeatDays
+        // LEARN: `switch` on a Set compares it with each `case` value using `==`.
+        // The first matching case wins, so the order of the cases matters.
+        switch days {
+        case []:
+            return "Once"
+        case Set(Weekday.allCases):
+            return "Every day"
+        case [.monday, .tuesday, .wednesday, .thursday, .friday]:
+            return "Weekdays"
+        case [.saturday, .sunday]:
+            return "Weekends"
+        default:
+            // Keep the user's calendar order (Mon-first in Pakistan, Sun-first in the US).
+            return Weekday.orderedForCurrentLocale
+                .filter { days.contains($0) }
+                .map(\.shortName)
+                .joined(separator: ", ")
+        }
+    }
 }
 
 extension MissionConfig {
