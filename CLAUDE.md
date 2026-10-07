@@ -36,8 +36,18 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
 - `// TRY:` a safe change Salman can make to experiment.
 - `// WHY:` reasons for non-obvious decisions, especially iOS-limitation workarounds.
 
+## Git workflow (since 2026-10-07)
+- Only two long-lived branches: `main` (milestones only) and `development` (all ongoing work).
+- Work happens on `development` (or a short `feature/<name>` branch from it, merged back by PR, then deleted).
+  `development` → `main` only by PR at milestones. Never merge directly into `main`.
+- Always `git pull` the branch you start from **before** creating a new branch from it.
+- History note: `main` contains Phase 0 commits + a revert (9676403); `development` starts with
+  "Reapply Phase 0" (0912479). So a normal `development` → `main` merge brings all code. Never revert that reapply.
+- Salman runs git commands that touch GitHub (push, PRs, branch deletion) personally; Claude gives exact,
+  pre-tested steps and only commits locally.
+
 ## Workflow
-- One branch per phase (`phase-N-name`), one commit per screen. Build must have **zero warnings**.
+- One commit per screen. Build must have **zero warnings**.
 - Commit messages: plain, no `Co-Authored-By` or any Claude/AI attribution (Salman's explicit request).
 - Never commit Salman's own uncommitted experiments unless asked; leave them in the working tree.
 - For each screen: write `docs/screens/NN-name.md` brief (with a connection map) → build → update

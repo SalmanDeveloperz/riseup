@@ -1,6 +1,6 @@
 # Screen #6 · Alarm List: brief & review guide
 
-**Phase 1 · chunk 1** · branch `phase-1-foundation`
+**Phase 1 · chunk 1** · on `development`
 
 ## What it does
 The first screen of the Alarms tab:

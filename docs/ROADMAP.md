@@ -6,7 +6,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 
 ---
 
-## Phase 0 — Foundation  ·  branch `phase-0-foundation`
+## Phase 0 — Foundation  ·  on `development`
 | Item | Status | Notes |
 |---|---|---|
 | Project settings (iOS 26.0, iPhone, Swift 6, RiseUp name, dark, portrait) | 🟡 | Commit 7ef19fd had set the target to iOS 17.6; raised to 26.0 because AlarmKit requires iOS 26 |
@@ -23,7 +23,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | Spike experiments A–E on a real iPhone → `docs/SPIKE_RESULTS.md` | ⬜ | |
 | Decide final bundle ID (currently `com.testProject.Alarm`) | ⬜ | Must be final before App Groups (Phase 4) / App Store |
 
-## Phase 1 — Alarms core  ·  branch `phase-1-foundation` (stacked on `phase-0-foundation`)
+## Phase 1 — Alarms core  ·  on `development`
 | # | Screen / item | Status |
 |---|---|---|
 | 6 | Alarm List (countdown header, glowing cards, toggle, swipe delete, + button) | 🟡 brief: `docs/screens/06-alarm-list.md` |
@@ -98,8 +98,8 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 ---
 
 ## Changes from the original plan (and why)
-- Phase 1 branch is stacked on `phase-0-foundation` (not `main`), because Phase 0 isn't merged yet and
-  Phase 1 needs its code. After Phase 0 merges, retarget the Phase 1 PR to `main`.
+- Git: per-phase branches replaced by `main` + `development` (2026-10-07). Phase 0 was merged into `main`
+  by mistake and reverted; `development` starts with "Reapply Phase 0" so its PR into `main` carries everything.
 - Views get value snapshots (`AlarmRow`), never `@Model` objects; `AlarmRepository` owns the live list.
   (Learned from two crashes; see `docs/HOW_IT_WORKS.md` Part 4.)
 - Model is named `WakeAlarm`, not `Alarm`: Apple's AlarmKit already has `Alarm`.
