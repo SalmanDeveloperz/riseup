@@ -33,7 +33,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | 13 | Sound Picker (categories, preview, volume) | ⬜ |
 | 7 | Quick Alarm sheet | ⬜ |
 | 30 | Lock screen / Dynamic Island alarm UI (widget extension, polished) | ⬜ |
-| — | Re-sync all alarms with AlarmKit on app launch (move reconcile into `AlarmSyncService`, also cancel orphan system alarms) | ⬜ |
+| — | Re-sync all alarms with AlarmKit on app launch (move reconcile into `AlarmSyncService`, also cancel orphan system alarms, and re-arm backup chains for repeating mission alarms whose mission was never completed) | ⬜ |
 
 ## Phase 2 — Ringing flow + first missions
 | # | Screen / item | Status |
