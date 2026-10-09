@@ -18,7 +18,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | `StartMissionIntent` + `AlarmLaunchRouter` | 🟡 | |
 | Coordinator: `AppCoordinator`, `Routes`, `ScreenFactory`, `RootView` (4 tabs) | 🟡 | |
 | Debug: AlarmKit Lab, Design Gallery, Ringing placeholder | 🟡 | |
-| **Widget extension target `RiseUpWidgets`** (Salman creates it in Xcode) | ⬜ | Required: no alarm UI on an unlocked phone without it |
+| **Widget extension target `RiseUpWidgets`** | 🟡 | Added in Phase 1 (#30) with the `Shared/` folder; see `docs/screens/30-lock-screen-alarm-ui.md` |
 | **Unit test target `RiseUpTests`** (Salman creates it in Xcode) | ⬜ | Then Claude adds calculator/repository tests |
 | Spike experiments A–E on a real iPhone → `docs/SPIKE_RESULTS.md` | ⬜ | |
 | Decide final bundle ID (currently `com.testProject.Alarm`) | ⬜ | Must be final before App Groups (Phase 4) / App Store |
@@ -31,23 +31,24 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | — | Reconcile database ↔ iOS when the list appears (+ race-condition guard `isScheduling`) | 🟡 |
 | 8 | Alarm Editor (time wheel, repeat days, label, snooze, sound, missions row) | 🟡 brief: `docs/screens/08-alarm-editor.md` |
 | — | Shared `requirePermission()`, `countdownText`, `Weekday.summary`; Preview crash fix (repository keeps container) | 🟡 |
-| 13 | Sound Picker (categories, preview, volume) | ⬜ |
-| 7 | Quick Alarm sheet | ⬜ |
-| 30 | Lock screen / Dynamic Island alarm UI (widget extension, polished) | ⬜ |
-| — | Re-sync all alarms with AlarmKit on app launch (move reconcile into `AlarmSyncService`, also cancel orphan system alarms, and re-arm backup chains for repeating mission alarms whose mission was never completed) | ⬜ |
+| 13 | Sound Picker (categories, preview) + 8 generated sounds + `AudioService` | 🟡 brief: `docs/screens/13-sound-picker.md` |
+| 7 | Quick Alarm sheet (exact `.fixed` time, deletes itself after ringing) | 🟡 brief: `docs/screens/07-quick-alarm.md` |
+| 30 | Lock screen / Dynamic Island alarm UI (widget extension) | 🟡 brief: `docs/screens/30-lock-screen-alarm-ui.md` |
+| — | `AlarmSyncService`: sync on launch + every foreground; cancels orphan system alarms; re-arms missing backup chains | 🟡 |
+| — | `SchemaV2` (+ `fixedFireDate`, `WakeRecord`) with a lightweight migration from V1 (tested: existing alarms kept) | 🟡 |
 
 ## Phase 2 — Ringing flow + first missions
 | # | Screen / item | Status |
 |---|---|---|
-| 14 | Ringing screen (in-app sound, snooze limit) | ⬜ |
-| 9 | Mission Picker | ⬜ |
-| 10 | Mission Settings (math / typing / shake) | ⬜ |
-| 15a–c | Math, Typing, Shake missions | ⬜ |
-| 16 | Success screen | ⬜ |
-| — | Open ringing screen automatically if an alarm is alerting when the app opens (spike: alarms "ring" forever until stopped) | ⬜ |
-| — | Mission lock: while backups are ringing, block switching off / deleting / editing that alarm | ⬜ |
-| — | Replace RingingPlaceholder's live `WakeAlarm` with a snapshot (same crash class as Bug 2) | ⬜ |
-| — | `WakeRecord` model (SchemaV2 + migration) | ⬜ |
+| 14 | Ringing screen (in-app sound with volume ramp, snooze limit) | 🟡 brief: `docs/screens/14-16-ringing-flow.md` |
+| 9 | Mission Picker | 🟡 brief: `docs/screens/09-10-mission-picker.md` |
+| 10 | Mission Settings + "Try it now" practice | 🟡 |
+| 15a–c | Math, Typing, Shake missions (quiet while active, alarm returns after 15 s idle) | 🟡 |
+| 16 | Success screen (confetti, stats) | 🟡 |
+| — | Open ringing screen automatically if an alarm is alerting when the app opens (spike: alarms "ring" forever until stopped) | 🟡 |
+| — | Mission lock: while backups are ringing, block switching off / deleting / editing that alarm + "Finish your mission" banner | 🟡 |
+| — | Replace RingingPlaceholder's live `WakeAlarm` with a snapshot (same crash class as Bug 2) | 🟡 placeholder removed; `RingInfo` snapshot |
+| — | `WakeRecord` model (SchemaV2 + migration), one record per wake-up | 🟡 |
 
 ## Phase 3 — Remaining missions
 | # | Screen / item | Status |
@@ -55,7 +56,8 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | 15d–f | Memory, Steps, Squat missions | ⬜ |
 | 11, 15g | Photo registration + Photo mission | ⬜ |
 | 12, 15h | Barcode registration + Barcode mission | ⬜ |
-| — | Multiple missions per alarm, mute during mission, Time Pressure | ⬜ |
+| — | Multiple missions per alarm (up to 3, in order) | 🟡 done early in Phase 2 |
+| — | Mute button during mission (limited count), Time Pressure (spoken time) | ⬜ |
 | 18 | Wake-Up Check | ⬜ |
 
 ## Phase 4 — Onboarding, settings, widgets
@@ -107,3 +109,9 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 - Backup alarm IDs are *calculated* from the alarm ID, not stored, so there's no `backupChainIDs` field. Nothing can go out of sync.
 - `ScreenFactory` instead of a "RouteView"; typed route arrays instead of `NavigationPath` (easier to inspect).
 - Widget extension moved from Phase 1 to Phase 0: the spike showed alarms have no visible UI on an unlocked phone without it.
+  It was finally added in Phase 1 by editing `project.pbxproj` (build-checked), not with Xcode's wizard.
+- `Theme.swift` and `RiseUpAlarmMetadata.swift` moved to `Shared/` (compiled into the app AND the widget extension).
+- Alarm sounds are generated by our own script (`Tools/generate_sounds.py`): no licences to worry about (`docs/ASSETS.md`).
+- Snooze for mission alarms is not offered at all (a mission alarm can't be skipped); plain alarms snooze inside the app
+  with a limit, using a `.fixed` one-off system alarm (`AlarmKitScheduler.scheduleSnooze`).
+- Quick alarms use a new stored field `fixedFireDate` (SchemaV2) so "in 1 minute" rings at the exact second.

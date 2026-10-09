@@ -16,7 +16,10 @@ A glossary of every concept used in the code, with **where to see it**. Search t
 | `guard … else { return }` | Leave early when something's missing | `AlarmKitScheduler.schedule` |
 | `defer` | Run code right before leaving a function | `AlarmLaunchRouter.consumePendingAlarmID` |
 | `try` / `try?` / `do-catch` | Error handling | `AlarmRepository`, `AlarmKitScheduler.cancel` |
-| `typealias` | A short name for a type | bottom of `SchemaV1.swift` |
+| `typealias` | A short name for a type | bottom of `SchemaV2.swift` |
+| `[weak self]` | A closure that doesn't keep its owner alive | `AlarmEditorViewModel.chooseSound` |
+| `switch` with associated values | Pull data out of an enum case (`case .mission(let index)`) | `RingingViewModel.currentMission`, `AlarmActivityInfo` |
+| `#if DEBUG` | Code that exists only in Debug builds | `RingingView` "Close (debug)" |
 
 ## Concurrency (Swift 6)
 | Concept | In one sentence | See it in |
@@ -27,6 +30,9 @@ A glossary of every concept used in the code, with **where to see it**. Search t
 | `for await` (AsyncSequence) | Loop over values that arrive over time | `AlarmLabViewModel.observeSystemAlarms` |
 | Main actor / `nonisolated` | Main = UI thread (our default); `nonisolated` = usable from any thread | `Weekday.swift`, `StartMissionIntent.perform` |
 | `Sendable` | Safe to pass between threads; why we use `AlarmManager.shared` directly | WHY note in `AlarmKitScheduler.swift` |
+| `nonisolated extension` | Each extension gets the main-actor default separately; opt out per extension | `MissionDraft.swift` (`extension MissionType`) |
+| `MainActor.assumeIsolated` | "I promise this callback already runs on the main thread" | `CoreMotionShakeDetector.start` |
+| A loop in a `Task` + cancel | A background timer you can stop | `RingingViewModel.startWatchdog` |
 
 ## SwiftUI
 | Concept | In one sentence | See it in |
@@ -60,7 +66,9 @@ A glossary of every concept used in the code, with **where to see it**. Search t
 |---|---|---|
 | AlarmKit | System alarms that ring when silent/locked/closed | `AlarmKitScheduler.swift` |
 | App Intents | "Start Mission" button action | `StartMissionIntent.swift` |
-| ActivityKit / WidgetKit | Alarm UI on lock screen / Dynamic Island (widget extension) | `RiseUpWidgets/` (after you create it) |
+| ActivityKit / WidgetKit | Alarm UI on lock screen / Dynamic Island (widget extension) | `RiseUpWidgets/AlarmLiveActivity.swift` |
+| AVFoundation | Play sounds (`AVAudioSession`, `AVAudioPlayer`, looping, volume fade) | `AudioService.swift` |
+| CoreMotion | Accelerometer for the Shake mission | `ShakeDetector.swift` |
 
 ## Patterns
 | Pattern | Why we use it | See it in |
@@ -96,3 +104,22 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | `ButtonStyleConfiguration.role` | Lets a style react to `role: .destructive` | `GhostButtonStyle` |
 | `.toolbar(.hidden, for: .tabBar)` | Hide the tab bar on a focused screen | `AlarmEditorView` |
 | Object lifetime (strong references) | An object lives as long as someone holds it; a context doesn't hold its container | `AlarmRepository.container` |
+
+## Learned in Phase 1 (rest) + Phase 2
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Schema migration (V1 → V2) | Add a new schema version + a lightweight stage instead of editing a shipped model | `SchemaV2.swift`, `RiseUpMigrationPlan.swift` |
+| Sync service | A service that coordinates a repository and a system service | `AlarmSyncService.swift` |
+| `scenePhase` | Know when the app comes to the front | `RootView` |
+| `.sheet(item:)` + callbacks | Present by setting a value; results come back through a stored closure | `AppCoordinator.presentSoundPicker`, `RootView` |
+| Child coordinator | A flow inside a sheet owns its own small navigation path | `MissionPickerViewModel.path` |
+| `presentationDetents` + `safeAreaInset` | Half-height sheets with a button that is always visible | `QuickAlarmView` |
+| State machine (`enum Phase`) | One value says which step of a flow we're in; the View `switch`es on it | `RingingViewModel.Phase`, `RingingView` |
+| `.id(_:)` to reset state | A new id = a brand-new view with fresh `@State` | `RingingView` → `MissionView` |
+| Stored vs computed (randomness) | Random/expensive results are stored and refreshed on purpose | `MissionPickerViewModel.refreshSample` |
+| `Canvas` + `TimelineView(.animation)` | Draw many shapes every frame (confetti) | `ConfettiView.swift` |
+| `.symbolEffect` / `.contentTransition(.numericText())` | Built-in SF Symbol and number animations | `ShakeMissionView`, `SuccessView` |
+| `accessibilityReduceMotion` | Respect the user's "Reduce Motion" setting | `ConfettiView` |
+| Widget extension + shared folder | A second program in the app; shares source files, not objects | `RiseUpWidgets/`, `Shared/` |
+| Live Activity (`ActivityConfiguration`, `DynamicIsland`) | System UI drawn by our extension from data iOS stores | `AlarmLiveActivity.swift` |
+| `Text(date, style: .timer)` | A countdown iOS updates by itself (widgets can't run timers) | `AlarmTimingText` |

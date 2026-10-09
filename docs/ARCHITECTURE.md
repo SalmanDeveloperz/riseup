@@ -18,7 +18,7 @@
 │ SwiftData    │  │ AlarmKit, sensors…   │  │ navigation state  │
 └──────┬───────┘  └──────────────────────┘  └───────────────────┘
 ┌──────▼───────────────────────┐
-│ Model (@Model in SchemaV1)   │
+│ Model (@Model in SchemaV2)   │
 └──────────────────────────────┘
 ```
 
@@ -26,26 +26,37 @@
 |---|---|---|
 | App | `Alarm/App` | Creates `AppDependencies` + `AppCoordinator`, injects them via `.environment` |
 | Coordinator | `Alarm/Coordinator` | All navigation. `ScreenFactory` builds every screen + ViewModel |
-| Design System | `Alarm/DesignSystem` | Colours, fonts, reusable components. No business logic |
+| Design System | `Alarm/DesignSystem` (+ `Shared/DesignSystem/Theme.swift`) | Colours, fonts, reusable components. No business logic |
 | Features | `Alarm/Features/<Feature>/{Views,ViewModels}` | One folder per feature |
 | Repositories | `Alarm/Repositories` | Only place that touches `ModelContext` |
 | Services | `Alarm/Services` | System APIs behind protocols |
 | Models | `Alarm/Models` | SwiftData schema + plain value types |
+| Shared | `Shared/` | Compiled into BOTH the app and the widget extension. Only small types + colours |
+| Widget extension | `RiseUpWidgets/` | Lock screen / Dynamic Island alarm UI (a separate program iOS runs) |
+| Tools | `Tools/` | Scripts that are NOT part of the app (e.g. the sound generator) |
 
 ## 2. Startup sequence
 
 ```
 RiseUpApp
  ├─ AppDependencies.live()
- │    ├─ ModelContainerFactory.make()      → SwiftData database (SchemaV1 + migration plan)
- │    ├─ AlarmRepository(mainContext)
- │    └─ AlarmKitScheduler()
+ │    ├─ ModelContainerFactory.make()      → SwiftData database (SchemaV2; V1 → V2 migration)
+ │    ├─ AlarmRepository(mainContext) + WakeRecordRepository(mainContext)
+ │    ├─ AlarmKitScheduler()
+ │    ├─ AlarmSyncService(repository, scheduler)
+ │    ├─ AudioService()
+ │    └─ CoreMotionShakeDetector()
  ├─ AppCoordinator()
  └─ RootView  (.environment(dependencies), .environment(coordinator))
       ├─ TabView: Alarms | Morning | Sleep | Settings   ← coordinator.selectedTab
-      │    each tab = NavigationStack; Settings is bound to coordinator.settingsPath
-      ├─ .fullScreenCover(item: coordinator.fullScreen)
-      └─ .onChange(AlarmLaunchRouter.pendingAlarmID) → coordinator.presentRinging
+      │    Alarms ↔ coordinator.alarmsPath, Settings ↔ coordinator.settingsPath
+      ├─ .sheet(item: coordinator.sheet)             sound picker · quick alarm · mission picker
+      ├─ .fullScreenCover(item: coordinator.fullScreen)   ringing → missions → success
+      ├─ .onChange(AlarmLaunchRouter.pendingAlarmID) → coordinator.presentRinging
+      └─ .onChange(scenePhase) → alarmSync.sync() → ringing alarm? → coordinator.presentRinging
+
+RiseUpWidgets (separate program, started by iOS when an alarm needs its Live Activity)
+ └─ RiseUpWidgetsBundle → AlarmLiveActivity (lock screen + Dynamic Island)
 ```
 
 ## 3. How a screen is created (example: AlarmKit Lab)
@@ -72,10 +83,17 @@ User saves alarm 06:30 Mon–Fri with Math mission
   ├─ "Start Mission" → StartMissionIntent.perform()
   │     → AlarmManager.stop(ringing id)
   │     → AlarmLaunchRouter.shared.requestRinging(alarm.id)
-  │     → RootView → coordinator.presentRinging → Ringing screen
+  │     → RootView → coordinator.presentRinging → Ringing screen (app plays the sound now)
   │     → mission solved → scheduler.missionCompleted(alarm)
-  │          → cancel today's backups → arm backups for next occurrence
-  └─ "Stop" (skips mission) → backups ring at 06:31, 06:32, … until the mission is done
+  │          → cancel today's backups + snooze → arm backups for next occurrence
+  ├─ "Stop" (skips mission) → backups ring at 06:31, 06:32, … until the mission is done
+  │     (meanwhile the alarm is locked: hasPendingMission → can't switch off / delete / edit)
+  └─ app opened any other way → RootView sync → ringingAlarmID() → Ringing screen
+
+Plain alarm (no missions): Ringing screen → "I'm up", or "Snooze" (limited)
+  → scheduler.scheduleSnooze → one `.fixed` system alarm, ID = snoozeID(alarm.id)
+
+Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or by the next sync)
 ```
 
 **iOS limits behind this design** (see `docs/SPIKE_RESULTS.md`):
@@ -86,9 +104,9 @@ User saves alarm 06:30 Mon–Fri with Math mission
 
 | Stored in SwiftData | Written by | Read by |
 |---|---|---|
-| `WakeAlarm` (time, repeat days, label, enabled, sound, snooze, wake-up check) | Alarm Editor, List toggle/delete, Quick Alarm, Lab | List, Editor, Ringing, Widgets |
-| `MissionConfig` (type, difficulty, repetitions, order, payloads) | Mission Settings, Photo/Barcode registration | Ringing → missions |
-| `WakeRecord` (Phase 2) | Ringing flow, Morning check-in | Records, Stats, Morning |
+| `WakeAlarm` (time, repeat days, label, enabled, sound, snooze, wake-up check, `fixedFireDate` for quick alarms) | Alarm Editor, List toggle/delete, Quick Alarm, Sync, Ringing (one-time off / quick delete), Lab | List, Editor, Ringing, Sync |
+| `MissionConfig` (type, difficulty, repetitions, order, payloads) | Editor Save via `AlarmRepository.replaceMissions` (from Mission Picker drafts) | Editor, Ringing → missions |
+| `WakeRecord` (alarm, ring start, dismissed at, snoozes, missions, mission seconds, mood) | `RingingViewModel` via `WakeRecordRepository` | Records, Stats, Morning (Phase 5) |
 | `SleepSession` (Phase 8) | Sleep tracker | Sleep report |
 
 | Not in SwiftData | Where | Why |
@@ -97,4 +115,5 @@ User saves alarm 06:30 Mon–Fri with Math mission
 | Premium status | StoreKit 2 entitlements | Apple is the source of truth |
 | Photos for photo mission | Files in Application Support | keeps the database small |
 | Alarm sounds | App bundle (`Alarm/Resources/Sounds`) | AlarmKit plays them from the bundle |
-| Backup alarm IDs | Calculated (`AlarmKitScheduler.backupID`) | nothing to keep in sync |
+| Backup + snooze alarm IDs | Calculated (`AlarmKitScheduler.backupID` / `snoozeID`) | nothing to keep in sync |
+| Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |

@@ -30,9 +30,13 @@ Rule of thumb:
 
 ```
 RiseUpApp  (lives as long as the app)
- ├─ @State AppDependencies ──┬─ ModelContainer      (the database file)
- │                           ├─ AlarmRepository     (ONE, shared; holds the live `alarms` list)
- │                           └─ AlarmKitScheduler   (ONE, shared; talks to iOS)
+ ├─ @State AppDependencies ──┬─ ModelContainer        (the database file)
+ │                           ├─ AlarmRepository       (ONE, shared; holds the live `alarms` list)
+ │                           ├─ WakeRecordRepository  (ONE, shared; wake-up history)
+ │                           ├─ AlarmKitScheduler     (ONE, shared; talks to iOS)
+ │                           ├─ AlarmSyncService      (ONE, shared; database ↔ iOS agreement)
+ │                           ├─ AudioService          (ONE, shared; previews + in-app alarm sound)
+ │                           └─ CoreMotionShakeDetector (ONE, shared; the Shake mission's sensor)
  ├─ @State AppCoordinator    (ONE, shared; all navigation state)
  └─ RootView
      └─ each screen
@@ -43,6 +47,8 @@ RiseUpApp  (lives as long as the app)
 - **Per-screen, short-lived:** ViewModels. Created by `ScreenFactory`, kept alive by the screen's `@State`.
 - **Throwaway:** View structs and `AlarmRow` snapshots. SwiftUI creates and discards them constantly. That's normal and cheap.
 - **Exception:** `AlarmLaunchRouter.shared` is a singleton, because iOS creates `StartMissionIntent` outside our view tree (see its WHY comment).
+- **A second program:** the `RiseUpWidgets` extension is started by iOS, not by `RiseUpApp`. It shares no objects with
+  the app, only source files (the `Shared/` folder) and the data iOS hands it (`AlarmAttributes`).
 
 ---
 
@@ -57,8 +63,8 @@ RiseUpApp  (lives as long as the app)
 | 4 | `RiseUpApp.body` | shows `RootView`, injecting dependencies + coordinator (mechanism 1) |
 | 5 | `RootView.body` | builds `ScreenFactory`, `TabView` bound to `coordinator.selectedTab` (= `.alarms`) |
 | 6 | `ScreenFactory.makeRoot(for: .alarms)` | creates `AlarmListViewModel(...)` (mechanism 2) and `AlarmListView` |
-| 7 | `AlarmListView.task` | calls `viewModel.load()` |
-| 8 | `AlarmListViewModel.load()` | `repository.refresh()`, then reconciles with iOS (Trace D) |
+| 7 | `RootView.onChange(of: scenePhase, initial: true)` | app is `.active` → `AlarmSyncService.sync()` (Trace D); if an alarm is ringing → Ringing screen (Trace H) |
+| 8 | `AlarmListView.task` → `AlarmListViewModel.load()` | `repository.refresh()`, then `sync()` again (cheap; skipped if one is already running) |
 | 9 | `AlarmListView.body` | reads `viewModel.rows` → `repository.alarms.map(makeRow)` → draws one `AlarmCardView` per row |
 
 ### Trace B: User flips a switch ON
@@ -86,14 +92,20 @@ RiseUpApp  (lives as long as the app)
 | 7 | `ScreenFactory` | returns the editor screen (a placeholder until the next chunk) |
 | 8 | Back button | SwiftUI removes the last element from `alarmsPath` for us; the binding works both ways |
 
-### Trace D: Reconcile (database ↔ iOS)
-Runs inside `AlarmListViewModel.load()` every time the list appears.
+### Trace D: Sync (database ↔ iOS), `AlarmSyncService.sync()`
+Runs on launch, every time the app comes to the front, and when the Alarm List appears.
+(It used to live in `AlarmListViewModel`; it moved to a service because the *launch* needs it too.)
 ```
-for each alarm that is ON in our database but NOT in iOS's list (and not "busy"):
-    repeating → schedule it again          (iOS lost it, e.g. reinstall)
-    one-time  → mark it OFF                (it already rang)
+ask iOS for every system alarm (AlarmScheduling.systemAlarms)
+for each alarm that is ON in our database (and not "busy" = isScheduling):
+    main alarm missing in iOS?
+        quick alarm → delete it          (it rang; quick alarms are throwaway)
+        one-time    → switch it OFF      (it rang)
+        repeating   → schedule it again  (iOS lost it, e.g. reinstall)
+    repeating mission alarm without backups → ensureBackupChain  (yesterday's mission never finished)
+cancel every system alarm that belongs to nobody (cancelSystemAlarms(notIn:))
+    (backups of existing alarms are KEPT: a mission may still be pending)
 ```
-Backups are deliberately NOT cancelled here; see the WHY in the code.
 
 ### Trace E: Alarm rings → "Start Mission" (needs the widget extension; see SPIKE_RESULTS)
 ```
@@ -104,7 +116,7 @@ iOS rings the AlarmKit alarm (app may be closed)
      → AlarmLaunchRouter.shared.requestRinging(alarmID)
  → RootView .onChange(of: launchRouter.pendingAlarmID) fires
      → coordinator.presentRinging(alarmID) → fullScreen = .ringing(id)
- → .fullScreenCover → ScreenFactory.makeScreen(for: .ringing) → RingingPlaceholderView
+ → .fullScreenCover → ScreenFactory.makeScreen(for: .ringing) → RingingView (Trace H)
 ```
 
 ### Trace F: Saving an alarm in the Editor
@@ -119,6 +131,46 @@ iOS rings the AlarmKit alarm (app may be closed)
 | 7 | `AppCoordinator.popAlarms()` | `alarmsPath.removeLast()` → the NavigationStack slides back to the list |
 | 8 | `AlarmListView.task` | runs `load()` → reconcile finds the alarm in iOS, so it stays ON |
 | ✗ | permission denied / iOS error | the alarm is saved but OFF; the alert's OK pops back (`closesAfterError`) |
+
+### Trace G: A sheet that returns a result (Sound Picker; the Mission Picker works the same way)
+| Step | File · function | What happens |
+|---|---|---|
+| 1 | `AlarmEditorView` Sound card | tap → `viewModel.chooseSound()` |
+| 2 | `AlarmEditorViewModel.chooseSound` | `coordinator.presentSoundPicker(selected: draft.sound) { [weak self] in self?.draft.sound = $0 }` |
+| 3 | `AppCoordinator.presentSoundPicker` | stores the closure in `onSoundPicked` (`@ObservationIgnored`), sets `sheet = .soundPicker(...)` |
+| 4 | `RootView .sheet(item: $coordinator.sheet)` | → `ScreenFactory.makeScreen(for: SheetRoute)` → `SoundPickerView` + ViewModel |
+| 5 | `SoundPickerViewModel.select` | highlights the row, `audio.preview(sound)` |
+| 6 | "Done" → `SoundPickerViewModel.done()` | `coordinator.completeSoundPicker(with: selected)` |
+| 7 | `AppCoordinator.completeSoundPicker` | runs the stored closure (step 2) → the editor's draft changes → closes the sheet, forgets the closure |
+| ✗ | Cancel / swipe down | `dismissSheet()` → closure forgotten, draft unchanged |
+
+Why `[weak self]`: the coordinator lives for the whole app. If it held the editor's ViewModel strongly
+through the closure, a closed editor could stay in memory. `weak` = "call me if I still exist".
+
+### Trace H: A mission alarm from ring to "You're up!"
+```
+06:30  iOS rings the main alarm (AlarmKit; phone may be locked, app closed)
+       └─ unlocked phone: the Live Activity UI comes from OUR widget extension (RiseUpWidgets)
+ user taps "Start Mission"  → StartMissionIntent → AlarmLaunchRouter → RootView → presentRinging
+   (or opens RiseUp any other way → RootView sync → ringingAlarmID() → presentRinging)
+ RingingViewModel.start()
+   → scheduler.stopRinging(alarm)          iOS's sound off
+   → audio.startAlarm(sound, rampUp:)      OUR sound on (quiet → loud)
+   → records.openRecord(...)               WakeRecord row (reused after a snooze)
+ "Start Mission" → phase = .mission(0) → sound muted → 15 s idle watchdog starts
+   each tap/key/shake → userInteracted()   (stay quiet)
+   idle 15 s          → sound back + red banner
+   mission solved     → missionFinished()  → next mission, or finish()
+ finish()
+   → scheduler.missionCompleted(alarm)     cancel today's backups + snooze; re-arm next occurrence
+   → one-time: isEnabled = false · quick: deleted
+   → WakeRecord: dismissedAt, missionSeconds, missionsCompleted
+   → phase = .success → SuccessView (confetti) → "Start my day" → dismissFullScreen()
+
+If the user pressed STOP instead: backups ring at 06:31, 06:32, 06:33, 06:35, 06:38.
+Meanwhile the alarm is LOCKED (hasPendingMission): no switching off, deleting or editing,
+and the Alarm List shows "Finish your mission".
+```
 
 ---
 
@@ -144,6 +196,35 @@ These happened while building the Alarm List, and they're the best system-design
 - **Rule: whoever uses a `ModelContext` must also keep its `ModelContainer` alive.** `AlarmRepository` now stores `context.container`.
 - **Lesson:** "it works in the app" isn't enough. The app kept `AppDependencies` alive by luck of structure (`@State` in `RiseUpApp`); previews and tests don't.
 
+### Bug 5: The mission lock switched on before the alarm even rang
+- **What happened:** the first rule was "locked if a backup is due within 10 minutes". At 06:25 the 06:31 backup
+  was "due soon", so you couldn't switch off an alarm that hadn't rung yet.
+- **Rule: describe the real event, not a time window near it.** A mission is pending if one of the alarm's system
+  alarms is *alerting*, or if the *main ring time* (backup date − its offset) has already passed.
+  That logic now lives in `AlarmKitScheduler.hasPendingMission`, next to the backup offsets it depends on.
+
+### Bug 6: The countdown said "2m" for a whole minute
+- **What happened:** the header used `TimelineView(.everyMinute)`'s `context.date`, which is the start of the
+  minute, not the current second. With 61 s left it computed from up to 59 s in the past.
+- **Rule:** a `TimelineView` tells you *when to redraw*. Read the real time (`Date.now`) for the maths.
+
+### Bug 7: The example in Mission Settings flickered
+- **What happened:** `sampleText` was a computed property that generated a *random* problem. Every redraw
+  (every tap on −/+) produced a new one.
+- **Rule: computed properties must be cheap and give the same answer for the same state.** Random or
+  expensive results are *stored* and refreshed on purpose (`refreshSample()` when type or difficulty changes).
+
+### Lesson: changing a released model = a new schema version
+`fixedFireDate` (quick alarms) and the new `WakeRecord` model changed the database. Instead of editing `SchemaV1`
+(frozen forever once shipped), we added `SchemaV2` plus a *lightweight* migration stage in `RiseUpMigrationPlan`.
+Tested on the Simulator's existing database: all 9 old alarms survived, and the new table appeared.
+Lightweight works for "add an optional field / add a model". Renames or data changes need a *custom* stage.
+
+### Lesson: two programs, one set of types (the widget extension)
+The widget extension can't see app files. Anything both sides need (the alarm metadata type and the colours)
+lives in `Shared/`, a folder that belongs to both targets. If the two sides used *different* copies of
+`RiseUpAlarmMetadata`, iOS couldn't match the alarm to our UI.
+
 ---
 
 ## Part 5 · Where to put new code (decision table)
@@ -157,3 +238,6 @@ These happened while building the Alarm List, and they're the best system-design
 | Go to another screen | a `Routes.swift` case + `ScreenFactory` case + `AppCoordinator` method |
 | Reusable look (button, card) | `DesignSystem/Components` |
 | Pure maths / formatting | a `nonisolated enum` with `static func` (easy to unit test) |
+| Show a sheet that returns a value | a `SheetRoute` case + `present…(onPick:)` / `complete…(with:)` in `AppCoordinator` (Trace G) |
+| Something the app AND the widget need | `Shared/` (keep it tiny: types and colours only) |
+| Lock screen / Dynamic Island / widgets | `RiseUpWidgets/` |

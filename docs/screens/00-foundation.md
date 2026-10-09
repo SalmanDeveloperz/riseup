@@ -14,7 +14,7 @@ Write anything unclear in `docs/LEARNING_LOG.md`.
    1. `Alarm/App/RiseUpApp.swift`
    2. `Alarm/App/AppDependencies.swift`
 4. **Design System** (open each file's `#Preview` in Xcode with ⌥⌘↩)
-   1. `DesignSystem/Theme.swift`
+   1. `DesignSystem/Theme.swift` (moved to `Shared/DesignSystem/Theme.swift` in Phase 1, see screen 30)
    2. `DesignSystem/Typography.swift`
    3. `DesignSystem/Components/AppBackground.swift`, `GlowCard.swift`, `NeonButtonStyle.swift`, `NeonToggleStyle.swift`, `BigClockText.swift`
 5. **Models (SwiftData)**
