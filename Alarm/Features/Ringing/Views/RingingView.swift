@@ -1,0 +1,222 @@
+//
+//  RingingView.swift
+//  RiseUp
+//
+//  LAYER: View (Screens #14 Ringing / #15 Missions / #16 Success, one full-screen flow)
+//  WHAT:  Switches between three looks depending on `viewModel.phase`:
+//           .ringing → pulsing clock, alarm title, Start Mission / I'm up / Snooze
+//           .mission → the current mission (Math/Typing/Shake) + "alarm paused" status
+//           .success → SuccessView with confetti
+//  VIEWMODEL: RingingViewModel.
+//
+//  CONNECTIONS (the paths to this screen):
+//    lock screen "Start Mission" → StartMissionIntent → AlarmLaunchRouter → RootView.onChange
+//    app opened while an alarm rings → RootView sync → AlarmSyncService.ringingAlarmID
+//    Alarm List "Finish your mission" banner → AlarmListViewModel.resumeMission
+//      → all three call AppCoordinator.presentRinging(alarmID:)
+//      → coordinator.fullScreen = .ringing(...) → RootView .fullScreenCover → ScreenFactory → this view
+//
+
+import SwiftUI
+
+struct RingingView: View {
+    @State private var viewModel: RingingViewModel
+    /// Drives the breathing glow behind the clock.
+    @State private var isPulsing = false
+
+    init(viewModel: RingingViewModel) {
+        _viewModel = State(initialValue: viewModel)
+    }
+
+    var body: some View {
+        ZStack {
+            AppBackground()
+            content
+                .padding(Theme.Spacing.lg)
+        }
+        .onAppear { viewModel.start() }                 // → silence iOS, play our sound, open record
+        .alert("Alarm", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.dismissError() } }
+        )) {
+            Button("OK") { viewModel.dismissError() }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch viewModel.phase {
+        case .ringing:
+            if let info = viewModel.info {
+                ringing(info)
+            } else {
+                missingAlarm
+            }
+        case .mission:
+            if let mission = viewModel.currentMission {
+                missionStage(mission)
+            }
+        case .success(let summary):
+            SuccessView(summary: summary) { viewModel.close() }
+        }
+    }
+
+    // MARK: - Ringing
+
+    private func ringing(_ info: RingingViewModel.RingInfo) -> some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            #if DEBUG
+            HStack {
+                Spacer()
+                Button("Close (debug)") { viewModel.debugClose() }
+                    .font(.riseCaption)
+                    .foregroundStyle(Theme.Colors.textTertiary)
+            }
+            #endif
+
+            Spacer()
+
+            Text(info.title.uppercased())
+                .font(.riseHeadline)
+                .tracking(2)
+                .foregroundStyle(Theme.Colors.neonPink)
+
+            // The live clock, with a glow that "breathes" like a heartbeat.
+            TimelineView(.everyMinute) { context in
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: context.date)
+                BigClockText(hour: parts.hour ?? 0, minute: parts.minute ?? 0, size: 96)
+            }
+            .background {
+                Circle()
+                    .fill(Theme.Colors.neonPink.opacity(0.35))
+                    .blur(radius: 60)
+                    .scaleEffect(isPulsing ? 1.25 : 0.85)
+            }
+            .onAppear {
+                withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { isPulsing = true }
+            }
+
+            Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                .font(.riseBody)
+                .foregroundStyle(Theme.Colors.textSecondary)
+
+            Spacer()
+
+            if info.missions.isEmpty {
+                Button {
+                    Task { await viewModel.dismiss() }     // → success
+                } label: {
+                    Label("I'm up", systemImage: "sun.max.fill")
+                }
+                .buttonStyle(.neon)
+
+                if viewModel.canSnooze {
+                    Button {
+                        Task { await viewModel.snooze() }  // → rings again in N minutes
+                    } label: {
+                        Text("Snooze \(info.snoozeMinutes) min · \(viewModel.snoozesLeft) left")
+                    }
+                    .buttonStyle(.ghost)
+                } else if info.isSnoozeEnabled {
+                    Text("No snoozes left. Time to get up!")
+                        .font(.riseCaption)
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                }
+            } else {
+                // Which missions are waiting, as small chips.
+                HStack(spacing: Theme.Spacing.xs) {
+                    ForEach(info.missions) { mission in
+                        Label(mission.type.title, systemImage: mission.type.systemImage)
+                            .font(.riseCaption)
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                            .padding(.horizontal, Theme.Spacing.sm)
+                            .padding(.vertical, Theme.Spacing.xs)
+                            .background(Theme.Colors.surfaceRaised, in: .capsule)
+                    }
+                }
+                Button {
+                    viewModel.startMissions()              // → first mission
+                } label: {
+                    Label("Start Mission", systemImage: "bolt.fill")
+                }
+                .buttonStyle(.neon)
+                Text("The alarm goes quiet while you work on it.")
+                    .font(.riseCaption)
+                    .foregroundStyle(Theme.Colors.textTertiary)
+            }
+        }
+        .sensoryFeedback(.warning, trigger: viewModel.snoozeCount)
+    }
+
+    // MARK: - Mission
+
+    private func missionStage(_ mission: MissionDraft) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            HStack {
+                Text(viewModel.missionNumberText)
+                    .font(.riseHeadline)
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                Spacer()
+                Label(viewModel.isQuiet ? "Alarm paused" : "Alarm ringing",
+                      systemImage: viewModel.isQuiet ? "speaker.slash.fill" : "speaker.wave.3.fill")
+                    .font(.riseCaption)
+                    .foregroundStyle(viewModel.isQuiet ? Theme.Colors.textTertiary : Theme.Colors.neonPink)
+            }
+
+            if viewModel.isIdleWarning {
+                Label("Still there? The alarm is back. Keep going to quiet it.", systemImage: "exclamationmark.triangle.fill")
+                    .font(.riseHeadline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Theme.Spacing.md)
+                    .background(Theme.Colors.danger.opacity(0.85), in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            MissionView(
+                mission: mission,
+                shakeDetector: viewModel.shakeDetector,
+                onInteraction: { viewModel.userInteracted() },   // → keeps the alarm quiet
+                onComplete: { viewModel.missionFinished() }      // → next mission or success
+            )
+            // WHY `.id`: a new mission = a brand-new mission view with fresh state.
+            .id(mission.id)
+            .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)).combined(with: .opacity))
+        }
+        // Any tap anywhere counts as "still awake".
+        .simultaneousGesture(TapGesture().onEnded { viewModel.userInteracted() })
+        .animation(.spring(duration: 0.4), value: viewModel.phase)
+        .animation(.easeInOut, value: viewModel.isIdleWarning)
+    }
+
+    // MARK: - Missing alarm
+
+    private var missingAlarm: some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            Spacer()
+            Text("This alarm no longer exists.")
+                .font(.riseTitle)
+                .foregroundStyle(Theme.Colors.textPrimary)
+            Button("Close") { viewModel.close() }.buttonStyle(.neon)
+            Spacer()
+        }
+    }
+}
+
+#Preview {
+    let dependencies = AppDependencies.preview()
+    let alarm = WakeAlarm(hour: 6, minute: 30, label: "Gym")
+    alarm.missions = [MissionConfig(type: .math, difficulty: .easy, repetitions: 2)]
+    try? dependencies.alarmRepository.insert(alarm)
+    return RingingView(viewModel: RingingViewModel(
+        alarmID: alarm.id,
+        repository: dependencies.alarmRepository,
+        records: dependencies.wakeRecordRepository,
+        scheduler: dependencies.alarmScheduler,
+        audio: dependencies.audio,
+        shakeDetector: dependencies.shakeDetector,
+        coordinator: AppCoordinator()
+    ))
+}

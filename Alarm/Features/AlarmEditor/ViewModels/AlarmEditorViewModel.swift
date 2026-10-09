@@ -16,6 +16,8 @@
 //    → DATA:        AlarmRepository.fetch(id:) / insert / save / delete
 //    → iOS:         AlarmScheduling.requirePermission() / schedule() / cancel()
 //    → NAVIGATION:  AppCoordinator.popAlarms()  → back to the Alarm List
+//    → SHEETS:      AppCoordinator.presentSoundPicker / presentMissionPicker (results come back
+//                   through callbacks into `draft`)
 //    → DATE MATHS:  AlarmScheduleCalculator.nextOccurrence + countdownText
 //
 //  THE SAVE FLOW, step by step (see save() below):
@@ -49,6 +51,9 @@ final class AlarmEditorViewModel {
     /// Longest label we allow. TRY: change to 20 and type a long name.
     static let maxLabelLength = 30
 
+    /// Most missions one alarm can have. TRY: change to 5.
+    static let maxMissions = 3
+
     /// Choices shown in the snooze pickers.
     static let snoozeMinuteOptions = [1, 3, 5, 10, 15, 20, 30]
     static let snoozeCountOptions = [1, 2, 3, 5, 10]
@@ -65,6 +70,11 @@ final class AlarmEditorViewModel {
     /// WHY: after "saved but switched off" the alert's OK button should also close the editor.
     private var closesAfterError = false
 
+    /// The draft as it was when the editor opened (to know what changed on Save).
+    private let originalDraft: AlarmDraft
+    /// Set for quick alarms: their exact ring moment, kept only if the time isn't changed.
+    private let originalFixedFireDate: Date?
+
     init(alarmID: UUID?, repository: AlarmRepository, scheduler: any AlarmScheduling, coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
@@ -73,13 +83,20 @@ final class AlarmEditorViewModel {
 
         // Fill the draft. LEARN: in an `init`, every stored property must get a value
         // before we can call methods on `self`, so we use `static` helpers here.
+        // LEARN: Swift requires every stored property to be set before `self` is used,
+        // so we build the draft in a local constant first and assign it twice.
+        let startingDraft: AlarmDraft
         if let alarmID, let existing = try? repository.fetch(id: alarmID) {
-            draft = Self.makeDraft(from: existing)
+            startingDraft = Self.makeDraft(from: existing)
             isEditing = true
+            originalFixedFireDate = existing.fixedFireDate
         } else {
-            draft = .newAlarm()
+            startingDraft = .newAlarm()
             isEditing = false
+            originalFixedFireDate = nil
         }
+        draft = startingDraft
+        originalDraft = startingDraft
     }
 
     // MARK: - Values derived from the draft (read by the View)
@@ -124,7 +141,48 @@ final class AlarmEditorViewModel {
     /// Mission alarms use "Start Mission" instead of the system Snooze button
     /// (see AlarmKitScheduler.makeAttributes), so the snooze settings don't apply to them.
     var snoozeAppliesToThisAlarm: Bool {
-        draft.missionTypes.isEmpty
+        draft.missions.isEmpty
+    }
+
+    var canAddMission: Bool {
+        draft.missions.count < Self.maxMissions
+    }
+
+    // MARK: - Sheets (sound & missions)
+
+    /// Opens the Sound Picker; the chosen sound comes back into `draft.sound`.
+    /// ← CALLED BY: the Sound row
+    /// → AppCoordinator.presentSoundPicker → SoundPickerViewModel → completeSoundPicker → this closure
+    ///
+    /// LEARN: `[weak self]` stops a "retain cycle": the coordinator holds this closure,
+    /// and the closure would otherwise hold this ViewModel forever.
+    func chooseSound() {
+        coordinator.presentSoundPicker(selected: draft.sound) { [weak self] sound in
+            self?.draft.sound = sound
+        }
+    }
+
+    /// Opens the Mission Picker to add a new mission at the end.
+    /// ← CALLED BY: "Add mission"
+    func addMission() {
+        guard canAddMission else { return }
+        coordinator.presentMissionPicker(editing: nil) { [weak self] mission in
+            self?.draft.missions.append(mission)
+        }
+    }
+
+    /// Opens the Mission Picker to change an existing mission (matched by its id).
+    /// ← CALLED BY: tapping a mission row
+    func editMission(_ mission: MissionDraft) {
+        coordinator.presentMissionPicker(editing: mission) { [weak self] updated in
+            guard let self, let index = self.draft.missions.firstIndex(where: { $0.id == updated.id }) else { return }
+            self.draft.missions[index] = updated
+        }
+    }
+
+    /// ← CALLED BY: the remove (−) button on a mission row
+    func removeMission(_ mission: MissionDraft) {
+        draft.missions.removeAll { $0.id == mission.id }
     }
 
     // MARK: - Actions
@@ -134,6 +192,10 @@ final class AlarmEditorViewModel {
     /// ← CALLED BY: the "Save" toolbar button in AlarmEditorView
     func save() async {
         guard !isSaving else { return }
+        if isLocked {
+            errorMessage = AlarmListViewModel.lockedMessage
+            return
+        }
         isSaving = true
         defer { isSaving = false }
 
@@ -154,6 +216,12 @@ final class AlarmEditorViewModel {
             if let alarmID, let existing = try repository.fetch(id: alarmID) {
                 alarm = existing
                 Self.apply(draft, to: alarm)
+                // A quick alarm stays "exact" only if its time wasn't changed; otherwise
+                // it becomes a normal hour:minute alarm.
+                let timeChanged = draft.hour != originalDraft.hour || draft.minute != originalDraft.minute
+                    || !draft.repeatDays.isEmpty
+                alarm.fixedFireDate = timeChanged ? nil : originalFixedFireDate
+                repository.replaceMissions(of: alarm, with: draft.missions)
                 // WHY: like the iOS Clock app, saving an alarm switches it on.
                 alarm.isEnabled = isAllowed
                 try repository.save()                  // → refreshes repository.alarms
@@ -161,6 +229,8 @@ final class AlarmEditorViewModel {
                 alarm = Self.makeAlarm(from: draft)
                 alarm.isEnabled = isAllowed
                 try repository.insert(alarm)           // → refreshes repository.alarms
+                repository.replaceMissions(of: alarm, with: draft.missions)
+                try repository.save()
             }
         } catch {
             errorMessage = "Couldn't save the alarm. \(error.localizedDescription)"
@@ -192,6 +262,10 @@ final class AlarmEditorViewModel {
     func delete() {
         guard let alarmID, let alarm = try? repository.fetch(id: alarmID) else {
             coordinator.popAlarms()
+            return
+        }
+        if scheduler.hasPendingMission(alarm) {
+            errorMessage = AlarmListViewModel.lockedMessage
             return
         }
         // WHY cancel first: reading a deleted SwiftData object crashes, and cancel needs `alarm.id`.
@@ -228,6 +302,13 @@ final class AlarmEditorViewModel {
 
     // MARK: - Helpers
 
+    /// True while this alarm's mission is pending (see AlarmScheduling.hasPendingMission).
+    /// Editing it then could cancel the backups and let the user dodge the mission.
+    var isLocked: Bool {
+        guard let alarmID, let alarm = try? repository.fetch(id: alarmID) else { return false }
+        return scheduler.hasPendingMission(alarm)
+    }
+
     private func showErrorThenClose(_ message: String) {
         closesAfterError = true
         errorMessage = message
@@ -240,21 +321,24 @@ final class AlarmEditorViewModel {
             minute: alarm.minute,
             repeatDays: alarm.repeatDays,
             label: alarm.label,
-            soundName: alarm.soundName,
+            sound: AlarmSound.from(alarm.soundName),
             isSnoozeEnabled: alarm.isSnoozeEnabled,
             snoozeMinutes: alarm.snoozeMinutes,
             maxSnoozeCount: alarm.maxSnoozeCount,
-            missionTypes: alarm.sortedMissions.map(\.type)
+            missions: alarm.sortedMissions.map {
+                MissionDraft(id: $0.id, type: $0.type, difficulty: $0.difficulty, repetitions: $0.repetitions)
+            }
         )
     }
 
-    /// Draft → existing WakeAlarm (copying values in). Missions are left untouched for now.
+    /// Draft → existing WakeAlarm (copying values in). Missions are handled by
+    /// AlarmRepository.replaceMissions in save().
     private static func apply(_ draft: AlarmDraft, to alarm: WakeAlarm) {
         alarm.hour = draft.hour
         alarm.minute = draft.minute
         alarm.repeatDays = draft.repeatDays
         alarm.label = draft.label.trimmingCharacters(in: .whitespaces)
-        alarm.soundName = draft.soundName
+        alarm.soundName = draft.sound.rawValue
         alarm.isSnoozeEnabled = draft.isSnoozeEnabled
         alarm.snoozeMinutes = draft.snoozeMinutes
         alarm.maxSnoozeCount = draft.maxSnoozeCount
@@ -267,7 +351,7 @@ final class AlarmEditorViewModel {
             minute: draft.minute,
             repeatDays: draft.repeatDays,
             label: draft.label.trimmingCharacters(in: .whitespaces),
-            soundName: draft.soundName,
+            soundName: draft.sound.rawValue,
             isSnoozeEnabled: draft.isSnoozeEnabled,
             snoozeMinutes: draft.snoozeMinutes,
             maxSnoozeCount: draft.maxSnoozeCount

@@ -42,6 +42,23 @@ nonisolated enum AlarmPermissionError: LocalizedError {
     }
 }
 
+/// What iOS is doing with one system alarm right now.
+/// WHY our own types: ViewModels and services never import AlarmKit (see AlarmPermission).
+nonisolated enum SystemAlarmState: Sendable {
+    case scheduled   // waiting for its time
+    case countdown   // snoozing (system Snooze button)
+    case paused
+    case alerting    // RINGING right now
+}
+
+/// One system alarm as iOS reports it.
+nonisolated struct SystemAlarmInfo: Sendable {
+    var state: SystemAlarmState
+    /// The exact ring moment for one-time (`.fixed`) alarms: backups, snoozes, quick alarms.
+    /// `nil` for clock-time (`.relative`) alarms.
+    var fixedDate: Date?
+}
+
 /// Schedules and cancels RiseUp alarms with the operating system.
 protocol AlarmScheduling: AnyObject {
     /// Current permission state (no popup).
@@ -72,6 +89,42 @@ protocol AlarmScheduling: AnyObject {
     /// two (the reconcile step) must skip it, or it would wrongly switch the alarm off.
     /// See "race condition" in docs/HOW_IT_WORKS.md.
     func isScheduling(_ alarm: WakeAlarm) -> Bool
+
+    // MARK: Added in Phase 1/2 (sync, ringing, snooze)
+
+    /// Every RiseUp system alarm iOS knows about, with its state and exact date (if fixed).
+    /// ← USED BY: AlarmSyncService (reconcile, "is something ringing?", orphans), hasPendingMission
+    func systemAlarms() -> [UUID: SystemAlarmInfo]
+
+    /// Every system alarm ID that can belong to this WakeAlarm: main, each backup, snooze.
+    /// ← USED BY: AlarmSyncService (which system alarm belongs to which WakeAlarm)
+    func systemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
+
+    /// Silences every system alarm of this WakeAlarm that is ringing right now
+    /// (the app takes over with its own sound on the Ringing screen).
+    /// ← USED BY: RingingViewModel.start()
+    func stopRinging(_ alarm: WakeAlarm)
+
+    /// Schedules a one-time "snooze" ring `minutes` from now, for alarms without missions.
+    /// ← USED BY: RingingViewModel.snooze()
+    func scheduleSnooze(for alarm: WakeAlarm, minutes: Int) async throws
+
+    /// Makes sure a mission alarm has its backup chain for the next ring; schedules it if missing.
+    /// ← USED BY: AlarmSyncService (if the user never finished yesterday's mission, the
+    ///   chain for the next day was never armed)
+    func ensureBackupChain(for alarm: WakeAlarm) async throws
+
+    /// Removes system alarms whose IDs are NOT in `keeping` (leftovers from deleted alarms or bugs).
+    /// ← USED BY: AlarmSyncService
+    func cancelSystemAlarms(notIn keeping: Set<UUID>)
+
+    /// True when this alarm's mission is "in progress": one of its system alarms is ringing
+    /// right now, or the main alarm already rang and one of its backups is still waiting.
+    /// While true the alarm is LOCKED (can't be switched off, edited or deleted), so
+    /// nobody can dodge the mission.
+    ///
+    /// ← USED BY: AlarmListViewModel / AlarmEditorViewModel (mission lock), Alarm List banner
+    func hasPendingMission(_ alarm: WakeAlarm, now: Date) -> Bool
 }
 
 // MARK: - Shared helpers
@@ -89,4 +142,10 @@ extension AlarmScheduling {
         let answer = await requestPermission()   // → the system "Allow alarms?" popup if never asked
         guard answer == .authorized else { throw AlarmPermissionError.denied }
     }
+
+    /// Convenience: `hasPendingMission(alarm, now: .now)`.
+    func hasPendingMission(_ alarm: WakeAlarm) -> Bool {
+        hasPendingMission(alarm, now: .now)
+    }
+
 }

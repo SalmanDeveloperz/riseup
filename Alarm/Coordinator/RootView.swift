@@ -21,7 +21,9 @@
 //    → BINDS:      coordinator.selectedTab  ↔ TabView
 //                  coordinator.alarmsPath   ↔ Alarms tab NavigationStack
 //                  coordinator.settingsPath ↔ Settings tab NavigationStack
-//                  coordinator.fullScreen   ↔ fullScreenCover
+//                  coordinator.sheet        ↔ sheet (sound picker, quick alarm, mission picker)
+//                  coordinator.fullScreen   ↔ fullScreenCover (ringing flow)
+//    → RUNS:       AlarmSyncService.sync() on launch and every return to the foreground
 //    → ASKS:       ScreenFactory to build every screen
 //
 //  LEARN: "Binding" here means two-way. When code changes `coordinator.alarmsPath`,
@@ -37,6 +39,10 @@ struct RootView: View {
 
     /// Mailbox for "Start Mission" taps coming from the lock screen.
     private let launchRouter = AlarmLaunchRouter.shared
+
+    /// LEARN: `scenePhase` tells us whether the app is active (on screen), inactive or
+    /// in the background. We sync with iOS every time it becomes `.active`.
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         // LEARN: `@Bindable` lets us create bindings (`$coordinator.selectedTab`) to an
@@ -73,6 +79,11 @@ struct RootView: View {
             }
         }
         .tint(Theme.Colors.neonPink)
+        // Shows a sheet whenever `coordinator.sheet` is not nil (sound picker, quick alarm, missions).
+        // `onDismiss` also runs when the user swipes the sheet down → forget pending callbacks.
+        .sheet(item: $coordinator.sheet, onDismiss: { coordinator.dismissSheet() }) { route in
+            factory.makeScreen(for: route)
+        }
         // Shows a full-screen page whenever `coordinator.fullScreen` is not nil.
         .fullScreenCover(item: $coordinator.fullScreen) { route in
             factory.makeScreen(for: route)
@@ -82,6 +93,20 @@ struct RootView: View {
         .onChange(of: launchRouter.pendingAlarmID, initial: true) {
             if let alarmID = launchRouter.consumePendingAlarmID() {
                 coordinator.presentRinging(alarmID: alarmID)
+            }
+        }
+        // Every time the app comes to the front (including the first launch):
+        //   1. sync database ↔ iOS (AlarmSyncService)
+        //   2. if an alarm is ringing right now, open the Ringing screen automatically
+        // WHY: an unanswered alarm keeps ringing forever (spike finding). If the user opens
+        // RiseUp instead of tapping "Start Mission", we still take them to the mission.
+        .onChange(of: scenePhase, initial: true) {
+            guard scenePhase == .active else { return }
+            Task {
+                await dependencies.alarmSync.sync()
+                if coordinator.fullScreen == nil, let ringingID = dependencies.alarmSync.ringingAlarmID() {
+                    coordinator.presentRinging(alarmID: ringingID)
+                }
             }
         }
     }

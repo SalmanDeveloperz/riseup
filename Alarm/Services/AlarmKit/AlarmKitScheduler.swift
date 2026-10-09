@@ -89,11 +89,13 @@ final class AlarmKitScheduler: AlarmScheduling {
         // WHY `try?`: `cancel` throws if the alarm isn't scheduled (already fired, never
         // scheduled…). That's fine for us; the goal "make sure it's gone" is reached either way.
         try? AlarmManager.shared.cancel(id: alarm.id)
+        try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
         cancelBackupChain(for: alarm)
     }
 
     func missionCompleted(for alarm: WakeAlarm) async throws {
         cancelBackupChain(for: alarm)
+        try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
 
         // Repeating alarms need tomorrow's (or next week's) chain armed right away.
         // One-time alarms are finished; their ViewModel turns them off.
@@ -107,18 +109,109 @@ final class AlarmKitScheduler: AlarmScheduling {
         Set(((try? AlarmManager.shared.alarms) ?? []).map(\.id))
     }
 
+    func systemAlarms() -> [UUID: SystemAlarmInfo] {
+        var result: [UUID: SystemAlarmInfo] = [:]
+        for alarm in (try? AlarmManager.shared.alarms) ?? [] {
+            let state: SystemAlarmState = switch alarm.state {
+            case .scheduled: .scheduled
+            case .countdown: .countdown
+            case .paused: .paused
+            case .alerting: .alerting
+            @unknown default: .scheduled
+            }
+            // LEARN: `if case .fixed(let date) = …` pulls the date out of an enum case, if it matches.
+            var fixedDate: Date?
+            if case .fixed(let date) = alarm.schedule { fixedDate = date }
+            result[alarm.id] = SystemAlarmInfo(state: state, fixedDate: fixedDate)
+        }
+        return result
+    }
+
+    func systemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
+        var ids: Set<UUID> = [alarm.id, Self.snoozeID(for: alarm.id)]
+        for index in Self.backupOffsetsInMinutes.indices {
+            ids.insert(Self.backupID(for: alarm.id, index: index))
+        }
+        return ids
+    }
+
+    func stopRinging(_ alarm: WakeAlarm) {
+        let system = systemAlarms()
+        for id in systemAlarmIDs(for: alarm) where system[id]?.state == .alerting {
+            // WHY stop and not cancel: for a REPEATING main alarm, `stop` ends today's ring
+            // but keeps the schedule for next time; `cancel` would delete it.
+            try? AlarmManager.shared.stop(id: id)
+        }
+    }
+
+    func scheduleSnooze(for alarm: WakeAlarm, minutes: Int) async throws {
+        let id = Self.snoozeID(for: alarm.id)
+        try? AlarmManager.shared.cancel(id: id)
+        let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
+            schedule: .fixed(Date.now.addingTimeInterval(TimeInterval(minutes * 60))),
+            attributes: makeAttributes(for: alarm, isBackup: false, usesSnooze: false),
+            sound: Self.sound(named: alarm.soundName)
+        )
+        _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
+    }
+
+    func ensureBackupChain(for alarm: WakeAlarm) async throws {
+        guard alarm.isEnabled, alarm.hasMissions else { return }
+        let system = systemAlarms()
+        let hasAnyBackup = Self.backupOffsetsInMinutes.indices.contains {
+            system[Self.backupID(for: alarm.id, index: $0)] != nil
+        }
+        if !hasAnyBackup {
+            try await scheduleBackupChain(for: alarm, afterDate: .now)
+        }
+    }
+
+    func hasPendingMission(_ alarm: WakeAlarm, now: Date) -> Bool {
+        guard alarm.hasMissions else { return false }
+        let system = systemAlarms()
+        // 1. Is any of its system alarms ringing right now?
+        if systemAlarmIDs(for: alarm).contains(where: { system[$0]?.state == .alerting }) {
+            return true
+        }
+        // 2. Did the main alarm already ring while a backup is still waiting?
+        // Each backup knows its offset (+1, +2, +3, +5, +8 min), so its date minus the
+        // offset is the moment the main alarm rang (or will ring).
+        // WHY not "a backup is due soon": that's also true in the minute BEFORE the ring,
+        // which locked the alarm too early (we saw this while testing).
+        for (index, offset) in Self.backupOffsetsInMinutes.enumerated() {
+            guard let date = system[Self.backupID(for: alarm.id, index: index)]?.fixedDate else { continue }
+            let mainRing = date.addingTimeInterval(-TimeInterval(offset * 60))
+            if mainRing <= now { return true }
+        }
+        return false
+    }
+
+    func cancelSystemAlarms(notIn keeping: Set<UUID>) {
+        // WHY skip lab IDs: the AlarmKit Lab schedules test alarms that belong to no
+        // WakeAlarm. Without this, a sync would delete them before they ring.
+        for id in systemAlarms().keys where !keeping.contains(id) && !Self.isLabTestID(id) {
+            try? AlarmManager.shared.cancel(id: id)
+        }
+    }
+
     // MARK: - Main alarm
 
     private func scheduleMainAlarm(for alarm: WakeAlarm) async throws {
         // LEARN: `.relative` = "at this clock time" (follows time-zone changes), with
-        // optional weekly repetition. `.fixed` = one exact moment (used for backups).
-        let recurrence: Alarm.Schedule.Relative.Recurrence = alarm.isRepeating
-            ? .weekly(alarm.repeatDays.map(\.localeWeekday))
-            : .never
-        let schedule = Alarm.Schedule.relative(.init(
-            time: .init(hour: alarm.hour, minute: alarm.minute),
-            repeats: recurrence
-        ))
+        // optional weekly repetition. `.fixed` = one exact moment (backups, quick alarms).
+        let schedule: Alarm.Schedule
+        if let fixedFireDate = alarm.fixedFireDate {
+            // Quick Alarm: ring at one exact moment ("in 10 minutes").
+            schedule = .fixed(fixedFireDate)
+        } else {
+            let recurrence: Alarm.Schedule.Relative.Recurrence = alarm.isRepeating
+                ? .weekly(alarm.repeatDays.map(\.localeWeekday))
+                : .never
+            schedule = .relative(.init(
+                time: .init(hour: alarm.hour, minute: alarm.minute),
+                repeats: recurrence
+            ))
+        }
 
         // Snooze only exists for alarms WITHOUT missions. Mission alarms get "Start Mission" instead.
         let usesSnooze = !alarm.hasMissions && alarm.isSnoozeEnabled
@@ -141,12 +234,8 @@ final class AlarmKitScheduler: AlarmScheduling {
     // MARK: - Backup chain
 
     private func scheduleBackupChain(for alarm: WakeAlarm, afterDate: Date) async throws {
-        guard let mainDate = AlarmScheduleCalculator.nextOccurrence(
-            hour: alarm.hour,
-            minute: alarm.minute,
-            weekdays: alarm.repeatDays,
-            after: afterDate
-        ) else { return }
+        // → WakeAlarm.nextFireDate (WakeAlarm+Schedule.swift): works for normal AND quick alarms.
+        guard let mainDate = alarm.nextFireDate(after: afterDate) else { return }
 
         let dates = AlarmScheduleCalculator.backupDates(
             after: mainDate,
@@ -183,6 +272,25 @@ final class AlarmKitScheduler: AlarmScheduling {
         var bytes = alarmID.uuid
         bytes.14 ^= 0xB0                       // "B" for backup: marks the family
         bytes.15 = bytes.15 &+ UInt8(index + 1) // &+ wraps around instead of crashing on overflow
+        return UUID(uuid: bytes)
+    }
+
+    /// A random ID marked as "AlarmKit Lab test" (first byte 0x1A), so sync leaves it alone.
+    /// ← USED BY: AlarmLabViewModel (sound and limit tests)
+    static func makeLabTestID() -> UUID {
+        var bytes = UUID().uuid
+        bytes.0 = 0x1A
+        return UUID(uuid: bytes)
+    }
+
+    static func isLabTestID(_ id: UUID) -> Bool {
+        id.uuid.0 == 0x1A
+    }
+
+    /// The ID of this alarm's in-app snooze ring (see `scheduleSnooze`). Derived like backups.
+    static func snoozeID(for alarmID: UUID) -> UUID {
+        var bytes = alarmID.uuid
+        bytes.14 ^= 0x5E                       // "S" for snooze: a different family than backups
         return UUID(uuid: bytes)
     }
 

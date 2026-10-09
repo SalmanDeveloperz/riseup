@@ -4,7 +4,7 @@
 //
 //  LAYER: View (Screen #8)
 //  WHAT:  Create or edit an alarm: time wheel, "Rings in…", repeat days, label,
-//         mission & sound rows (pickers arrive later), snooze, delete.
+//         missions (add/edit/remove), sound, snooze, delete.
 //  VIEWMODEL: AlarmEditorViewModel (all decisions live there).
 //  DATA:  none directly. Controls are bound to `viewModel.draft` (a value copy).
 //
@@ -15,6 +15,8 @@
 //
 //    FROM HERE:
 //    → Save   → viewModel.save()   → permission → AlarmRepository → AlarmKitScheduler → pop
+//    → Sound row      → viewModel.chooseSound()  → Sound Picker sheet → result into draft.sound
+//    → Add mission    → viewModel.addMission()   → Mission Picker sheet → result into draft.missions
 //    → Cancel → viewModel.cancel() → pop (draft thrown away)
 //    → Delete → viewModel.delete() → AlarmKitScheduler.cancel + AlarmRepository.delete → pop
 //
@@ -38,10 +40,19 @@ struct AlarmEditorView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.md) {
+                if viewModel.isLocked {
+                    Label("This alarm's mission is pending. Finish it before editing.", systemImage: "lock.fill")
+                        .font(.riseHeadline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(Theme.Spacing.md)
+                        .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
+                }
                 timeCard
                 repeatCard
                 labelCard
-                missionAndSoundCard
+                missionCard
+                soundCard
                 snoozeCard
                 if viewModel.isEditing {
                     deleteButton
@@ -86,8 +97,8 @@ struct AlarmEditorView: View {
                     .frame(maxWidth: .infinity)
 
                 // Re-computed each minute AND whenever the draft changes (it reads viewModel).
-                TimelineView(.everyMinute) { context in
-                    Text(viewModel.ringsInText(now: context.date))
+                TimelineView(.everyMinute) { _ in
+                    Text(viewModel.ringsInText(now: .now))     // `.now`: see AlarmListView's WHY
                         .font(.riseHeadline)
                         .foregroundStyle(Theme.Gradients.sunrise)
                         .contentTransition(.numericText())
@@ -129,43 +140,95 @@ struct AlarmEditorView: View {
         }
     }
 
-    /// Missions and sound are shown but not editable yet; their pickers come next.
-    private var missionAndSoundCard: some View {
-        GlowCard {
+    /// Missions: a list of rows (tap = edit, − = remove) and "Add mission".
+    /// → viewModel.addMission / editMission / removeMission → Mission Picker sheet
+    private var missionCard: some View {
+        GlowCard(isGlowing: !viewModel.draft.missions.isEmpty) {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                HStack {
-                    Label("Mission", systemImage: "bolt.fill")
-                        .font(.riseHeadline)
-                        .foregroundStyle(Theme.Colors.textPrimary)
-                    Spacer()
-                    if viewModel.draft.missionTypes.isEmpty {
-                        Text("None").font(.riseBody).foregroundStyle(Theme.Colors.textSecondary)
-                    } else {
-                        HStack(spacing: Theme.Spacing.xs) {
-                            ForEach(Array(viewModel.draft.missionTypes.enumerated()), id: \.offset) { _, type in
-                                Image(systemName: type.systemImage)
-                                    .foregroundStyle(Theme.Colors.neonPink)
-                                    .accessibilityLabel(type.title)
-                            }
-                        }
-                    }
-                }
-                comingSoonNote("Mission picker arrives in Phase 2.")
+                sectionHeader("Wake-up mission", value: viewModel.draft.missions.isEmpty ? "None" : "\(viewModel.draft.missions.count) of \(AlarmEditorViewModel.maxMissions)")
 
-                Divider().overlay(Theme.Colors.hairline)
-
-                HStack {
-                    Label("Sound", systemImage: "speaker.wave.3.fill")
-                        .font(.riseHeadline)
-                        .foregroundStyle(Theme.Colors.textPrimary)
-                    Spacer()
-                    Text(viewModel.draft.soundName == "default" ? "Default" : viewModel.draft.soundName)
-                        .font(.riseBody)
+                if viewModel.draft.missions.isEmpty {
+                    Text("Without a mission, the alarm stops with one tap. Add one to make sure you really get up.")
+                        .font(.riseCaption)
                         .foregroundStyle(Theme.Colors.textSecondary)
                 }
-                comingSoonNote("Sound picker is the next Phase 1 step.")
+
+                ForEach(viewModel.draft.missions) { mission in
+                    missionRow(mission)
+                }
+
+                if viewModel.canAddMission {
+                    Button {
+                        viewModel.addMission()            // → coordinator → Mission Picker sheet
+                    } label: {
+                        Label("Add mission", systemImage: "plus.circle.fill")
+                    }
+                    .buttonStyle(.ghost)
+                }
             }
         }
+        .animation(.spring(duration: 0.3), value: viewModel.draft.missions)
+    }
+
+    private func missionRow(_ mission: MissionDraft) -> some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Button {
+                viewModel.editMission(mission)            // → Mission Picker in edit mode
+            } label: {
+                HStack(spacing: Theme.Spacing.sm) {
+                    Image(systemName: mission.type.systemImage)
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(width: 40, height: 40)
+                        .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(mission.type.title).font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
+                        Text(mission.summary).font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").foregroundStyle(Theme.Colors.textTertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                viewModel.removeMission(mission)
+            } label: {
+                Image(systemName: "minus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(Theme.Colors.danger)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Remove \(mission.type.title) mission")
+        }
+        .transition(.move(edge: .leading).combined(with: .opacity))
+    }
+
+    /// Sound: tap to open the Sound Picker. → viewModel.chooseSound()
+    private var soundCard: some View {
+        Button {
+            viewModel.chooseSound()                       // → coordinator → Sound Picker sheet
+        } label: {
+            GlowCard {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: viewModel.draft.sound.systemImage)
+                        .font(.title3)
+                        .foregroundStyle(Theme.Gradients.sunrise)
+                        .frame(width: 32)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Sound").font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
+                        Text(viewModel.draft.sound.subtitle).font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    Spacer()
+                    Text(viewModel.draft.sound.title)
+                        .font(.riseBody)
+                        .foregroundStyle(Theme.Colors.neonPink)
+                    Image(systemName: "chevron.right").foregroundStyle(Theme.Colors.textTertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private var snoozeCard: some View {
@@ -212,7 +275,7 @@ struct AlarmEditorView: View {
 
                     // WHY this note: AlarmKit's lock-screen Snooze button can't be limited by apps.
                     // Our limit will be enforced by RiseUp's own ringing screen (Phase 2).
-                    comingSoonNote("The snooze limit is enforced by RiseUp's ringing screen (Phase 2).")
+                    comingSoonNote("When the alarm rings inside RiseUp, Snooze disappears after this many times.")
                 }
             }
         }

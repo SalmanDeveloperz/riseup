@@ -41,4 +41,22 @@ final class MockAlarmScheduler: AlarmScheduling {
 
     /// The fake schedules instantly, so it's never "in the middle" of scheduling.
     func isScheduling(_ alarm: WakeAlarm) -> Bool { false }
+
+    func systemAlarms() -> [UUID: SystemAlarmInfo] {
+        Dictionary(uniqueKeysWithValues: scheduledIDs.map { ($0, SystemAlarmInfo(state: .scheduled, fixedDate: nil)) })
+    }
+
+    func systemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [alarm.id] }
+
+    func stopRinging(_ alarm: WakeAlarm) {}
+
+    func scheduleSnooze(for alarm: WakeAlarm, minutes: Int) async throws {}
+
+    func ensureBackupChain(for alarm: WakeAlarm) async throws {}
+
+    func cancelSystemAlarms(notIn keeping: Set<UUID>) {
+        scheduledIDs = scheduledIDs.intersection(keeping)
+    }
+
+    func hasPendingMission(_ alarm: WakeAlarm, now: Date) -> Bool { false }
 }

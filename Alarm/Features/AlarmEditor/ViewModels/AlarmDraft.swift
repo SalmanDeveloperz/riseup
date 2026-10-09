@@ -32,16 +32,15 @@ nonisolated struct AlarmDraft: Equatable {
     var repeatDays: Set<Weekday>
     /// Optional name, e.g. "Gym".
     var label: String
-    /// "default" or a sound file name (Sound Picker comes in the next chunk).
-    var soundName: String
+    /// The alarm sound (→ AlarmSound.swift). Chosen in the Sound Picker.
+    var sound: AlarmSound
     var isSnoozeEnabled: Bool
     var snoozeMinutes: Int
     var maxSnoozeCount: Int
-    /// Read-only for now: shown in the editor, kept unchanged on save.
-    /// The Mission Picker (Phase 2) will make these editable.
-    var missionTypes: [MissionType]
+    /// Missions in the order they run. Edited through the Mission Picker sheet.
+    var missions: [MissionDraft]
 
-    /// Settings for a brand-new alarm: the current time, rings once, snooze 5 min × 3.
+    /// Settings for a brand-new alarm: the current time, rings once, Radar sound, snooze 5 min × 3.
     ///
     /// TRY: change `snoozeMinutes: 5` to `10` and create a new alarm: the picker starts at 10.
     static func newAlarm(now: Date = .now, calendar: Calendar = .current) -> AlarmDraft {
@@ -51,11 +50,11 @@ nonisolated struct AlarmDraft: Equatable {
             minute: parts.minute ?? 0,
             repeatDays: [],
             label: "",
-            soundName: "default",
+            sound: .radar,
             isSnoozeEnabled: true,
             snoozeMinutes: 5,
             maxSnoozeCount: 3,
-            missionTypes: []
+            missions: []
         )
     }
 }

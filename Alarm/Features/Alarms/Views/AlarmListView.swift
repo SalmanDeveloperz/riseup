@@ -52,7 +52,18 @@ struct AlarmListView: View {
             }
             .padding(Theme.Spacing.lg)
         }
-        .toolbar { debugToolbar }
+        .toolbar {
+            // ⚡︎ Quick alarm: "ring in 10 minutes" without opening the editor.
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    viewModel.quickAlarmTapped()        // → coordinator.presentQuickAlarm → sheet
+                } label: {
+                    Label("Quick alarm", systemImage: "bolt.fill")
+                }
+                .tint(Theme.Colors.neonOrange)
+            }
+            debugToolbar
+        }
         // Runs every time this screen becomes visible (first launch, back from the editor,
         // back from another tab) → re-reads alarms and checks them against iOS.
         // LEARN: `.task` is like `.onAppear`, but it can `await` async work, and it's
@@ -73,11 +84,21 @@ struct AlarmListView: View {
         // grey style so our neon cards show through.
         List {
             // Header: re-computed at the start of every minute so the countdown stays correct.
-            TimelineView(.everyMinute) { context in
-                NextAlarmHeaderView(
-                    next: viewModel.nextAlarm(after: context.date),   // → ViewModel finds the soonest alarm
-                    now: context.date
-                )
+            // WHY `Date.now` and not `context.date`: context.date is the start of the minute
+            // (e.g. 17:01:00). If the list redraws at 17:01:47, "now" must really be 17:01:47,
+            // or a quick alarm 61 s away would read "2m".
+            TimelineView(.everyMinute) { _ in
+                let now = Date.now
+                VStack(spacing: Theme.Spacing.sm) {
+                    // Mission lock banner: only while a mission is waiting to be finished.
+                    if let pending = viewModel.pendingMission(now: now) {
+                        pendingMissionBanner(pending)
+                    }
+                    NextAlarmHeaderView(
+                        next: viewModel.nextAlarm(after: now),   // → ViewModel finds the soonest alarm
+                        now: now
+                    )
+                }
             }
             .plainListRow()
 
@@ -129,19 +150,58 @@ struct AlarmListView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Button("Create your first alarm") {
-                viewModel.addAlarmTapped()              // → same path as the "+" button
+            VStack(spacing: Theme.Spacing.sm) {
+                Button("Create your first alarm") {
+                    viewModel.addAlarmTapped()          // → same path as the "+" button
+                }
+                .buttonStyle(.neon)
+                Button {
+                    viewModel.quickAlarmTapped()        // → Quick Alarm sheet
+                } label: {
+                    Label("Quick alarm", systemImage: "bolt.fill")
+                }
+                .buttonStyle(.ghost)
             }
-            .buttonStyle(.neon)
             Spacer()
             Spacer()
         }
         .padding(.horizontal, Theme.Spacing.xl)
     }
 
+    // MARK: - Mission lock banner
+
+    /// "Finish your mission": shown while an alarm's mission is pending (ringing or backups due).
+    /// Tapping it re-opens the Ringing screen. → viewModel.resumeMission()
+    private func pendingMissionBanner(_ pending: NextAlarmInfo) -> some View {
+        Button {
+            viewModel.resumeMission()
+        } label: {
+            HStack(spacing: Theme.Spacing.md) {
+                Image(systemName: "bolt.heart.fill")
+                    .font(.title2)
+                    .symbolEffect(.pulse, options: .repeating)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Finish your mission")
+                        .font(.riseHeadline)
+                    Text("\(pending.title) is locked until you do. Backup alarms will keep ringing.")
+                        .font(.riseCaption)
+                        .opacity(0.85)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+            }
+            .foregroundStyle(.white)
+            .padding(Theme.Spacing.md)
+            .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
+            .shadow(color: Theme.Colors.neonPink.opacity(0.5), radius: 14, y: 4)
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - Toolbar & alert
 
-    /// Debug-only menu (🐞) to add example alarms while the editor doesn't exist yet.
+    /// Debug-only menu (🐞) to add example alarms quickly.
     @ToolbarContentBuilder
     private var debugToolbar: some ToolbarContent {
         #if DEBUG
@@ -194,6 +254,7 @@ private extension View {
         AlarmListView(viewModel: AlarmListViewModel(
             repository: dependencies.alarmRepository,
             scheduler: dependencies.alarmScheduler,
+            sync: dependencies.alarmSync,
             coordinator: AppCoordinator()
         ))
     }
@@ -205,6 +266,7 @@ private extension View {
         AlarmListView(viewModel: AlarmListViewModel(
             repository: dependencies.alarmRepository,
             scheduler: dependencies.alarmScheduler,
+            sync: dependencies.alarmSync,
             coordinator: AppCoordinator()
         ))
     }

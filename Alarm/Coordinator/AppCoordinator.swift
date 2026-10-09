@@ -15,6 +15,7 @@
 //     selectedTab       → which tab is open
 //     alarmsPath        → the stack of screens pushed in the Alarms tab
 //     settingsPath      → the stack of screens pushed in the Settings tab
+//     sheet             → a sheet sliding up from the bottom (sound picker, quick alarm…)
 //     fullScreen        → a screen covering everything (e.g. ringing alarm)
 //
 //  CONNECTIONS:
@@ -46,8 +47,21 @@ final class AppCoordinator {
     /// print it and see exactly which screens are open.
     var settingsPath: [SettingsRoute] = []
 
+    /// Sheet sliding up from the bottom, or `nil` when none.
+    /// → bound in RootView: `.sheet(item: $coordinator.sheet)`
+    var sheet: SheetRoute?
+
     /// Screen covering the whole app, or `nil` when none.
     var fullScreen: FullScreenRoute?
+
+    // MARK: - Sheet results (callbacks)
+
+    // LEARN: a picker must hand its RESULT back to whoever opened it (the editor).
+    // Routes are plain values and can't carry functions, so the coordinator keeps the
+    // "call me back with the answer" closure until the sheet finishes.
+    // `@ObservationIgnored`: no view displays these, so SwiftUI needn't watch them.
+    @ObservationIgnored private var onSoundPicked: ((AlarmSound) -> Void)?
+    @ObservationIgnored private var onMissionPicked: ((MissionDraft) -> Void)?
 
     // MARK: - Alarms tab
 
@@ -78,6 +92,48 @@ final class AppCoordinator {
     /// Goes back one screen in the Settings tab.
     func popSettings() {
         _ = settingsPath.popLast()
+    }
+
+    // MARK: - Sheets
+
+    /// Opens the Sound Picker. `onPick` runs with the chosen sound when the user taps Done.
+    /// ← CALLED BY: AlarmEditorViewModel.chooseSound()
+    func presentSoundPicker(selected: AlarmSound, onPick: @escaping (AlarmSound) -> Void) {
+        onSoundPicked = onPick
+        sheet = .soundPicker(selected: selected)
+    }
+
+    /// ← CALLED BY: SoundPickerViewModel.done() → delivers the result, closes the sheet.
+    func completeSoundPicker(with sound: AlarmSound) {
+        onSoundPicked?(sound)
+        dismissSheet()
+    }
+
+    /// Opens the Mission Picker. `editing` = an existing mission to change, `nil` = add a new one.
+    /// ← CALLED BY: AlarmEditorViewModel.addMission() / editMission(_:)
+    func presentMissionPicker(editing: MissionDraft?, onPick: @escaping (MissionDraft) -> Void) {
+        onMissionPicked = onPick
+        sheet = .missionPicker(editing: editing)
+    }
+
+    /// ← CALLED BY: MissionPickerViewModel.save() → delivers the result, closes the sheet.
+    func completeMissionPicker(with mission: MissionDraft) {
+        onMissionPicked?(mission)
+        dismissSheet()
+    }
+
+    /// Opens the Quick Alarm sheet.
+    /// ← CALLED BY: AlarmListViewModel.quickAlarmTapped()
+    func presentQuickAlarm() {
+        sheet = .quickAlarm
+    }
+
+    /// Closes any sheet and forgets pending callbacks.
+    /// ← CALLED BY: Cancel buttons, the complete… methods above, RootView's `onDismiss` (swipe down)
+    func dismissSheet() {
+        sheet = nil
+        onSoundPicked = nil
+        onMissionPicked = nil
     }
 
     // MARK: - Full screen

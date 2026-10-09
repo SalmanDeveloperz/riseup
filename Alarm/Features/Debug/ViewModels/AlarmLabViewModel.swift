@@ -104,7 +104,7 @@ final class AlarmLabViewModel {
                 attributes: attributes,
                 sound: AlarmKitScheduler.sound(named: variant.rawValue)
             )
-            _ = try await AlarmManager.shared.schedule(id: UUID(), configuration: configuration)
+            _ = try await AlarmManager.shared.schedule(id: AlarmKitScheduler.makeLabTestID(), configuration: configuration)
             write("Rings at \(fireDate.formatted(date: .omitted, time: .standard)). Lock the phone and listen.")
         }
     }
@@ -177,7 +177,7 @@ final class AlarmLabViewModel {
                     )
                 )
                 do {
-                    let id = UUID()
+                    let id = AlarmKitScheduler.makeLabTestID()
                     _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
                     createdIDs.append(id)
                 } catch {

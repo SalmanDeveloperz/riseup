@@ -118,6 +118,26 @@ final class AlarmRepository {
         try save()
     }
 
+    /// Replaces an alarm's missions with the given drafts (in that order). Call `save()` after.
+    ///
+    /// ← CALLED BY: AlarmEditorViewModel.save()
+    /// WHY delete + re-create instead of editing each one: a draft list can have missions
+    /// added, removed, reordered and changed. Replacing them all is simple and always correct.
+    func replaceMissions(of alarm: WakeAlarm, with drafts: [MissionDraft]) {
+        for old in alarm.missions {
+            context.delete(old)
+        }
+        alarm.missions = drafts.enumerated().map { index, draft in
+            MissionConfig(
+                id: draft.id,
+                type: draft.type,
+                difficulty: draft.difficulty,
+                repetitions: draft.repetitions,
+                sortOrder: index
+            )
+        }
+    }
+
     /// Writes all pending changes to disk, then refreshes `alarms` (order may have changed).
     ///
     /// LEARN: when you change a property on a fetched object (`alarm.isEnabled = false`),

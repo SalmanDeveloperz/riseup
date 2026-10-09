@@ -73,6 +73,24 @@ enum SettingsRoute: Hashable {
     case designGallery
 }
 
+/// Screens that slide up from the bottom as a sheet, on top of whatever is showing.
+///
+/// FLOW (example, Sound Picker):
+///   AlarmEditorViewModel.chooseSound() → AppCoordinator.presentSoundPicker(selected:onPick:)
+///   → coordinator.sheet = .soundPicker(...) → RootView's `.sheet(item:)` shows it
+///   → user taps Done → SoundPickerViewModel → coordinator.completeSoundPicker(with:)
+///   → the editor's `onPick` callback receives the sound → sheet closes.
+enum SheetRoute: Hashable, Identifiable {
+    /// Choose an alarm sound (Screen #13). Starts with `selected` highlighted.
+    case soundPicker(selected: AlarmSound)
+    /// "Ring in 10 minutes" (Screen #7).
+    case quickAlarm
+    /// Choose a mission and its settings (Screens #9 + #10). `editing` = change an existing one.
+    case missionPicker(editing: MissionDraft?)
+
+    var id: Self { self }
+}
+
 /// Screens that cover the WHOLE screen (no tab bar), shown on top of everything.
 ///
 /// LEARN: `Identifiable` is required by SwiftUI's `.fullScreenCover(item:)`.

@@ -1,0 +1,290 @@
+//
+//  RingingViewModel.swift
+//  RiseUp
+//
+//  LAYER: ViewModel (Screen #14 Ringing, #15 Missions, #16 Success, all one full-screen flow)
+//  WHAT:  Runs a wake-up from start to finish:
+//           ringing ──(Start Mission)──▶ mission 1 … mission N ──▶ success
+//           ringing ──(I'm up)──────────────────────────────────▶ success
+//           ringing ──(Snooze)──▶ screen closes, rings again in X minutes
+//  DATA:  reads WakeAlarm (→ RingInfo snapshot), writes WakeRecord (history),
+//         may switch off / delete a one-time alarm when done.
+//
+//  CONNECTIONS:
+//    ← CREATED BY: ScreenFactory.makeScreen(for: .ringing(alarmID:))
+//    ← OPENED BY:  "Start Mission" on the lock screen → StartMissionIntent → AlarmLaunchRouter → RootView
+//                  RootView after a sync finds an alarm ringing (AlarmSyncService.ringingAlarmID)
+//                  Alarm List "Finish your mission" banner (AlarmListViewModel.resumeMission)
+//    → iOS:     AlarmScheduling.stopRinging / scheduleSnooze / missionCompleted
+//    → AUDIO:   AudioPlaying.startAlarm / setAlarmMuted / stopAlarm
+//    → DATA:    AlarmRepository (fetch, save, delete), WakeRecordRepository (openRecord, save)
+//    → MISSIONS: MissionView → (Math|Typing|Shake)MissionViewModel → missionFinished()/userInteracted()
+//    → CLOSE:   AppCoordinator.dismissFullScreen()
+//
+//  WHY the app plays its OWN sound here: "Start Mission" silences iOS's alarm (otherwise
+//  it would keep ringing over the mission). From that moment, RiseUp itself must keep
+//  the user awake, or they'd put the phone down and sleep.
+//
+
+import Foundation
+import Observation
+
+@Observable
+final class RingingViewModel {
+
+    // MARK: - Types
+
+    enum Phase: Equatable {
+        case ringing
+        case mission(index: Int)
+        case success(WakeSummary)
+    }
+
+    /// Everything the screen shows about the alarm, copied out of the WakeAlarm
+    /// (Views never hold live database objects; see AlarmRow.swift).
+    struct RingInfo: Equatable {
+        let title: String
+        let missions: [MissionDraft]
+        let sound: AlarmSound
+        let isSnoozeEnabled: Bool
+        let snoozeMinutes: Int
+        let maxSnoozeCount: Int
+    }
+
+    /// Shown on the success screen.
+    struct WakeSummary: Equatable {
+        let wokeAt: Date
+        let missionSeconds: Double
+        let missionsCompleted: Int
+        let snoozeCount: Int
+    }
+
+    // MARK: - State the View reads
+
+    private(set) var phase: Phase = .ringing
+    /// `nil` if the alarm no longer exists (deleted while ringing).
+    private(set) var info: RingInfo?
+    /// True while missions keep the alarm quiet; false when it's ringing at you.
+    private(set) var isQuiet = false
+    /// True when the user stopped interacting during a mission and the alarm came back.
+    private(set) var isIdleWarning = false
+    private(set) var snoozeCount = 0
+    private(set) var errorMessage: String?
+
+    var currentMission: MissionDraft? {
+        if case .mission(let index) = phase, let info, index < info.missions.count {
+            return info.missions[index]
+        }
+        return nil
+    }
+
+    var missionNumberText: String {
+        if case .mission(let index) = phase, let info {
+            return "Mission \(index + 1) of \(info.missions.count)"
+        }
+        return ""
+    }
+
+    /// Snooze is offered only for alarms WITHOUT missions, and only up to the limit.
+    var canSnooze: Bool {
+        guard let info, info.missions.isEmpty, info.isSnoozeEnabled else { return false }
+        return snoozeCount < info.maxSnoozeCount
+    }
+
+    var snoozesLeft: Int {
+        guard let info else { return 0 }
+        return max(0, info.maxSnoozeCount - snoozeCount)
+    }
+
+    // MARK: - Dependencies
+
+    let alarmID: UUID
+    let shakeDetector: any ShakeDetecting
+    private let repository: AlarmRepository
+    private let records: WakeRecordRepository
+    private let scheduler: any AlarmScheduling
+    private let audio: any AudioPlaying
+    private let coordinator: AppCoordinator
+
+    private var record: WakeRecord?
+    private var missionStartedAt: Date?
+    private var lastInteraction = Date.now
+    private var watchdog: Task<Void, Never>?
+    private var hasStarted = false
+
+    /// Seconds without touching the screen before the alarm comes back during a mission.
+    /// TRY: set to 5 and watch the alarm return quickly when you stop.
+    static let idleSecondsBeforeAlarmReturns: TimeInterval = 15
+
+    init(alarmID: UUID, repository: AlarmRepository, records: WakeRecordRepository,
+         scheduler: any AlarmScheduling, audio: any AudioPlaying,
+         shakeDetector: any ShakeDetecting, coordinator: AppCoordinator) {
+        self.alarmID = alarmID
+        self.repository = repository
+        self.records = records
+        self.scheduler = scheduler
+        self.audio = audio
+        self.shakeDetector = shakeDetector
+        self.coordinator = coordinator
+    }
+
+    // MARK: - Start
+
+    /// ← CALLED BY: RingingView `.onAppear`
+    func start() {
+        guard !hasStarted else { return }     // onAppear can fire more than once
+        hasStarted = true
+
+        guard let alarm = try? repository.fetch(id: alarmID) else { return }
+        info = RingInfo(
+            title: alarm.displayTitle,
+            missions: alarm.sortedMissions.map {
+                MissionDraft(id: $0.id, type: $0.type, difficulty: $0.difficulty, repetitions: $0.repetitions)
+            },
+            sound: AlarmSound.from(alarm.soundName),
+            isSnoozeEnabled: alarm.isSnoozeEnabled,
+            snoozeMinutes: alarm.snoozeMinutes,
+            maxSnoozeCount: alarm.maxSnoozeCount
+        )
+
+        // 1. iOS's alarm off, ours on. (WHY: see the header comment.)
+        scheduler.stopRinging(alarm)
+        audio.startAlarm(AlarmSound.from(alarm.soundName), rampUp: true)
+
+        // 2. History: continue an unfinished record (after a snooze) or start a new one.
+        record = try? records.openRecord(alarmID: alarm.id, alarmTitle: alarm.displayTitle)
+        snoozeCount = record?.snoozeCount ?? 0
+    }
+
+    // MARK: - Ringing actions
+
+    /// ← CALLED BY: "Start Mission"
+    func startMissions() {
+        guard let info, !info.missions.isEmpty else { return }
+        missionStartedAt = .now
+        phase = .mission(index: 0)
+        quietAlarm()
+        startWatchdog()
+    }
+
+    /// ← CALLED BY: "I'm up" (alarms without missions)
+    func dismiss() async {
+        await finish()
+    }
+
+    /// ← CALLED BY: "Snooze"
+    func snooze() async {
+        guard canSnooze, let info, let alarm = try? repository.fetch(id: alarmID) else { return }
+        do {
+            try await scheduler.scheduleSnooze(for: alarm, minutes: info.snoozeMinutes)
+            snoozeCount += 1
+            record?.snoozeCount = snoozeCount
+            try? records.save()
+            audio.stopAlarm()
+            coordinator.dismissFullScreen()          // → rings again in snoozeMinutes
+        } catch {
+            errorMessage = "Couldn't snooze. \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Mission callbacks (from the mission ViewModels)
+
+    /// Any tap/keypress/shake. Keeps the alarm quiet while the user is active.
+    func userInteracted() {
+        lastInteraction = .now
+        if isIdleWarning {
+            isIdleWarning = false
+            quietAlarm()
+        }
+    }
+
+    /// The current mission is solved → next one, or success after the last.
+    func missionFinished() {
+        guard case .mission(let index) = phase, let info else { return }
+        lastInteraction = .now
+        if index + 1 < info.missions.count {
+            phase = .mission(index: index + 1)
+        } else {
+            Task { await finish() }
+        }
+    }
+
+    // MARK: - Success / close
+
+    /// ← CALLED BY: "Start my day" on the success screen
+    func close() {
+        coordinator.dismissFullScreen()
+    }
+
+    #if DEBUG
+    /// Debug-only escape hatch so testing can't get stuck. Not in App Store builds.
+    func debugClose() {
+        stopWatchdog()
+        audio.stopAlarm()
+        coordinator.dismissFullScreen()
+    }
+    #endif
+
+    func dismissError() { errorMessage = nil }
+
+    // MARK: - Private
+
+    private func finish() async {
+        stopWatchdog()
+        audio.stopAlarm()
+
+        let now = Date.now
+        let seconds = missionStartedAt.map { now.timeIntervalSince($0) } ?? 0
+        let missionCount = info?.missions.count ?? 0
+
+        if let alarm = try? repository.fetch(id: alarmID) {
+            // Stop the backup chain (and snooze), and arm tomorrow's chain for repeating alarms.
+            try? await scheduler.missionCompleted(for: alarm)
+            if alarm.isQuickAlarm {
+                scheduler.cancel(alarm)
+                try? repository.delete(alarm)        // quick alarms are throwaway
+            } else if !alarm.isRepeating {
+                alarm.isEnabled = false              // one-time alarm: done, like the iOS Clock app
+                try? repository.save()
+            }
+        }
+
+        record?.dismissedAt = now
+        record?.missionsCompleted = missionCount
+        record?.missionSeconds = seconds
+        try? records.save()
+
+        phase = .success(WakeSummary(
+            wokeAt: now, missionSeconds: seconds, missionsCompleted: missionCount, snoozeCount: snoozeCount
+        ))
+    }
+
+    private func quietAlarm() {
+        isQuiet = true
+        audio.setAlarmMuted(true)
+    }
+
+    /// Every second during missions: if the user went idle, bring the alarm back.
+    private func startWatchdog() {
+        stopWatchdog()
+        lastInteraction = .now
+        watchdog = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, !Task.isCancelled else { return }
+                if case .mission = self.phase,
+                   !self.isIdleWarning,
+                   Date.now.timeIntervalSince(self.lastInteraction) > Self.idleSecondsBeforeAlarmReturns {
+                    self.isIdleWarning = true
+                    self.isQuiet = false
+                    self.audio.setAlarmMuted(false)   // → it rings again until they continue
+                }
+            }
+        }
+    }
+
+    private func stopWatchdog() {
+        watchdog?.cancel()
+        watchdog = nil
+    }
+}

@@ -43,11 +43,13 @@ struct ScreenFactory {
         case .alarms:
             // Screen #6, Alarm List. Its ViewModel gets:
             //   repository  → to read/save/delete WakeAlarms
-            //   scheduler   → to turn system alarms on/off
-            //   coordinator → to open the editor
+            //   scheduler   → to turn system alarms on/off, check the mission lock
+            //   sync        → to bring database and iOS into agreement when the list appears
+            //   coordinator → to open the editor, quick alarm, ringing screen
             AlarmListView(viewModel: AlarmListViewModel(
                 repository: dependencies.alarmRepository,
                 scheduler: dependencies.alarmScheduler,
+                sync: dependencies.alarmSync,
                 coordinator: coordinator
             ))
         case .morning:
@@ -109,16 +111,51 @@ struct ScreenFactory {
         }
     }
 
+    // MARK: - Sheets
+
+    /// Sheets that slide up from the bottom.
+    /// ← CALLED BY: RootView's `.sheet(item: $coordinator.sheet)`
+    @ViewBuilder
+    func makeScreen(for route: SheetRoute) -> some View {
+        switch route {
+        case .soundPicker(let selected):
+            // Screen #13. The result goes back through coordinator.completeSoundPicker.
+            SoundPickerView(viewModel: SoundPickerViewModel(
+                selected: selected,
+                audio: dependencies.audio,
+                coordinator: coordinator
+            ))
+        case .quickAlarm:
+            // Screen #7.
+            QuickAlarmView(viewModel: QuickAlarmViewModel(
+                repository: dependencies.alarmRepository,
+                scheduler: dependencies.alarmScheduler,
+                coordinator: coordinator
+            ))
+        case .missionPicker(let editing):
+            // Screens #9 + #10. The result goes back through coordinator.completeMissionPicker.
+            MissionPickerView(viewModel: MissionPickerViewModel(
+                editing: editing,
+                shakeDetector: dependencies.shakeDetector,
+                coordinator: coordinator
+            ))
+        }
+    }
+
     // MARK: - Full-screen covers
 
     @ViewBuilder
     func makeScreen(for route: FullScreenRoute) -> some View {
         switch route {
         case .ringing(let alarmID):
-            RingingPlaceholderView(viewModel: RingingPlaceholderViewModel(
+            // Screens #14–#16: ringing → missions → success.
+            RingingView(viewModel: RingingViewModel(
                 alarmID: alarmID,
                 repository: dependencies.alarmRepository,
+                records: dependencies.wakeRecordRepository,
                 scheduler: dependencies.alarmScheduler,
+                audio: dependencies.audio,
+                shakeDetector: dependencies.shakeDetector,
                 coordinator: coordinator
             ))
         }
