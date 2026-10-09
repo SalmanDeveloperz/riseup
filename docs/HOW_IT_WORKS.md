@@ -107,9 +107,22 @@ iOS rings the AlarmKit alarm (app may be closed)
  → .fullScreenCover → ScreenFactory.makeScreen(for: .ringing) → RingingPlaceholderView
 ```
 
+### Trace F: Saving an alarm in the Editor
+| Step | File · function | What happens |
+|---|---|---|
+| 1 | `AlarmEditorView` toolbar | "Save" → hides the keyboard → `Task { await viewModel.save() }` |
+| 2 | `AlarmEditorViewModel.save` | `isSaving = true` (button disabled), then `scheduler.requirePermission()`: popup the first time |
+| 3 | same | Edit mode: `repository.fetch(id:)` → copy the draft into it. New: `makeAlarm(from: draft)` |
+| 4 | `AlarmRepository.save()` / `insert()` | writes to disk, then `refresh()` → `repository.alarms` changes |
+| 5 | *(observation)* | the Alarm List (still alive under the editor) already redraws with the new card |
+| 6 | `AlarmKitScheduler.schedule` | cancels any old version, schedules main (+ backups if missions) |
+| 7 | `AppCoordinator.popAlarms()` | `alarmsPath.removeLast()` → the NavigationStack slides back to the list |
+| 8 | `AlarmListView.task` | runs `load()` → reconcile finds the alarm in iOS, so it stays ON |
+| ✗ | permission denied / iOS error | the alarm is saved but OFF; the alert's OK pops back (`closesAfterError`) |
+
 ---
 
-## Part 4 · Three real bugs we hit, and the design rule each one taught us
+## Part 4 · Real bugs we hit, and the design rule each one taught us
 
 These happened while building the Alarm List, and they're the best system-design lessons so far.
 
@@ -125,6 +138,11 @@ These happened while building the Alarm List, and they're the best system-design
 - **What happened:** the Lab saved an alarm as ON and *then* scheduled it (~0.1 s). The list's reconcile ran in between: "ON in database but not in iOS?" → switched it OFF. The logs proved the timing: schedule start `.833s` → reconcile `.879s` → schedule end `.932s`.
 - **Rule: anything comparing two systems must know about work in progress.** `AlarmScheduling.isScheduling(_:)` tells the reconcile to skip alarms that are mid-schedule.
 - **Lesson:** `async` code on the main actor still interleaves at every `await`. "Main actor" means one thing at a time, NOT one whole function at a time.
+
+### Bug 4: Xcode Preview crash: the database disappeared
+- **What happened:** a `#Preview` built `let dependencies = AppDependencies.preview()` and passed only the repository on. When the preview finished building, `dependencies` was released, and so was its `ModelContainer`. The repository's `ModelContext` doesn't keep the container alive, so the first fetch crashed inside SwiftData.
+- **Rule: whoever uses a `ModelContext` must also keep its `ModelContainer` alive.** `AlarmRepository` now stores `context.container`.
+- **Lesson:** "it works in the app" isn't enough. The app kept `AppDependencies` alive by luck of structure (`@State` in `RiseUpApp`); previews and tests don't.
 
 ---
 

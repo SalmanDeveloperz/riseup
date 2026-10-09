@@ -83,3 +83,16 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | Reconcile / sync | Compare two systems (our DB vs iOS) and fix the differences | `AlarmListViewModel.reconcileWithSystemAlarms` |
 | Optimistic update + rollback | Change the UI first, undo it if the real work fails | `AlarmListViewModel.setEnabled` |
 | The 5 connection mechanisms | Environment, init injection, closures, observation, bindings | `HOW_IT_WORKS.md` Part 1 |
+
+## Learned while building the Alarm Editor
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Draft / form state | Edit a value copy; write it to the database only on Save | `AlarmDraft.swift` |
+| `@Binding` | A value owned by someone else that this view may change | `RepeatDaysPicker.selection` |
+| Binding to a computed property | `get`/`set` lets a control edit hour/minute through a `Date` | `AlarmEditorViewModel.time`, `.label` |
+| `DatePicker(.wheel)` | The iOS time wheel; respects 12/24-hour automatically | `AlarmEditorView.timeCard` |
+| `@FocusState` | Which text field has the keyboard; set it to `false` to hide it | `AlarmEditorView` |
+| Protocol extension | Write a method once; every conforming type gets it | `AlarmScheduling.requirePermission()` |
+| `ButtonStyleConfiguration.role` | Lets a style react to `role: .destructive` | `GhostButtonStyle` |
+| `.toolbar(.hidden, for: .tabBar)` | Hide the tab bar on a focused screen | `AlarmEditorView` |
+| Object lifetime (strong references) | An object lives as long as someone holds it; a context doesn't hold its container | `AlarmRepository.container` |

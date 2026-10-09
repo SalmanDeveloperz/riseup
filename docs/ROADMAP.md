@@ -29,7 +29,8 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | 6 | Alarm List (countdown header, glowing cards, toggle, swipe delete, + button) | 🟡 brief: `docs/screens/06-alarm-list.md` |
 | — | `AlarmRepository` as single source of truth + `AlarmRow` snapshots (fixes 2 crashes) | 🟡 |
 | — | Reconcile database ↔ iOS when the list appears (+ race-condition guard `isScheduling`) | 🟡 |
-| 8 | Alarm Editor (time wheel, repeat days, label, snooze, sound, missions row) | ⬜ |
+| 8 | Alarm Editor (time wheel, repeat days, label, snooze, sound, missions row) | 🟡 brief: `docs/screens/08-alarm-editor.md` |
+| — | Shared `requirePermission()`, `countdownText`, `Weekday.summary`; Preview crash fix (repository keeps container) | 🟡 |
 | 13 | Sound Picker (categories, preview, volume) | ⬜ |
 | 7 | Quick Alarm sheet | ⬜ |
 | 30 | Lock screen / Dynamic Island alarm UI (widget extension, polished) | ⬜ |
