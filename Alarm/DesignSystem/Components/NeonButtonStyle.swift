@@ -44,7 +44,11 @@ struct GhostButtonStyle: ButtonStyle {
         configuration.label
             .font(.riseHeadline)
             .multilineTextAlignment(.center)
-            .foregroundStyle(Theme.Colors.textPrimary)
+            // LEARN: `configuration.role` is the role given to the Button, e.g.
+            // `Button("Delete", role: .destructive)`. Destructive actions turn red automatically.
+            // WHY here: a style's own `.foregroundStyle` wins over one set outside the button,
+            // so the style itself must pick the danger colour.
+            .foregroundStyle(configuration.role == .destructive ? Theme.Colors.danger : Theme.Colors.textPrimary)
             .padding(.vertical, Theme.Spacing.md)
             .padding(.horizontal, Theme.Spacing.xl)
             .frame(maxWidth: .infinity)

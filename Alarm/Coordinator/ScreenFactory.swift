@@ -80,14 +80,17 @@ struct ScreenFactory {
     func makeScreen(for route: AlarmsRoute) -> some View {
         switch route {
         case .editor(let alarmID):
-            // TEMPORARY: the real Alarm Editor (Screen #8) is the next Phase 1 chunk.
-            // This placeholder proves the navigation path works end-to-end.
-            ComingSoonView(
-                title: alarmID == nil ? "New Alarm" : "Edit Alarm",
-                systemImage: "slider.horizontal.3",
-                phase: 1,
-                message: "The Alarm Editor is the next Phase 1 step: time wheel, repeat days, label, sound and missions."
-            )
+            // Screen #8, Alarm Editor. `alarmID == nil` → create mode, otherwise edit mode.
+            // Its ViewModel gets:
+            //   repository  → to load the alarm into a draft and save it back
+            //   scheduler   → to ask permission and schedule/cancel with iOS
+            //   coordinator → to pop back to the list after Save/Cancel/Delete
+            AlarmEditorView(viewModel: AlarmEditorViewModel(
+                alarmID: alarmID,
+                repository: dependencies.alarmRepository,
+                scheduler: dependencies.alarmScheduler,
+                coordinator: coordinator
+            ))
         }
     }
 
