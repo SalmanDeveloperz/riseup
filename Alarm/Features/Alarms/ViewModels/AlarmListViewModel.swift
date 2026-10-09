@@ -169,7 +169,7 @@ final class AlarmListViewModel {
         do {
             // 2. Turning ON needs alarm permission (asks the first time).
             if isEnabled {
-                try await requireAlarmPermission()
+                try await scheduler.requirePermission()   // → shared helper in AlarmScheduling.swift
             }
             // 3. Tell iOS. `schedule` re-creates the system alarm, or cancels it when disabled.
             try await scheduler.schedule(alarm)
@@ -244,14 +244,6 @@ final class AlarmListViewModel {
         )
     }
 
-    /// Makes sure RiseUp may schedule alarms; asks the user the first time.
-    /// Throws `AlarmListError.permissionDenied` if they said no.
-    private func requireAlarmPermission() async throws {
-        if scheduler.permission == .authorized { return }
-        let answer = await scheduler.requestPermission()   // shows the system popup if never asked
-        guard answer == .authorized else { throw AlarmListError.permissionDenied }
-    }
-
     // MARK: - Debug helpers
 
     // LEARN: `#if DEBUG` code exists only in builds run from Xcode. App Store builds never contain it.
@@ -280,21 +272,4 @@ final class AlarmListViewModel {
         }
     }
     #endif
-}
-
-// MARK: - Errors
-
-/// Errors this screen can show to the user.
-///
-/// LEARN: conforming to `LocalizedError` and providing `errorDescription` makes
-/// `error.localizedDescription` return OUR friendly text instead of a technical one.
-nonisolated enum AlarmListError: LocalizedError {
-    case permissionDenied
-
-    var errorDescription: String? {
-        switch self {
-        case .permissionDenied:
-            "RiseUp isn't allowed to schedule alarms. Turn it on in Settings → RiseUp → Alarms."
-        }
-    }
 }

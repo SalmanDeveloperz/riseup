@@ -36,7 +36,7 @@ struct NextAlarmHeaderView: View {
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                     if let next {
-                        Text("Rings in \(Self.countdownText(from: now, to: next.fireDate))")
+                        Text("Rings in \(AlarmScheduleCalculator.countdownText(from: now, to: next.fireDate))")
                             .font(.riseTitle)
                             .foregroundStyle(Theme.Colors.textPrimary)
                         // LEARN: `Date.formatted(...)` builds localized text like "Tue 6:30 AM".
@@ -54,24 +54,6 @@ struct NextAlarmHeaderView: View {
                 }
             }
         }
-    }
-
-    /// "7h 20m", "2d 3h", "45m", or "less than a minute".
-    ///
-    /// WHY round UP to the next minute: at 6:29:10 an alarm at 6:30 should read "1m", not "0m".
-    /// LEARN: `static func` belongs to the type, not to one instance. It uses no
-    /// view state, which makes it easy to unit-test later.
-    static func countdownText(from now: Date, to fireDate: Date) -> String {
-        let totalMinutes = Int((fireDate.timeIntervalSince(now) / 60).rounded(.up))
-        guard totalMinutes > 0 else { return "less than a minute" }
-
-        let days = totalMinutes / (24 * 60)
-        let hours = (totalMinutes % (24 * 60)) / 60
-        let minutes = totalMinutes % 60
-
-        if days > 0 { return "\(days)d \(hours)h" }
-        if hours > 0 { return "\(hours)h \(minutes)m" }
-        return "\(minutes)m"
     }
 }
 

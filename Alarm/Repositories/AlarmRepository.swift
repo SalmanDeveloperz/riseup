@@ -55,8 +55,17 @@ final class AlarmRepository {
     /// changes after init, so watching it would be wasted work.
     @ObservationIgnored private let context: ModelContext
 
+    /// Keeps the database alive for as long as this repository exists.
+    ///
+    /// WHY (a crash we found in Xcode Previews): a `ModelContext` does NOT keep its
+    /// `ModelContainer` (the database) alive. In a `#Preview`, `AppDependencies.preview()`
+    /// is a local value that disappears once the preview is built, so the container was
+    /// freed, and the next fetch crashed inside SwiftData. Holding it here fixes that everywhere.
+    @ObservationIgnored private let container: ModelContainer
+
     init(context: ModelContext) {
         self.context = context
+        self.container = context.container
         // Fill the list once at startup. If it fails, the list stays empty and the next
         // `refresh()` (e.g. when the Alarm List appears) tries again.
         try? refresh()

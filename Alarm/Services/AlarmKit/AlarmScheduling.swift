@@ -27,6 +27,21 @@ nonisolated enum AlarmPermission: Sendable {
     case authorized
 }
 
+/// Thrown when the user hasn't allowed RiseUp to schedule alarms.
+///
+/// ← THROWN BY: AlarmScheduling.requirePermission() (below)
+/// ← SHOWN BY:  AlarmListViewModel and AlarmEditorViewModel alerts
+///
+/// LEARN: conforming to `LocalizedError` and providing `errorDescription` makes
+/// `error.localizedDescription` return OUR friendly text instead of a technical one.
+nonisolated enum AlarmPermissionError: LocalizedError {
+    case denied
+
+    var errorDescription: String? {
+        "RiseUp isn't allowed to schedule alarms. Turn it on in Settings → RiseUp → Alarms."
+    }
+}
+
 /// Schedules and cancels RiseUp alarms with the operating system.
 protocol AlarmScheduling: AnyObject {
     /// Current permission state (no popup).
@@ -57,4 +72,21 @@ protocol AlarmScheduling: AnyObject {
     /// two (the reconcile step) must skip it, or it would wrongly switch the alarm off.
     /// See "race condition" in docs/HOW_IT_WORKS.md.
     func isScheduling(_ alarm: WakeAlarm) -> Bool
+}
+
+// MARK: - Shared helpers
+
+extension AlarmScheduling {
+    /// Makes sure RiseUp may schedule alarms. Shows the system popup the first time;
+    /// throws `AlarmPermissionError.denied` if the user says no (now or earlier).
+    ///
+    /// ← CALLED BY: AlarmListViewModel.setEnabled, AlarmEditorViewModel.save
+    ///
+    /// LEARN: a protocol *extension* gives every type that adopts the protocol this
+    /// method for free. The real scheduler and the mock both get it, written once.
+    func requirePermission() async throws {
+        if permission == .authorized { return }
+        let answer = await requestPermission()   // → the system "Allow alarms?" popup if never asked
+        guard answer == .authorized else { throw AlarmPermissionError.denied }
+    }
 }
