@@ -15,7 +15,7 @@ enum ModelContainerFactory {
     /// - Parameter inMemory: `true` keeps everything in RAM and throws it away when the
     ///   app closes. Used by SwiftUI Previews and unit tests so they never touch real data.
     static func make(inMemory: Bool = false) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: SchemaV1.self)
+        let schema = Schema(versionedSchema: SchemaV2.self)   // ← the CURRENT schema
         let configuration = ModelConfiguration(
             "RiseUp",
             schema: schema,

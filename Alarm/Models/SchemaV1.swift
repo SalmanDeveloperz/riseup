@@ -4,7 +4,9 @@
 //
 //  LAYER: Model (SwiftData)
 //  WHAT:  Version 1 of the database: the `WakeAlarm` and `MissionConfig` tables.
-//  USED BY: AlarmRepository (read/write), ModelContainerFactory (setup).
+//         FROZEN since SchemaV2 (2026-10-09). The app now uses SchemaV2; this file only
+//         describes old databases so RiseUpMigrationPlan can upgrade them.
+//  USED BY: RiseUpMigrationPlan (as the "from" version).
 //
 //  LEARN: SwiftData basics
 //  ──────────────────────
@@ -169,10 +171,6 @@ enum SchemaV1: VersionedSchema {
     }
 }
 
-// MARK: - Current model names
-
-// LEARN: `typealias` gives a short name. The rest of the app writes `WakeAlarm`
-// instead of `SchemaV1.WakeAlarm`. When SchemaV2 exists, we only update these two
-// lines and the whole app uses the new version.
-typealias WakeAlarm = SchemaV1.WakeAlarm
-typealias MissionConfig = SchemaV1.MissionConfig
+// The short names `WakeAlarm` / `MissionConfig` now point at SchemaV2 (see SchemaV2.swift).
+// WHY keep this file at all: SwiftData needs the OLD shape to recognise and upgrade
+// databases created by older app versions. Never edit SchemaV1 again: it's frozen history.
