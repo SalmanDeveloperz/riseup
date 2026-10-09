@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  RiseUpWidgets extension: extra Info.plist keys.
+
+  `NSExtension` tells iOS "this bundle is a WidgetKit extension". Xcode can't set it
+  as a build setting, so it lives here and Xcode merges it with the generated plist.
+
+  WHY in /Config (not /RiseUpWidgets): files inside a synchronized folder are copied
+  into the bundle as resources. A plist there would be copied twice and break the build.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
+</dict>
+</plist>

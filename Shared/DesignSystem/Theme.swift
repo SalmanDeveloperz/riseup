@@ -2,10 +2,13 @@
 //  Theme.swift
 //  RiseUp
 //
-//  LAYER: Design System
+//  LAYER: Design System (Shared: compiled into the app AND the RiseUpWidgets extension)
 //  WHAT:  The single source of truth for colours, gradients, spacing and corner radii.
-//  USED BY: every View in the app.
+//  USED BY: every View in the app, and the lock screen / Dynamic Island alarm UI.
 //  DATA:  none (pure constants).
+//
+//  WHY in /Shared: the widget extension is a separate program and can't see app files.
+//  Sharing this one file keeps the lock screen in exactly the same neon colours.
 //
 //  LEARN: A "design system" means we never type raw colours or numbers like
 //  `Color(red: 1, green: 0.2, blue: 0.5)` or `.padding(17)` inside screens.
