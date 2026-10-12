@@ -67,10 +67,13 @@ struct ScreenFactory {
                 message: "Relaxing sleep sounds with a timer, and later sleep tracking."
             )
         case .settings:
-            SettingsHomePlaceholderView(
-                onOpenAlarmKitLab: { coordinator.show(.alarmKitLab) },
-                onOpenDesignGallery: { coordinator.show(.designGallery) }
-            )
+            // Screen #26. Its ViewModel gets:
+            //   settings    → Time Pressure, defaults for new alarms (UserDefaults)
+            //   coordinator → to push the alarm check / FAQ / privacy and open the sound picker
+            SettingsView(viewModel: SettingsViewModel(
+                settings: dependencies.settings,
+                coordinator: coordinator
+            ))
         }
     }
 
@@ -102,6 +105,19 @@ struct ScreenFactory {
     @ViewBuilder
     func makeScreen(for route: SettingsRoute) -> some View {
         switch route {
+        case .alarmCheck:
+            // Screen #28 "Why didn't my alarm ring?". Reads the database AND iOS, so it gets both.
+            AlarmHealthCheckView(viewModel: AlarmHealthCheckViewModel(
+                repository: dependencies.alarmRepository,
+                scheduler: dependencies.alarmScheduler,
+                sync: dependencies.alarmSync,
+                stepCounter: dependencies.missionServices.steps,
+                coordinator: coordinator
+            ))
+        case .faq:
+            FAQView()                              // static text, no ViewModel needed
+        case .privacy:
+            PrivacyView()
         case .alarmKitLab:
             AlarmLabView(viewModel: AlarmLabViewModel(
                 repository: dependencies.alarmRepository,
@@ -159,6 +175,14 @@ struct ScreenFactory {
                 timeAnnouncer: dependencies.timeAnnouncer,
                 settings: dependencies.settings,
                 missionServices: dependencies.missionServices,
+                coordinator: coordinator
+            ))
+        case .onboarding:
+            // Screens #1–#4. Creates the first alarm, so it needs repository + scheduler.
+            OnboardingView(viewModel: OnboardingViewModel(
+                repository: dependencies.alarmRepository,
+                scheduler: dependencies.alarmScheduler,
+                settings: dependencies.settings,
                 coordinator: coordinator
             ))
         }

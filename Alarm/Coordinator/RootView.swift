@@ -24,6 +24,7 @@
 //                  coordinator.sheet        ↔ sheet (sound picker, quick alarm, mission picker)
 //                  coordinator.fullScreen   ↔ fullScreenCover (ringing flow)
 //    → RUNS:       AlarmSyncService.sync() on launch and every return to the foreground
+//    → SHOWS:      onboarding while AppSettings.hasCompletedOnboarding is false
 //    → ASKS:       ScreenFactory to build every screen
 //
 //  LEARN: "Binding" here means two-way. When code changes `coordinator.alarmsPath`,
@@ -93,6 +94,13 @@ struct RootView: View {
         .onChange(of: launchRouter.pendingAlarmID, initial: true) {
             if let alarmID = launchRouter.consumePendingAlarmID() {
                 coordinator.presentRinging(alarmID: alarmID)
+            }
+        }
+        // First launch (or "Replay intro" in Settings): show onboarding.
+        // → AppCoordinator.presentOnboarding() never covers a ringing alarm.
+        .onChange(of: dependencies.settings.hasCompletedOnboarding, initial: true) {
+            if !dependencies.settings.hasCompletedOnboarding {
+                coordinator.presentOnboarding()
             }
         }
         // Every time the app comes to the front (including the first launch):

@@ -67,6 +67,12 @@ enum AlarmsRoute: Hashable {
 
 /// Screens pushed inside the Settings tab.
 enum SettingsRoute: Hashable {
+    /// "Why didn't my alarm ring?": checks permissions and schedules, offers fixes (Screen #28).
+    case alarmCheck
+    /// Questions & answers (Screen #29).
+    case faq
+    /// What RiseUp stores and why (Screen #29).
+    case privacy
     /// Debug screen to test AlarmKit on a real iPhone (Phase 0 spike).
     case alarmKitLab
     /// Debug screen showing every Design System component.
@@ -98,6 +104,8 @@ enum SheetRoute: Hashable, Identifiable {
 enum FullScreenRoute: Hashable, Identifiable {
     /// The alarm is ringing → show the mission flow for this WakeAlarm.
     case ringing(alarmID: UUID)
+    /// First launch: welcome → goal → permission → first alarm (Screens #1–#4).
+    case onboarding
 
     var id: Self { self }
 }

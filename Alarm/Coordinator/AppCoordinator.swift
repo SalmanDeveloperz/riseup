@@ -145,7 +145,16 @@ final class AppCoordinator {
         fullScreen = .ringing(alarmID: alarmID)
     }
 
-    /// ← CALLED BY: RingingPlaceholderViewModel when the mission ends or the user closes it
+    /// Shows onboarding on top of everything (first launch, or "Replay intro" in Settings).
+    ///
+    /// ← CALLED BY: RootView (when AppSettings.hasCompletedOnboarding is false)
+    /// WHY never over a ringing alarm: waking up always wins. Onboarding comes back next launch.
+    func presentOnboarding() {
+        guard fullScreen == nil else { return }
+        fullScreen = .onboarding
+    }
+
+    /// ← CALLED BY: RingingViewModel (mission done / closed), OnboardingViewModel (finished)
     func dismissFullScreen() {
         fullScreen = nil
     }
