@@ -22,7 +22,9 @@
 //    alarmScheduler        → iOS system alarms     (AlarmKitScheduler / MockAlarmScheduler)
 //    alarmSync             → keeps database & iOS in agreement (AlarmSyncService)
 //    audio                 → sounds inside the app (AudioService / MockAudioService)
-//    shakeDetector         → motion sensor for the Shake mission (CoreMotion / Mock)
+//    timeAnnouncer         → speaks the time during missions (SpeechTimeAnnouncer / Mock)
+//    missionServices       → sensors + camera matching for missions (MissionServices)
+//    settings              → small preferences in UserDefaults (AppSettings)
 //
 
 import Foundation
@@ -40,13 +42,17 @@ final class AppDependencies {
     let alarmScheduler: any AlarmScheduling
     let alarmSync: AlarmSyncService
     let audio: any AudioPlaying
-    let shakeDetector: any ShakeDetecting
+    let timeAnnouncer: any TimeAnnouncing
+    let missionServices: MissionServices
+    let settings: AppSettings
 
     init(
         modelContainer: ModelContainer,
         alarmScheduler: any AlarmScheduling,
         audio: any AudioPlaying,
-        shakeDetector: any ShakeDetecting
+        timeAnnouncer: any TimeAnnouncing,
+        missionServices: MissionServices,
+        settings: AppSettings
     ) {
         self.modelContainer = modelContainer
         self.alarmRepository = AlarmRepository(context: modelContainer.mainContext)
@@ -55,17 +61,28 @@ final class AppDependencies {
         // The sync service is built FROM two other tools: repository + scheduler.
         self.alarmSync = AlarmSyncService(repository: alarmRepository, scheduler: alarmScheduler)
         self.audio = audio
-        self.shakeDetector = shakeDetector
+        self.timeAnnouncer = timeAnnouncer
+        self.missionServices = missionServices
+        self.settings = settings
     }
 
-    /// The real app: database on disk + real AlarmKit, audio and motion sensor.
+    /// The real app: database on disk + real AlarmKit, audio, sensors and camera matching.
     static func live() -> AppDependencies {
         do {
             return AppDependencies(
                 modelContainer: try ModelContainerFactory.make(),
                 alarmScheduler: AlarmKitScheduler(),
                 audio: AudioService(),
-                shakeDetector: CoreMotionShakeDetector()
+                timeAnnouncer: SpeechTimeAnnouncer(),
+                missionServices: MissionServices(
+                    shake: CoreMotionShakeDetector(),
+                    steps: CoreMotionStepCounter(),
+                    squat: CoreMotionSquatDetector(),
+                    // WHY the switch: Vision's photo fingerprints don't work in the Simulator
+                    // (see PixelPhotoMatcher). Real iPhones always use Vision.
+                    photoMatcher: MissionEnvironment.isSimulator ? PixelPhotoMatcher() : VisionPhotoMatcher()
+                ),
+                settings: AppSettings()
             )
         } catch {
             // WHY crash here? Without its database the app can't do anything useful, and
@@ -83,7 +100,10 @@ final class AppDependencies {
             modelContainer: try! ModelContainerFactory.make(inMemory: true),
             alarmScheduler: MockAlarmScheduler(),
             audio: MockAudioService(),
-            shakeDetector: MockShakeDetector()
+            timeAnnouncer: MockTimeAnnouncer(),
+            missionServices: .preview(),
+            // A throwaway settings store, so previews never change the real app's settings.
+            settings: AppSettings(store: UserDefaults(suiteName: "RiseUpPreview") ?? .standard)
         )
     }
 }

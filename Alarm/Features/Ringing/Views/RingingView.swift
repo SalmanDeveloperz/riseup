@@ -177,7 +177,7 @@ struct RingingView: View {
 
             MissionView(
                 mission: mission,
-                shakeDetector: viewModel.shakeDetector,
+                services: viewModel.missionServices,
                 onInteraction: { viewModel.userInteracted() },   // → keeps the alarm quiet
                 onComplete: { viewModel.missionFinished() }      // → next mission or success
             )
@@ -216,7 +216,9 @@ struct RingingView: View {
         records: dependencies.wakeRecordRepository,
         scheduler: dependencies.alarmScheduler,
         audio: dependencies.audio,
-        shakeDetector: dependencies.shakeDetector,
+        timeAnnouncer: dependencies.timeAnnouncer,
+        settings: dependencies.settings,
+        missionServices: dependencies.missionServices,
         coordinator: AppCoordinator()
     ))
 }

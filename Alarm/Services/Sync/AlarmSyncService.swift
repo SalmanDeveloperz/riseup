@@ -29,6 +29,7 @@
 //      (Happens when yesterday's mission was never completed.)
 //   3. System alarms that belong to no alarm (or the main alarm of a switched-off one)
 //      → cancel them. Backups of existing alarms are kept: a mission may be pending.
+//   4. A wake-up check ringing while the user opens RiseUp → stop it (they're clearly awake).
 //
 
 import Foundation
@@ -85,6 +86,9 @@ final class AlarmSyncService {
             if alarm.isEnabled && alarm.isRepeating && alarm.hasMissions {
                 try? await scheduler.ensureBackupChain(for: alarm)
             }
+
+            // Rule 4: opening RiseUp answers "are you up?".
+            scheduler.stopWakeUpCheckIfRinging(for: alarm)
         }
 
         for alarm in finishedQuickAlarms {
@@ -108,7 +112,8 @@ final class AlarmSyncService {
     func ringingAlarmID() -> UUID? {
         let system = scheduler.systemAlarms()
         return repository.alarms.first { alarm in
-            scheduler.systemAlarmIDs(for: alarm).contains { system[$0]?.state == .alerting }
+            // ringing IDs only: a ringing wake-up CHECK must not restart the missions.
+            scheduler.ringingSystemAlarmIDs(for: alarm).contains { system[$0]?.state == .alerting }
         }?.id
     }
 

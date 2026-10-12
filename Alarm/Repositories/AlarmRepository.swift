@@ -133,7 +133,9 @@ final class AlarmRepository {
                 type: draft.type,
                 difficulty: draft.difficulty,
                 repetitions: draft.repetitions,
-                sortOrder: index
+                sortOrder: index,
+                textPayload: draft.textPayload,   // barcode value
+                dataPayload: draft.dataPayload    // photo fingerprint + thumbnail
             )
         }
     }

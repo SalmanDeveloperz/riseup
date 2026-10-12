@@ -360,6 +360,8 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RiseUp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "RiseUp uses the camera for the Photo and Barcode wake-up missions: you photograph a spot or scan a code away from your bed to stop the alarm.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "RiseUp counts your steps for the Steps wake-up mission, so walking around stops the alarm.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -397,6 +399,8 @@
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RiseUp;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "RiseUp uses the camera for the Photo and Barcode wake-up missions: you photograph a spot or scan a code away from your bed to stop the alarm.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "RiseUp counts your steps for the Steps wake-up mission, so walking around stops the alarm.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

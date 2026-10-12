@@ -1,0 +1,114 @@
+//
+//  AppSettings.swift
+//  RiseUp
+//
+//  LAYER: Service (app preferences, saved in UserDefaults)
+//  WHAT:  Small settings that aren't alarms: onboarding finished?, speak the time during
+//         missions?, default sound and snooze for new alarms, the wake-up goal from onboarding.
+//  DATA:  UserDefaults (a tiny key-value store iOS keeps for every app). NOT SwiftData.
+//
+//  CONNECTIONS:
+//    ← CREATED BY: AppDependencies (one shared instance; tests pass their own UserDefaults)
+//    ← READ BY:    RootView (show onboarding?), RingingViewModel (Time Pressure),
+//                  AlarmEditorViewModel (defaults for new alarms), SettingsViewModel, OnboardingViewModel
+//    ← WRITTEN BY: SettingsViewModel, OnboardingViewModel
+//
+//  LEARN: SwiftData vs UserDefaults
+//  ────────────────────────────────
+//  SwiftData is a real database: many rows, relationships, queries (alarms, history).
+//  UserDefaults is a dictionary saved to disk: perfect for a handful of switches like these.
+//  `@Observable` + `didSet` = every change is shown on screen AND saved immediately.
+//
+
+import Foundation
+import Observation
+
+/// Why the user wants to wake up (asked in onboarding). Used to suggest a first mission.
+nonisolated enum WakeGoal: String, CaseIterable, Identifiable, Sendable {
+    case stopSnoozing
+    case beOnTime
+    case morningRoutine
+    case exercise
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .stopSnoozing: "Stop hitting snooze"
+        case .beOnTime: "Never be late again"
+        case .morningRoutine: "Build a morning routine"
+        case .exercise: "Move first thing"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .stopSnoozing: "zzz"
+        case .beOnTime: "clock.badge.checkmark.fill"
+        case .morningRoutine: "sun.horizon.fill"
+        case .exercise: "figure.run"
+        }
+    }
+
+    /// The mission we suggest for this goal on the "first alarm" onboarding page.
+    /// WHY never Photo/Barcode here: those need a registration (photo or scan) first,
+    /// which is too much for a first-launch screen. Users find them in the Mission Picker.
+    var suggestedMission: MissionType {
+        switch self {
+        case .stopSnoozing: .math
+        case .beOnTime: .memory
+        case .morningRoutine: .typing
+        case .exercise: .squat
+        }
+    }
+}
+
+@Observable
+final class AppSettings {
+    /// LEARN: keys are plain strings. Keeping them in one place avoids typos like "hasCompleteOnboarding".
+    private enum Key {
+        static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let speaksTimeWhileRinging = "speaksTimeWhileRinging"
+        static let defaultSound = "defaultSound"
+        static let defaultSnoozeMinutes = "defaultSnoozeMinutes"
+        static let wakeGoal = "wakeGoal"
+    }
+
+    @ObservationIgnored private let store: UserDefaults
+
+    /// False until the user finishes (or skips) onboarding. → RootView shows onboarding while false.
+    var hasCompletedOnboarding: Bool {
+        didSet { store.set(hasCompletedOnboarding, forKey: Key.hasCompletedOnboarding) }
+    }
+
+    /// "Time Pressure": read the time aloud every minute during missions.
+    var speaksTimeWhileRinging: Bool {
+        didSet { store.set(speaksTimeWhileRinging, forKey: Key.speaksTimeWhileRinging) }
+    }
+
+    /// The sound new alarms start with. TRY: change the fallback below to `.siren`.
+    var defaultSound: AlarmSound {
+        didSet { store.set(defaultSound.rawValue, forKey: Key.defaultSound) }
+    }
+
+    /// The snooze length new alarms start with (minutes).
+    var defaultSnoozeMinutes: Int {
+        didSet { store.set(defaultSnoozeMinutes, forKey: Key.defaultSnoozeMinutes) }
+    }
+
+    /// The onboarding answer, if given.
+    var wakeGoal: WakeGoal? {
+        didSet { store.set(wakeGoal?.rawValue, forKey: Key.wakeGoal) }
+    }
+
+    init(store: UserDefaults = .standard) {
+        self.store = store
+        // LEARN: `object(forKey:) as? Bool ?? true` = "the saved value, or `true` if never saved".
+        // (`bool(forKey:)` would return `false` for "never saved", which isn't the default we want.)
+        hasCompletedOnboarding = store.bool(forKey: Key.hasCompletedOnboarding)
+        speaksTimeWhileRinging = store.object(forKey: Key.speaksTimeWhileRinging) as? Bool ?? true
+        defaultSound = AlarmSound(rawValue: store.string(forKey: Key.defaultSound) ?? "") ?? .radar
+        defaultSnoozeMinutes = store.object(forKey: Key.defaultSnoozeMinutes) as? Int ?? 5
+        wakeGoal = store.string(forKey: Key.wakeGoal).flatMap(WakeGoal.init(rawValue:))
+    }
+}

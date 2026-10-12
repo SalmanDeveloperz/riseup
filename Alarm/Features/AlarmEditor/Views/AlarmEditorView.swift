@@ -54,6 +54,7 @@ struct AlarmEditorView: View {
                 missionCard
                 soundCard
                 snoozeCard
+                wakeUpCheckCard
                 if viewModel.isEditing {
                     deleteButton
                 }
@@ -234,7 +235,9 @@ struct AlarmEditorView: View {
     private var snoozeCard: some View {
         GlowCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                Toggle(isOn: $viewModel.draft.isSnoozeEnabled) {
+                // WHY `.constant(false)` for mission alarms: they can't snooze, so the switch must
+                // LOOK off too (it used to show "on" while greyed out, which was confusing).
+                Toggle(isOn: viewModel.snoozeAppliesToThisAlarm ? $viewModel.draft.isSnoozeEnabled : .constant(false)) {
                     Label("Snooze", systemImage: "zzz")
                         .font(.riseHeadline)
                         .foregroundStyle(Theme.Colors.textPrimary)
@@ -280,6 +283,36 @@ struct AlarmEditorView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.draft.isSnoozeEnabled)
+    }
+
+    /// Wake-Up Check (#18): one more "are you up?" ring a few minutes after getting up.
+    /// Bound straight to the draft; AlarmEditorViewModel.save() copies it into the WakeAlarm.
+    private var wakeUpCheckCard: some View {
+        GlowCard {
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                HStack {
+                    Label("Wake-up check", systemImage: "eye.fill")
+                        .font(.riseHeadline)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                    Spacer()
+                    Picker("Wake-up check", selection: viewModel.offersWakeUpCheck ? $viewModel.draft.wakeUpCheckMinutes : .constant(0)) {
+                        ForEach(AlarmEditorViewModel.wakeUpCheckOptions, id: \.self) { minutes in
+                            Text(minutes == 0 ? "Off" : "After \(minutes) min").tag(minutes)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(Theme.Colors.neonPink)
+                    .disabled(!viewModel.offersWakeUpCheck)
+                }
+                if !viewModel.offersWakeUpCheck {
+                    comingSoonNote("Not available for quick alarms: they disappear right after ringing. Change the time to make this a normal alarm.")
+                } else {
+                    comingSoonNote(viewModel.draft.wakeUpCheckMinutes == 0
+                        ? "Rings once more a few minutes after you're up, in case you went back to bed."
+                        : "\(viewModel.draft.wakeUpCheckMinutes) minutes after you're up, RiseUp asks “Are you up?” with one more ring. Stop it (or open RiseUp) to answer.")
+                }
+            }
+        }
     }
 
     private var deleteButton: some View {
@@ -348,6 +381,7 @@ struct AlarmEditorView: View {
             alarmID: nil,
             repository: dependencies.alarmRepository,
             scheduler: dependencies.alarmScheduler,
+            settings: dependencies.settings,
             coordinator: AppCoordinator()
         ))
     }
@@ -364,6 +398,7 @@ struct AlarmEditorView: View {
             alarmID: gym.id,
             repository: dependencies.alarmRepository,
             scheduler: dependencies.alarmScheduler,
+            settings: dependencies.settings,
             coordinator: AppCoordinator()
         ))
     }

@@ -91,6 +91,7 @@ struct ScreenFactory {
                 alarmID: alarmID,
                 repository: dependencies.alarmRepository,
                 scheduler: dependencies.alarmScheduler,
+                settings: dependencies.settings,          // defaults for NEW alarms
                 coordinator: coordinator
             ))
         }
@@ -136,7 +137,7 @@ struct ScreenFactory {
             // Screens #9 + #10. The result goes back through coordinator.completeMissionPicker.
             MissionPickerView(viewModel: MissionPickerViewModel(
                 editing: editing,
-                shakeDetector: dependencies.shakeDetector,
+                services: dependencies.missionServices,   // sensors for "Try it", Vision for photo registration
                 coordinator: coordinator
             ))
         }
@@ -155,7 +156,9 @@ struct ScreenFactory {
                 records: dependencies.wakeRecordRepository,
                 scheduler: dependencies.alarmScheduler,
                 audio: dependencies.audio,
-                shakeDetector: dependencies.shakeDetector,
+                timeAnnouncer: dependencies.timeAnnouncer,
+                settings: dependencies.settings,
+                missionServices: dependencies.missionServices,
                 coordinator: coordinator
             ))
         }

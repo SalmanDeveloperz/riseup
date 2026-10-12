@@ -48,6 +48,16 @@ struct SuccessView: View {
                     statTile(value: "\(summary.snoozeCount)", label: summary.snoozeCount == 1 ? "snooze" : "snoozes", icon: "zzz")
                 }
 
+                if summary.wakeUpCheckMinutes > 0 {
+                    // Wake-Up Check (#18): tell the user what will happen, so it's not a surprise.
+                    Label("Wake-up check in \(summary.wakeUpCheckMinutes) min. Don't go back to bed!", systemImage: "eye.fill")
+                        .font(.riseCaption)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                        .padding(.horizontal, Theme.Spacing.md)
+                        .padding(.vertical, Theme.Spacing.xs)
+                        .background(Theme.Colors.surface, in: .capsule)
+                }
+
                 Spacer()
 
                 Button {
@@ -94,7 +104,7 @@ struct SuccessView: View {
 }
 
 #Preview {
-    SuccessView(summary: .init(wokeAt: .now, missionSeconds: 42, missionsCompleted: 2, snoozeCount: 0), onClose: {})
+    SuccessView(summary: .init(wokeAt: .now, missionSeconds: 42, missionsCompleted: 2, snoozeCount: 0, wakeUpCheckMinutes: 5), onClose: {})
         .padding()
         .appBackground()
 }

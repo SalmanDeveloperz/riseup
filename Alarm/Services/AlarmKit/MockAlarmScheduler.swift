@@ -48,6 +48,17 @@ final class MockAlarmScheduler: AlarmScheduling {
 
     func systemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [alarm.id] }
 
+    func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [alarm.id] }
+
+    /// Alarms that got a wake-up check, with its minutes (tests can check it).
+    private(set) var wakeUpChecks: [UUID: Int] = [:]
+
+    func scheduleWakeUpCheck(for alarm: WakeAlarm, minutes: Int) async throws {
+        wakeUpChecks[alarm.id] = minutes
+    }
+
+    func stopWakeUpCheckIfRinging(for alarm: WakeAlarm) -> Bool { false }
+
     func stopRinging(_ alarm: WakeAlarm) {}
 
     func scheduleSnooze(for alarm: WakeAlarm, minutes: Int) async throws {}

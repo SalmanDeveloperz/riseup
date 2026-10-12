@@ -24,6 +24,10 @@
 //  3. Backup IDs are calculated from the alarm ID (see `backupID`), so we never need
 //     to store them in the database. We can always work out which ones to cancel.
 //
+//  4. WAKE-UP CHECK (optional, per alarm): one more `.fixed` alarm a few minutes after the
+//     user got up ("Are you up?"), ID = `wakeUpCheckID`. Just stopping it is enough:
+//     reacting at all proves you're awake.
+//
 
 import ActivityKit
 import AlarmKit
@@ -90,6 +94,7 @@ final class AlarmKitScheduler: AlarmScheduling {
         // scheduled…). That's fine for us; the goal "make sure it's gone" is reached either way.
         try? AlarmManager.shared.cancel(id: alarm.id)
         try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
+        try? AlarmManager.shared.cancel(id: Self.wakeUpCheckID(for: alarm.id))
         cancelBackupChain(for: alarm)
     }
 
@@ -128,6 +133,10 @@ final class AlarmKitScheduler: AlarmScheduling {
     }
 
     func systemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
+        ringingSystemAlarmIDs(for: alarm).union([Self.wakeUpCheckID(for: alarm.id)])
+    }
+
+    func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
         var ids: Set<UUID> = [alarm.id, Self.snoozeID(for: alarm.id)]
         for index in Self.backupOffsetsInMinutes.indices {
             ids.insert(Self.backupID(for: alarm.id, index: index))
@@ -137,7 +146,7 @@ final class AlarmKitScheduler: AlarmScheduling {
 
     func stopRinging(_ alarm: WakeAlarm) {
         let system = systemAlarms()
-        for id in systemAlarmIDs(for: alarm) where system[id]?.state == .alerting {
+        for id in ringingSystemAlarmIDs(for: alarm) where system[id]?.state == .alerting {
             // WHY stop and not cancel: for a REPEATING main alarm, `stop` ends today's ring
             // but keeps the schedule for next time; `cancel` would delete it.
             try? AlarmManager.shared.stop(id: id)
@@ -170,7 +179,7 @@ final class AlarmKitScheduler: AlarmScheduling {
         guard alarm.hasMissions else { return false }
         let system = systemAlarms()
         // 1. Is any of its system alarms ringing right now?
-        if systemAlarmIDs(for: alarm).contains(where: { system[$0]?.state == .alerting }) {
+        if ringingSystemAlarmIDs(for: alarm).contains(where: { system[$0]?.state == .alerting }) {
             return true
         }
         // 2. Did the main alarm already ring while a backup is still waiting?
@@ -184,6 +193,33 @@ final class AlarmKitScheduler: AlarmScheduling {
             if mainRing <= now { return true }
         }
         return false
+    }
+
+    func scheduleWakeUpCheck(for alarm: WakeAlarm, minutes: Int) async throws {
+        let id = Self.wakeUpCheckID(for: alarm.id)
+        try? AlarmManager.shared.cancel(id: id)
+        guard minutes > 0 else { return }
+        let alert = AlarmPresentation.Alert(
+            title: "Wake-up check: are you up?",
+            stopButton: AlarmButton(text: "I'm up", textColor: .white, systemImageName: "sun.max.fill")
+        )
+        let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
+            schedule: .fixed(Date.now.addingTimeInterval(TimeInterval(minutes * 60))),
+            attributes: AlarmAttributes(
+                presentation: AlarmPresentation(alert: alert),
+                metadata: RiseUpAlarmMetadata(wakeAlarmID: alarm.id, isBackup: false),
+                tintColor: Theme.Colors.neonOrange
+            ),
+            sound: Self.sound(named: alarm.soundName)
+        )
+        _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
+    }
+
+    func stopWakeUpCheckIfRinging(for alarm: WakeAlarm) -> Bool {
+        let id = Self.wakeUpCheckID(for: alarm.id)
+        guard systemAlarms()[id]?.state == .alerting else { return false }
+        try? AlarmManager.shared.stop(id: id)
+        return true
     }
 
     func cancelSystemAlarms(notIn keeping: Set<UUID>) {
@@ -291,6 +327,13 @@ final class AlarmKitScheduler: AlarmScheduling {
     static func snoozeID(for alarmID: UUID) -> UUID {
         var bytes = alarmID.uuid
         bytes.14 ^= 0x5E                       // "S" for snooze: a different family than backups
+        return UUID(uuid: bytes)
+    }
+
+    /// The ID of this alarm's wake-up check (see `scheduleWakeUpCheck`). Derived like backups.
+    static func wakeUpCheckID(for alarmID: UUID) -> UUID {
+        var bytes = alarmID.uuid
+        bytes.14 ^= 0xC4                       // "C" for check: yet another family
         return UUID(uuid: bytes)
     }
 

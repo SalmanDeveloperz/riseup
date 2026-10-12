@@ -39,20 +39,25 @@ nonisolated struct AlarmDraft: Equatable {
     var maxSnoozeCount: Int
     /// Missions in the order they run. Edited through the Mission Picker sheet.
     var missions: [MissionDraft]
+    /// Wake-Up Check (#18): minutes after getting up to ring "Are you up?". 0 = off.
+    var wakeUpCheckMinutes: Int = 0
 
-    /// Settings for a brand-new alarm: the current time, rings once, Radar sound, snooze 5 min × 3.
+    /// Settings for a brand-new alarm: the current time, rings once, snooze × 3.
+    /// Sound and snooze length come from Settings → "New alarms" (AppSettings).
     ///
-    /// TRY: change `snoozeMinutes: 5` to `10` and create a new alarm: the picker starts at 10.
-    static func newAlarm(now: Date = .now, calendar: Calendar = .current) -> AlarmDraft {
+    /// TRY: change `maxSnoozeCount: 3` to `5` and create a new alarm.
+    /// (Exercise 4 in docs/screens/08-alarm-editor.md: start at the next full hour instead.)
+    static func newAlarm(now: Date = .now, calendar: Calendar = .current,
+                         sound: AlarmSound = .radar, snoozeMinutes: Int = 5) -> AlarmDraft {
         let parts = calendar.dateComponents([.hour, .minute], from: now)
         return AlarmDraft(
             hour: parts.hour ?? 7,
             minute: parts.minute ?? 0,
             repeatDays: [],
             label: "",
-            sound: .radar,
+            sound: sound,
             isSnoozeEnabled: true,
-            snoozeMinutes: 5,
+            snoozeMinutes: snoozeMinutes,
             maxSnoozeCount: 3,
             missions: []
         )

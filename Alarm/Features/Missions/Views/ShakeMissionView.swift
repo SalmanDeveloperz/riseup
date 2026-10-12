@@ -8,6 +8,7 @@
 //
 //  CONNECTIONS:
 //    ← BUILT BY: MissionView (for missions of type .shake)
+//    → USES:     MissionCounterRing, SimulateSensorButton (shared with Steps and Squats)
 //    → starts/stops the motion sensor when the screen appears/disappears
 //
 
@@ -26,36 +27,13 @@ struct ShakeMissionView: View {
 
             Spacer(minLength: 0)
 
-            ZStack {
-                Circle()
-                    .stroke(Theme.Colors.surfaceRaised, lineWidth: 18)
-                // LEARN: `.trim(from:to:)` draws only part of a shape: here, the done fraction.
-                // Rotating by −90° makes it start at 12 o'clock instead of 3 o'clock.
-                Circle()
-                    .trim(from: 0, to: viewModel.progress)
-                    .stroke(Theme.Gradients.sunrise, style: StrokeStyle(lineWidth: 18, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .shadow(color: Theme.Colors.neonPink.opacity(0.6), radius: 12)
-                    .animation(.spring(duration: 0.3), value: viewModel.count)
-
-                VStack(spacing: Theme.Spacing.xs) {
-                    Image(systemName: "iphone.radiowaves.left.and.right")
-                        .font(.system(size: 44, weight: .bold))
-                        .foregroundStyle(Theme.Gradients.sunrise)
-                        // LEARN: `.symbolEffect(.wiggle, value:)` wiggles every time the value changes.
-                        .symbolEffect(.wiggle, value: viewModel.count)
-                    Text("\(viewModel.remaining)")
-                        .font(.riseClock(size: 64))
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.Colors.textPrimary)
-                        .contentTransition(.numericText(countsDown: true))
-                        .animation(.snappy, value: viewModel.remaining)
-                    Text("shakes left")
-                        .font(.riseCaption)
-                        .foregroundStyle(Theme.Colors.textSecondary)
-                }
-            }
-            .frame(width: 260, height: 260)
+            MissionCounterRing(
+                progress: viewModel.progress,
+                remaining: viewModel.remaining,
+                caption: "shakes left",
+                systemImage: "iphone.radiowaves.left.and.right",
+                trigger: viewModel.count
+            )
 
             Text("Hold your phone tight and shake it hard!")
                 .font(.riseHeadline)
@@ -65,9 +43,8 @@ struct ShakeMissionView: View {
             Spacer(minLength: 0)
 
             // The Simulator has no motion sensor: offer a button so the mission can be tested.
-            if !viewModel.isSensorAvailable {
-                Button("Simulate shake (no sensor)") { viewModel.registerShake() }
-                    .buttonStyle(.ghost)
+            if viewModel.canSimulate {
+                SimulateSensorButton(title: "Simulate shake (Simulator only)") { viewModel.registerShake() }
             }
         }
         .onAppear { viewModel.start() }      // → motion sensor on

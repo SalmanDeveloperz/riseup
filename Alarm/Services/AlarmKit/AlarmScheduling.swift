@@ -96,9 +96,15 @@ protocol AlarmScheduling: AnyObject {
     /// ← USED BY: AlarmSyncService (reconcile, "is something ringing?", orphans), hasPendingMission
     func systemAlarms() -> [UUID: SystemAlarmInfo]
 
-    /// Every system alarm ID that can belong to this WakeAlarm: main, each backup, snooze.
-    /// ← USED BY: AlarmSyncService (which system alarm belongs to which WakeAlarm)
+    /// Every system alarm ID that can belong to this WakeAlarm: main, each backup, snooze,
+    /// and the wake-up check.
+    /// ← USED BY: AlarmSyncService (which system alarms to KEEP when cleaning up)
     func systemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
+
+    /// The IDs whose ringing means "do the wake-up now": main, backups, snooze.
+    /// (NOT the wake-up check: that one only asks "are you still up?".)
+    /// ← USED BY: AlarmSyncService.ringingAlarmID, stopRinging, hasPendingMission
+    func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
 
     /// Silences every system alarm of this WakeAlarm that is ringing right now
     /// (the app takes over with its own sound on the Ringing screen).
@@ -113,6 +119,16 @@ protocol AlarmScheduling: AnyObject {
     /// ← USED BY: AlarmSyncService (if the user never finished yesterday's mission, the
     ///   chain for the next day was never armed)
     func ensureBackupChain(for alarm: WakeAlarm) async throws
+
+    /// Phase 3, Wake-Up Check (#18): one more alarm `minutes` after the user got up, titled
+    /// "Are you up?". If they went back to bed, it wakes them again.
+    /// ← USED BY: RingingViewModel.finish()
+    func scheduleWakeUpCheck(for alarm: WakeAlarm, minutes: Int) async throws
+
+    /// Stops this alarm's wake-up check if it is ringing right now. Returns true if it was.
+    /// ← USED BY: AlarmSyncService (opening RiseUp proves you're awake)
+    @discardableResult
+    func stopWakeUpCheckIfRinging(for alarm: WakeAlarm) -> Bool
 
     /// Removes system alarms whose IDs are NOT in `keeping` (leftovers from deleted alarms or bugs).
     /// ← USED BY: AlarmSyncService

@@ -2,10 +2,12 @@
 //  MissionPickerViewModel.swift
 //  RiseUp
 //
-//  LAYER: ViewModel (Screens #9 Mission Picker + #10 Mission Settings, in one sheet)
-//  WHAT:  Step 1: choose a mission type. Step 2: difficulty + how many. Optional: "Try it".
-//         Then hands the finished MissionDraft back to the editor.
-//  DATA:  none stored. The result travels back through AppCoordinator to the editor's draft.
+//  LAYER: ViewModel (Screens #9 Mission Picker + #10 Mission Settings + #11/#12 registration)
+//  WHAT:  Step 1: choose a mission type. Step 2: difficulty + how many, or, for Photo and
+//         Barcode missions, REGISTER the spot/code. Optional: "Try it". Then hands the
+//         finished MissionDraft back to the editor.
+//  DATA:  none stored. The result (with its payload) travels back through AppCoordinator
+//         to the editor's draft, and is saved only when the alarm is saved.
 //
 //  CONNECTIONS:
 //    ← CREATED BY: ScreenFactory.makeScreen(for: .missionPicker(editing:))
@@ -13,6 +15,7 @@
 //                  → AppCoordinator.presentMissionPicker(editing:onPick:)
 //    → RESULT:     AppCoordinator.completeMissionPicker(with:) → editor's draft.missions
 //    → CANCEL:     AppCoordinator.dismissSheet()
+//    → USES:       MissionServices.photoMatcher (photo fingerprint), CameraAccess (permission)
 //
 //  LEARN: a "child coordinator" inside a sheet
 //  ───────────────────────────────────────────
@@ -24,6 +27,7 @@
 
 import Foundation
 import Observation
+import UIKit
 
 @Observable
 final class MissionPickerViewModel {
@@ -48,17 +52,33 @@ final class MissionPickerViewModel {
     /// All mission types, available ones first. → MissionType.isAvailable
     let types: [MissionType] = MissionType.allCases.sorted { $0.isAvailable && !$1.isAvailable }
 
-    let shakeDetector: any ShakeDetecting
+    let services: MissionServices
     private let coordinator: AppCoordinator
 
-    init(editing: MissionDraft?, shakeDetector: any ShakeDetecting, coordinator: AppCoordinator) {
+    // MARK: - Registration state (Photo / Barcode)
+
+    /// Bound to the camera (photo registration).
+    var isShowingCamera = false
+    /// Bound to the code scanner (barcode registration).
+    var isShowingScanner = false
+    /// True while Vision computes the photo's fingerprint.
+    private(set) var isRegistering = false
+    /// Non-nil → the View shows an alert (e.g. camera not allowed).
+    private(set) var registrationError: String?
+    /// True when the alert should offer "Open Settings" (only for permission problems).
+    private(set) var registrationErrorOffersSettings = false
+    /// The registered photo, small, for the settings card.
+    private(set) var registeredThumbnail: UIImage?
+
+    init(editing: MissionDraft?, services: MissionServices, coordinator: AppCoordinator) {
         self.draft = editing
         self.isEditing = editing != nil
-        self.shakeDetector = shakeDetector
+        self.services = services
         self.coordinator = coordinator
         // Editing jumps straight to the settings step (Back still shows the type grid).
         if editing != nil { path = [.settings] }
         refreshSample()
+        refreshThumbnail()
     }
 
     // MARK: - Step 1: type
@@ -73,8 +93,10 @@ final class MissionPickerViewModel {
             var fresh = MissionDraft.defaults(for: type)
             if let existing = draft { fresh.id = existing.id }   // editing: keep the same identity
             draft = fresh
+            practiceSuccessCount = 0          // "Nice!" belonged to the previous mission type
         }
         refreshSample()
+        refreshThumbnail()
         path.append(.settings)
     }
 
@@ -91,8 +113,17 @@ final class MissionPickerViewModel {
         let range = d.type.repetitionRange
         d.repetitions = min(range.upperBound, max(range.lowerBound, d.repetitions + direction * d.type.repetitionStep))
         draft = d
-        if d.type == .shake { refreshSample() }   // the shake example mentions the count
+        refreshSample()                     // several examples mention the count
     }
+
+    /// Photo/Barcode missions have exactly one photo/scan, so there's nothing to count.
+    var showsCount: Bool {
+        guard let draft else { return false }
+        return draft.type.repetitionRange.count > 1
+    }
+
+    /// "Add mission" is disabled until a photo/barcode mission has its registration.
+    var canSave: Bool { draft?.isReadyToSave ?? false }
 
     /// An example of what the mission will look like at the chosen settings.
     ///
@@ -107,8 +138,91 @@ final class MissionPickerViewModel {
         case .math: MathProblemGenerator.make(draft.difficulty).text + " = ?"
         case .typing: "“" + (TypingPhrases.pick(1, difficulty: draft.difficulty).first ?? "") + "”"
         case .shake: "Shake \(draft.repetitions) times, \(draft.difficulty.title.lowercased()) strength"
-        default: draft.type.pitch
+        case .memory: Self.memoryExample(draft)
+        case .steps: "Walk \(draft.repetitions) steps"
+        case .squat: "Do \(draft.repetitions) squats"
+        case .photo: "Photograph the same spot to stop the alarm"
+        case .barcode: "Scan the same code to stop the alarm"
         }
+    }
+
+    /// "Remember 5 of 16 tiles · 2 rounds"
+    private static func memoryExample(_ draft: MissionDraft) -> String {
+        let level = MemoryPatternGenerator.level(for: draft.difficulty)
+        return "Remember \(level.litTiles) of \(level.gridSize * level.gridSize) tiles"
+    }
+
+    // MARK: - Registration: Photo (Screen #11)
+
+    /// ← CALLED BY: "Take photo" / "Retake"
+    func takePhoto() async {
+        if CameraAccess.usesRealCamera {
+            guard await CameraAccess.requestIfNeeded() else {
+                showError("Camera access is off. Turn it on in Settings → RiseUp → Camera to use the Photo mission.", offersSettings: true)
+                return
+            }
+        }
+        isShowingCamera = true                    // → PhotoCapture (camera, or library in the Simulator)
+    }
+
+    /// ← CALLED BY: PhotoCapture when a photo was taken
+    func registerPhoto(_ image: UIImage) async {
+        guard draft?.type == .photo else { return }
+        isRegistering = true
+        defer { isRegistering = false }
+        do {
+            guard let jpeg = CameraAccess.jpegData(from: image),
+                  let thumbnail = CameraAccess.jpegData(from: image, maxSide: 320, quality: 0.7) else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            let fingerprint = try await services.photoMatcher.fingerprint(of: jpeg)   // → Vision
+            let payload = PhotoMissionPayload(fingerprint: fingerprint, thumbnail: thumbnail)
+            draft?.dataPayload = try payload.encoded()
+            refreshThumbnail()
+        } catch {
+            // WHY no technical details here: "espresso context" means nothing to a user.
+            // The real error still goes to Xcode's console for us.
+            print("Photo registration failed:", error)
+            showError("Couldn't read that photo. Please try again with a clear, well-lit photo.", offersSettings: false)
+        }
+    }
+
+    // MARK: - Registration: Barcode (Screen #12)
+
+    /// ← CALLED BY: "Scan a code" / "Scan again"
+    func scanCode() async {
+        if CameraAccess.usesRealCamera {
+            guard await CameraAccess.requestIfNeeded() else {
+                showError("Camera access is off. Turn it on in Settings → RiseUp → Camera to use the Barcode mission.", offersSettings: true)
+                return
+            }
+            guard BarcodeScanScreen.canScan else {
+                showError("This iPhone can't scan codes with the camera.", offersSettings: false)
+                return
+            }
+        }
+        isShowingScanner = true                   // → BarcodeScanScreen
+    }
+
+    /// ← CALLED BY: BarcodeScanScreen when a code was read
+    func registerCode(_ code: String) {
+        isShowingScanner = false
+        guard draft?.type == .barcode, !code.isEmpty else { return }
+        draft?.textPayload = code
+    }
+
+    func dismissRegistrationError() {
+        registrationError = nil
+        registrationErrorOffersSettings = false
+    }
+
+    private func showError(_ message: String, offersSettings: Bool) {
+        registrationError = message
+        registrationErrorOffersSettings = offersSettings
+    }
+
+    private func refreshThumbnail() {
+        registeredThumbnail = PhotoMissionPayload.decode(draft?.dataPayload).flatMap { UIImage(data: $0.thumbnail) }
     }
 
     // MARK: - Practice
@@ -128,7 +242,7 @@ final class MissionPickerViewModel {
 
     /// ← CALLED BY: "Add mission" / "Save"
     func save() {
-        guard let draft else { return }
+        guard let draft, draft.isReadyToSave else { return }
         coordinator.completeMissionPicker(with: draft)   // → editor's onPick → draft.missions
     }
 

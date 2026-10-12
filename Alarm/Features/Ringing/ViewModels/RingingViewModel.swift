@@ -57,6 +57,8 @@ final class RingingViewModel {
         let missionSeconds: Double
         let missionsCompleted: Int
         let snoozeCount: Int
+        /// > 0 → "We'll check on you in N minutes" (Wake-Up Check, #18).
+        var wakeUpCheckMinutes: Int = 0
     }
 
     // MARK: - State the View reads
@@ -99,32 +101,43 @@ final class RingingViewModel {
     // MARK: - Dependencies
 
     let alarmID: UUID
-    let shakeDetector: any ShakeDetecting
+    /// The sensors the missions need (handed to MissionView by the View).
+    let missionServices: MissionServices
     private let repository: AlarmRepository
     private let records: WakeRecordRepository
     private let scheduler: any AlarmScheduling
     private let audio: any AudioPlaying
+    private let timeAnnouncer: any TimeAnnouncing
+    private let settings: AppSettings
     private let coordinator: AppCoordinator
 
     private var record: WakeRecord?
     private var missionStartedAt: Date?
     private var lastInteraction = Date.now
     private var watchdog: Task<Void, Never>?
+    /// When the time was last spoken ("Time Pressure"). `nil` = not yet in this wake-up.
+    private var lastAnnouncement: Date?
     private var hasStarted = false
 
-    /// Seconds without touching the screen before the alarm comes back during a mission.
-    /// TRY: set to 5 and watch the alarm return quickly when you stop.
-    static let idleSecondsBeforeAlarmReturns: TimeInterval = 15
+    /// Seconds without touching the screen before the alarm comes back during the CURRENT
+    /// mission: 15 s for most, longer for walking missions (→ MissionType.idleSecondsAllowed).
+    /// TRY: return 5 here and watch the alarm come back quickly when you stop.
+    var idleSecondsBeforeAlarmReturns: TimeInterval {
+        currentMission?.type.idleSecondsAllowed ?? 15
+    }
 
     init(alarmID: UUID, repository: AlarmRepository, records: WakeRecordRepository,
          scheduler: any AlarmScheduling, audio: any AudioPlaying,
-         shakeDetector: any ShakeDetecting, coordinator: AppCoordinator) {
+         timeAnnouncer: any TimeAnnouncing, settings: AppSettings,
+         missionServices: MissionServices, coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
         self.records = records
         self.scheduler = scheduler
         self.audio = audio
-        self.shakeDetector = shakeDetector
+        self.timeAnnouncer = timeAnnouncer
+        self.settings = settings
+        self.missionServices = missionServices
         self.coordinator = coordinator
     }
 
@@ -138,9 +151,7 @@ final class RingingViewModel {
         guard let alarm = try? repository.fetch(id: alarmID) else { return }
         info = RingInfo(
             title: alarm.displayTitle,
-            missions: alarm.sortedMissions.map {
-                MissionDraft(id: $0.id, type: $0.type, difficulty: $0.difficulty, repetitions: $0.repetitions)
-            },
+            missions: alarm.sortedMissions.map(MissionDraft.init),  // → MissionDraft.init(_ config:) copies every field, payloads too
             sound: AlarmSound.from(alarm.soundName),
             isSnoozeEnabled: alarm.isSnoozeEnabled,
             snoozeMinutes: alarm.snoozeMinutes,
@@ -236,10 +247,21 @@ final class RingingViewModel {
         let now = Date.now
         let seconds = missionStartedAt.map { now.timeIntervalSince($0) } ?? 0
         let missionCount = info?.missions.count ?? 0
+        var checkMinutes = 0
 
         if let alarm = try? repository.fetch(id: alarmID) {
             // Stop the backup chain (and snooze), and arm tomorrow's chain for repeating alarms.
             try? await scheduler.missionCompleted(for: alarm)
+            // Wake-Up Check: one more "are you up?" alarm in a few minutes, if switched on.
+            // (Never for quick alarms: they're deleted just below, and their check with them.)
+            if alarm.wakeUpCheckMinutes > 0 && !alarm.isQuickAlarm {
+                do {
+                    try await scheduler.scheduleWakeUpCheck(for: alarm, minutes: alarm.wakeUpCheckMinutes)
+                    checkMinutes = alarm.wakeUpCheckMinutes
+                } catch {
+                    checkMinutes = 0                 // couldn't schedule: don't promise it on screen
+                }
+            }
             if alarm.isQuickAlarm {
                 scheduler.cancel(alarm)
                 try? repository.delete(alarm)        // quick alarms are throwaway
@@ -255,7 +277,8 @@ final class RingingViewModel {
         try? records.save()
 
         phase = .success(WakeSummary(
-            wokeAt: now, missionSeconds: seconds, missionsCompleted: missionCount, snoozeCount: snoozeCount
+            wokeAt: now, missionSeconds: seconds, missionsCompleted: missionCount, snoozeCount: snoozeCount,
+            wakeUpCheckMinutes: checkMinutes
         ))
     }
 
@@ -274,11 +297,12 @@ final class RingingViewModel {
                 guard let self, !Task.isCancelled else { return }
                 if case .mission = self.phase,
                    !self.isIdleWarning,
-                   Date.now.timeIntervalSince(self.lastInteraction) > Self.idleSecondsBeforeAlarmReturns {
+                   Date.now.timeIntervalSince(self.lastInteraction) > self.idleSecondsBeforeAlarmReturns {
                     self.isIdleWarning = true
                     self.isQuiet = false
                     self.audio.setAlarmMuted(false)   // → it rings again until they continue
                 }
+                self.announceTimeIfDue()
             }
         }
     }
@@ -286,5 +310,16 @@ final class RingingViewModel {
     private func stopWatchdog() {
         watchdog?.cancel()
         watchdog = nil
+        timeAnnouncer.stop()
+    }
+
+    /// "Time Pressure": speak the time when missions start, then once a minute.
+    /// Only while the alarm itself is quiet (otherwise nobody would hear the voice).
+    /// → TimeAnnouncer (AVSpeechSynthesizer). Switched on/off in Settings.
+    private func announceTimeIfDue(now: Date = .now) {
+        guard settings.speaksTimeWhileRinging, isQuiet, case .mission = phase else { return }
+        if let last = lastAnnouncement, now.timeIntervalSince(last) < 60 { return }
+        lastAnnouncement = now
+        timeAnnouncer.announce(now)
     }
 }

@@ -57,6 +57,8 @@ final class AlarmEditorViewModel {
     /// Choices shown in the snooze pickers.
     static let snoozeMinuteOptions = [1, 3, 5, 10, 15, 20, 30]
     static let snoozeCountOptions = [1, 2, 3, 5, 10]
+    /// Wake-Up Check choices (minutes after getting up). 0 = off. TRY: add 20.
+    static let wakeUpCheckOptions = [0, 3, 5, 10, 15]
 
     // MARK: - Dependencies
 
@@ -75,7 +77,8 @@ final class AlarmEditorViewModel {
     /// Set for quick alarms: their exact ring moment, kept only if the time isn't changed.
     private let originalFixedFireDate: Date?
 
-    init(alarmID: UUID?, repository: AlarmRepository, scheduler: any AlarmScheduling, coordinator: AppCoordinator) {
+    init(alarmID: UUID?, repository: AlarmRepository, scheduler: any AlarmScheduling,
+         settings: AppSettings, coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
         self.scheduler = scheduler
@@ -91,7 +94,8 @@ final class AlarmEditorViewModel {
             isEditing = true
             originalFixedFireDate = existing.fixedFireDate
         } else {
-            startingDraft = .newAlarm()
+            // Defaults chosen in Settings → "New alarms". → AppSettings
+            startingDraft = .newAlarm(sound: settings.defaultSound, snoozeMinutes: settings.defaultSnoozeMinutes)
             isEditing = false
             originalFixedFireDate = nil
         }
@@ -147,6 +151,19 @@ final class AlarmEditorViewModel {
     var canAddMission: Bool {
         draft.missions.count < Self.maxMissions
     }
+
+    /// True while a QUICK alarm keeps its exact ring moment: its time and repeat days weren't
+    /// changed. (Changing them turns it into a normal hour:minute alarm.)
+    var staysQuickAlarm: Bool {
+        originalFixedFireDate != nil
+            && draft.hour == originalDraft.hour && draft.minute == originalDraft.minute
+            && draft.repeatDays.isEmpty
+    }
+
+    /// WHY quick alarms can't have a wake-up check: they delete themselves right after
+    /// ringing, and the check alarm belongs to them, so it would be deleted too. (We found
+    /// this while testing: the Success screen promised a check that never rang.)
+    var offersWakeUpCheck: Bool { !staysQuickAlarm }
 
     // MARK: - Sheets (sound & missions)
 
@@ -213,14 +230,19 @@ final class AlarmEditorViewModel {
         // 2. Copy the draft into a WakeAlarm and write it to disk.
         let alarm: WakeAlarm
         do {
-            if let alarmID, let existing = try repository.fetch(id: alarmID) {
+            if let alarmID {
+                // WHY this check: the alarm can disappear while the editor is open (a quick
+                // alarm deletes itself after ringing). Saving must not quietly create a copy.
+                guard let existing = try repository.fetch(id: alarmID) else {
+                    showErrorThenClose("This alarm no longer exists. It may have finished while you were editing it.")
+                    return
+                }
                 alarm = existing
                 Self.apply(draft, to: alarm)
                 // A quick alarm stays "exact" only if its time wasn't changed; otherwise
                 // it becomes a normal hour:minute alarm.
-                let timeChanged = draft.hour != originalDraft.hour || draft.minute != originalDraft.minute
-                    || !draft.repeatDays.isEmpty
-                alarm.fixedFireDate = timeChanged ? nil : originalFixedFireDate
+                alarm.fixedFireDate = staysQuickAlarm ? originalFixedFireDate : nil
+                if staysQuickAlarm { alarm.wakeUpCheckMinutes = 0 }   // see offersWakeUpCheck
                 repository.replaceMissions(of: alarm, with: draft.missions)
                 // WHY: like the iOS Clock app, saving an alarm switches it on.
                 alarm.isEnabled = isAllowed
@@ -325,9 +347,8 @@ final class AlarmEditorViewModel {
             isSnoozeEnabled: alarm.isSnoozeEnabled,
             snoozeMinutes: alarm.snoozeMinutes,
             maxSnoozeCount: alarm.maxSnoozeCount,
-            missions: alarm.sortedMissions.map {
-                MissionDraft(id: $0.id, type: $0.type, difficulty: $0.difficulty, repetitions: $0.repetitions)
-            }
+            missions: alarm.sortedMissions.map(MissionDraft.init),  // → MissionDraft.init(_ config:) copies every field, payloads too
+            wakeUpCheckMinutes: alarm.wakeUpCheckMinutes
         )
     }
 
@@ -342,6 +363,7 @@ final class AlarmEditorViewModel {
         alarm.isSnoozeEnabled = draft.isSnoozeEnabled
         alarm.snoozeMinutes = draft.snoozeMinutes
         alarm.maxSnoozeCount = draft.maxSnoozeCount
+        alarm.wakeUpCheckMinutes = draft.wakeUpCheckMinutes
     }
 
     /// Draft → brand-new WakeAlarm.
@@ -354,7 +376,8 @@ final class AlarmEditorViewModel {
             soundName: draft.sound.rawValue,
             isSnoozeEnabled: draft.isSnoozeEnabled,
             snoozeMinutes: draft.snoozeMinutes,
-            maxSnoozeCount: draft.maxSnoozeCount
+            maxSnoozeCount: draft.maxSnoozeCount,
+            wakeUpCheckMinutes: draft.wakeUpCheckMinutes
         )
     }
 }

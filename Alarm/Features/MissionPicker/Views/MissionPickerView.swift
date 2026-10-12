@@ -4,6 +4,7 @@
 //
 //  LAYER: View (Screens #9 + #10, shown as a sheet)
 //  WHAT:  Grid of mission types → settings (difficulty, how many, example, Try it) → Add.
+//         Photo/Barcode missions also get a registration card (take the photo / scan the code).
 //  VIEWMODEL: MissionPickerViewModel (owns this sheet's own navigation path).
 //
 //  CONNECTIONS (the path to this screen):
@@ -13,9 +14,12 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct MissionPickerView: View {
     @State private var viewModel: MissionPickerViewModel
+    /// LEARN: `openURL` is SwiftUI's way to open a link, here the app's page in the Settings app.
+    @Environment(\.openURL) private var openURL
 
     init(viewModel: MissionPickerViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -72,7 +76,7 @@ struct MissionPickerView: View {
                                     in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                     Spacer()
                     if !type.isAvailable {
-                        Text("Phase 3")
+                        Text("Soon")
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(Theme.Colors.textTertiary)
                             .padding(.horizontal, Theme.Spacing.xs)
@@ -132,19 +136,25 @@ struct MissionPickerView: View {
                         }
                     }
 
-                    GlowCard {
-                        HStack {
-                            Text("How many").font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
-                            Spacer()
-                            roundButton("minus") { viewModel.adjustRepetitions(by: -1) }
-                            Text("\(draft.repetitions)")
-                                .font(.riseClock(size: 30))
-                                .monospacedDigit()
-                                .foregroundStyle(Theme.Gradients.sunrise)
-                                .frame(minWidth: 60)
-                                .contentTransition(.numericText())
-                                .animation(.snappy, value: draft.repetitions)
-                            roundButton("plus") { viewModel.adjustRepetitions(by: 1) }
+                    if draft.needsRegistration {
+                        registrationCard(draft)
+                    }
+
+                    if viewModel.showsCount {
+                        GlowCard {
+                            HStack {
+                                Text("How many").font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
+                                Spacer()
+                                roundButton("minus") { viewModel.adjustRepetitions(by: -1) }
+                                Text("\(draft.repetitions)")
+                                    .font(.riseClock(size: 30))
+                                    .monospacedDigit()
+                                    .foregroundStyle(Theme.Gradients.sunrise)
+                                    .frame(minWidth: 60)
+                                    .contentTransition(.numericText())
+                                    .animation(.snappy, value: draft.repetitions)
+                                roundButton("plus") { viewModel.adjustRepetitions(by: 1) }
+                            }
                         }
                     }
 
@@ -173,11 +183,13 @@ struct MissionPickerView: View {
                         Label("Try it now", systemImage: "play.fill")
                     }
                     .buttonStyle(.ghost)
+                    .disabled(!viewModel.canSave)          // photo/barcode: register first
 
                     Button(viewModel.isEditing ? "Save mission" : "Add mission") {
                         viewModel.save()                  // → AppCoordinator → editor
                     }
                     .buttonStyle(.neon)
+                    .disabled(!viewModel.canSave)
                 }
                 .padding(Theme.Spacing.lg)
                 .animation(.spring, value: viewModel.practiceSuccessCount)
@@ -187,6 +199,87 @@ struct MissionPickerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .sensoryFeedback(.success, trigger: viewModel.practiceSuccessCount)
             .sensoryFeedback(.selection, trigger: draft.difficulty)
+            // Registration: camera (photo) and live scanner (barcode).
+            .photoCapture(isPresented: $viewModel.isShowingCamera) { image in
+                Task { await viewModel.registerPhoto(image) }   // → Vision fingerprint → draft
+            }
+            .fullScreenCover(isPresented: $viewModel.isShowingScanner) {
+                BarcodeScanScreen(
+                    title: "Scan a code in ANOTHER room (toothpaste, coffee jar, a printed QR…)",
+                    onCode: { viewModel.registerCode($0) },
+                    onCancel: { viewModel.isShowingScanner = false }
+                )
+            }
+            .alert("Mission", isPresented: Binding(
+                get: { viewModel.registrationError != nil },
+                set: { if !$0 { viewModel.dismissRegistrationError() } }
+            )) {
+                if viewModel.registrationErrorOffersSettings {
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                        viewModel.dismissRegistrationError()
+                    }
+                }
+                Button("OK", role: .cancel) { viewModel.dismissRegistrationError() }
+            } message: {
+                Text(viewModel.registrationError ?? "")
+            }
+        }
+    }
+
+    // MARK: - Registration (Screens #11 Photo, #12 Barcode)
+
+    /// "Your photo spot" / "Your code": what's registered, and a button to (re)do it.
+    private func registrationCard(_ draft: MissionDraft) -> some View {
+        GlowCard(isGlowing: !draft.isReadyToSave) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                Text(draft.type == .photo ? "Your photo spot" : "Your code")
+                    .font(.riseHeadline)
+                    .foregroundStyle(Theme.Colors.textPrimary)
+
+                if draft.type == .photo {
+                    if let thumbnail = viewModel.registeredThumbnail {
+                        Image(uiImage: thumbnail)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 180)
+                            .clipShape(.rect(cornerRadius: Theme.Radius.chip, style: .continuous))
+                    } else {
+                        Text("Take a photo of something far from your bed: the bathroom sink, the coffee machine, your front door. In the morning you'll have to photograph it again.")
+                            .font(.riseCaption)
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    Button {
+                        Task { await viewModel.takePhoto() }      // → permission → camera
+                    } label: {
+                        if viewModel.isRegistering {
+                            ProgressView().tint(Theme.Colors.textPrimary)
+                        } else {
+                            Label(draft.dataPayload == nil ? "Take photo" : "Retake photo", systemImage: "camera.fill")
+                        }
+                    }
+                    .buttonStyle(.ghost)
+                    .disabled(viewModel.isRegistering)
+                } else {
+                    if let code = draft.textPayload {
+                        Label(code, systemImage: "checkmark.seal.fill")
+                            .font(.riseBody.monospaced())
+                            .foregroundStyle(Theme.Colors.success)
+                            .lineLimit(2)
+                    } else {
+                        Text("Scan any QR code or barcode in another room (toothpaste, a coffee jar, a printed QR). In the morning you'll have to walk there and scan it again.")
+                            .font(.riseCaption)
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    Button {
+                        Task { await viewModel.scanCode() }       // → permission → scanner
+                    } label: {
+                        Label(draft.textPayload == nil ? "Scan a code" : "Scan a different code", systemImage: "qrcode.viewfinder")
+                    }
+                    .buttonStyle(.ghost)
+                }
+            }
         }
     }
 
@@ -241,7 +334,7 @@ struct MissionPickerView: View {
         if let draft = viewModel.draft {
             MissionView(
                 mission: draft,
-                shakeDetector: viewModel.shakeDetector,
+                services: viewModel.services,
                 onInteraction: {},
                 onComplete: { viewModel.practiceFinished() }   // → back to settings with "Nice!"
             )
@@ -256,7 +349,7 @@ struct MissionPickerView: View {
 #Preview {
     Color.clear.sheet(isPresented: .constant(true)) {
         MissionPickerView(viewModel: MissionPickerViewModel(
-            editing: nil, shakeDetector: MockShakeDetector(), coordinator: AppCoordinator()
+            editing: nil, services: .preview(), coordinator: AppCoordinator()
         ))
     }
 }
