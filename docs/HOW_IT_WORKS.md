@@ -36,7 +36,9 @@ RiseUpApp  (lives as long as the app)
  │                           ├─ AlarmKitScheduler     (ONE, shared; talks to iOS)
  │                           ├─ AlarmSyncService      (ONE, shared; database ↔ iOS agreement)
  │                           ├─ AudioService          (ONE, shared; previews + in-app alarm sound)
- │                           └─ CoreMotionShakeDetector (ONE, shared; the Shake mission's sensor)
+ │                           ├─ SpeechTimeAnnouncer   (ONE, shared; "Time Pressure" voice)
+ │                           ├─ MissionServices       (ONE bundle: shake, steps, squat sensors + photo matcher)
+ │                           └─ AppSettings           (ONE, shared; small preferences in UserDefaults)
  ├─ @State AppCoordinator    (ONE, shared; all navigation state)
  └─ RootView
      └─ each screen
@@ -172,6 +174,43 @@ Meanwhile the alarm is LOCKED (hasPendingMission): no switching off, deleting or
 and the Alarm List shows "Finish your mission".
 ```
 
+### Trace I: A sensor mission that can't run (the safety net)
+```
+RingingView → MissionView(mission: .steps, services:)            replacement = nil
+  → StepsMissionViewModel.start()
+       counter.isAvailable == false (Motion & Fitness denied)
+         Simulator? → canSimulate = true ("Simulate 5 steps")
+         iPhone?    → onUnavailable()  ─┐
+  MissionView.useFallback  ◄────────────┘   replacement = .unavailable
+  → body redraws: banner + MathMissionView(3 normal problems)
+  → same onComplete → RingingViewModel.missionFinished()   (the alarm can still be finished)
+Photo/Barcode after 3 failed tries → "Can't match?" → onGiveUp → replacement = .gaveUp → 5 HARD problems
+```
+
+### Trace J: Registering and checking a photo spot
+```
+Mission Settings "Take photo" → MissionPickerViewModel.takePhoto()
+  → CameraAccess.requestIfNeeded()            (camera popup, once)
+  → isShowingCamera = true → .photoCapture → UIImagePickerController (library in the Simulator)
+  → registerPhoto(image)
+       CameraAccess.jpegData(image)            640 px, upright
+       photoMatcher.fingerprint(jpeg)          Vision, @concurrent = off the main thread
+       PhotoMissionPayload(fingerprint, thumbnail).encoded() → draft.dataPayload
+  → Add mission → editor Save → MissionConfig.dataPayload (external storage)
+Morning: PhotoMissionViewModel.check(newPhoto)
+  → fingerprint(new) → distance(registered, new) ≤ matchThreshold ? ✓ : "doesn't look like the same spot"
+```
+
+### Trace K: First launch (onboarding)
+```
+RiseUpApp → AppDependencies.live() → AppSettings(): hasCompletedOnboarding = false (never saved)
+RootView .onChange(of: settings.hasCompletedOnboarding, initial: true)
+  → AppCoordinator.presentOnboarding() → fullScreen = .onboarding → OnboardingView
+  → … "Create my alarm" → repository.insert + replaceMissions → scheduler.schedule
+  → finish(): hasCompletedOnboarding = true (saved) → dismissFullScreen()
+Next launches: the flag is true → no onboarding. Settings → Replay intro sets it to false again.
+```
+
 ---
 
 ## Part 4 · Real bugs we hit, and the design rule each one taught us
@@ -225,6 +264,45 @@ The widget extension can't see app files. Anything both sides need (the alarm me
 lives in `Shared/`, a folder that belongs to both targets. If the two sides used *different* copies of
 `RiseUpAlarmMetadata`, iOS couldn't match the alarm to our UI.
 
+### Bug 8: Vision said a flower photo matched a waterfall (Simulator)
+- **What happened:** Vision's feature prints fail in the Simulator. Forced onto the CPU they "worked", but a
+  throwaway test showed every photo got the SAME fingerprint (distance 0.0), so everything matched.
+- **Rules:** (1) *measure, don't assume*: a 30-line scratch test settled it in a minute. (2) When a framework
+  can't run somewhere, swap the implementation behind the protocol (`PixelPhotoMatcher` in the Simulator).
+  That's exactly what the protocol is for.
+
+### Bug 9: The Simulator "has a camera", but it can't take photos
+- **What happened:** `UIImagePickerController.isSourceTypeAvailable(.camera)` is true in newer Simulators, but the
+  shutter does nothing. Our camera code path was unusable there.
+- **Rule:** decide by what you actually need. `CameraAccess.usesRealCamera` = camera **and** a real device.
+
+### Bug 10: Tips listed above the green checks in "Check my alarms"
+- **What happened:** the status enum's order was ok, info, warning, problem, so "info" ranked above "ok".
+- **Rule:** when an enum's order means something, write the order down (raw values + a WHY) and test it
+  (`HealthCheckTests`).
+
+### Bugs 11–15: found by a code review, not by testing
+A second pair of eyes read every new file asking one question: *"how could someone end up stuck with a ringing
+alarm?"* None of these showed up in normal Simulator testing:
+- **Two Shake (or Squat/Steps) missions in a row:** one shared sensor. The first mission's screen disappears
+  *after* the second one started, and its `stop()` switched the sensor off → the second mission could never finish.
+  Fix: each mission ViewModel only stops a sensor it is still running (`isRunning`).
+- **"Start Mission" while a sheet is open:** SwiftUI won't show a full-screen cover over a sheet → silence, no mission.
+  Fix: `AppCoordinator.presentRinging` closes the sheet first.
+- **Opening the app during a ring before finishing onboarding:** the intro won. Fix: ringing replaces onboarding.
+- **A mission reporting "done" twice** (typing one more letter after the last phrase) skipped the NEXT mission.
+  Fix: report done exactly once; `finish()` also guards against running twice.
+- **Memory could freeze** if its screen disappeared and came back mid-round. Fix: `start()` restarts the round.
+
+**Rule:** for the scariest failure ("can't turn the alarm off"), test the happy path AND have someone read the code
+looking only for that failure. Each fix now has a test in `RiseUpTests/MissionSafetyTests.swift` or `RingingFlowTests.swift`.
+
+### Lesson: Swift 6 and callbacks from other threads
+CMPedometer calls its closure on a background thread. In our project (main actor by default) an un-annotated
+closure would be *assumed* main-actor, and Swift 6 checks that at runtime: **crash**. Mark such closures
+`@Sendable` and hop back with `Task { @MainActor in … }` (see `StepCounter.swift`). APIs that let you choose
+`to: .main` (motion updates) are simpler: then `MainActor.assumeIsolated` is enough.
+
 ---
 
 ## Part 5 · Where to put new code (decision table)
@@ -241,3 +319,6 @@ lives in `Shared/`, a folder that belongs to both targets. If the two sides used
 | Show a sheet that returns a value | a `SheetRoute` case + `present…(onPick:)` / `complete…(with:)` in `AppCoordinator` (Trace G) |
 | Something the app AND the widget need | `Shared/` (keep it tiny: types and colours only) |
 | Lock screen / Dynamic Island / widgets | `RiseUpWidgets/` |
+| A new mission | `MissionType` case → rules in `MissionDraft.swift` → ViewModel + View in `Features/Missions` → `MissionView` switch; sensors via `MissionServices` |
+| A small app setting | `AppSettings` (UserDefaults) + a row in `SettingsView` |
+| Logic you want to be sure about | a test in `RiseUpTests/` (⌘U) |

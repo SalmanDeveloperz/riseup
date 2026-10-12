@@ -19,7 +19,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | Coordinator: `AppCoordinator`, `Routes`, `ScreenFactory`, `RootView` (4 tabs) | 🟡 | |
 | Debug: AlarmKit Lab, Design Gallery, Ringing placeholder | 🟡 | |
 | **Widget extension target `RiseUpWidgets`** | 🟡 | Added in Phase 1 (#30) with the `Shared/` folder; see `docs/screens/30-lock-screen-alarm-ui.md` |
-| **Unit test target `RiseUpTests`** (Salman creates it in Xcode) | ⬜ | Then Claude adds calculator/repository tests |
+| **Unit test target `RiseUpTests`** + shared `Alarm` scheme (⌘U runs the tests) | 🟡 | Added in Phase 3/4: 44 tests (dates, IDs, missions, repositories, sync rules, photo matching, ringing flow, health check, review fixes) |
 | Spike experiments A–E on a real iPhone → `docs/SPIKE_RESULTS.md` | ⬜ | |
 | Decide final bundle ID (currently `com.testProject.Alarm`) | ⬜ | Must be final before App Groups (Phase 4) / App Store |
 
@@ -53,21 +53,23 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 ## Phase 3 — Remaining missions
 | # | Screen / item | Status |
 |---|---|---|
-| 15d–f | Memory, Steps, Squat missions | ⬜ |
-| 11, 15g | Photo registration + Photo mission | ⬜ |
-| 12, 15h | Barcode registration + Barcode mission | ⬜ |
+| 15d–f | Memory, Steps, Squat missions | 🟡 brief: `docs/screens/15d-h-phase3-missions.md` |
+| 11, 15g | Photo registration + Photo mission (Vision feature prints) | 🟡 ⚠️ tune `VisionPhotoMatcher.matchThreshold` on a real iPhone |
+| 12, 15h | Barcode registration + Barcode mission (VisionKit live scanner) | 🟡 |
+| — | Safety net: missing sensor/permission → Math; "Can't match?" → hard Math | 🟡 |
 | — | Multiple missions per alarm (up to 3, in order) | 🟡 done early in Phase 2 |
-| — | Mute button during mission (limited count), Time Pressure (spoken time) | ⬜ |
-| 18 | Wake-Up Check | ⬜ |
+| — | Time Pressure (spoken time every minute during missions) | 🟡 brief: `docs/screens/18-wake-up-check-and-time-pressure.md` |
+| — | Mute button during mission | ➖ dropped: missions already silence the alarm while you're active (15 s idle → it returns) |
+| 18 | Wake-Up Check | 🟡 |
 
 ## Phase 4 — Onboarding, settings, widgets
 | # | Screen / item | Status |
 |---|---|---|
-| 1–4 | Welcome, Survey, Permissions, First alarm | ⬜ |
-| 26 | Settings | ⬜ |
-| 28 | "Why didn't my alarm ring?" checker | ⬜ |
-| 29 | FAQ / contact / legal | ⬜ |
-| 31 | Home & lock screen widgets (App Group database) | ⬜ |
+| 1–4 | Welcome, Goal, Permission, First alarm | 🟡 brief: `docs/screens/01-04-onboarding.md` |
+| 26 | Settings (Time Pressure, default sound & snooze, help, replay intro) | 🟡 brief: `docs/screens/26-29-settings.md` |
+| 28 | "Why didn't my alarm ring?" checker with one-tap fixes | 🟡 |
+| 29 | FAQ + Privacy | 🟡 contact & privacy-policy URL still needed (Phase 7) |
+| 31 | Home & lock screen widgets (App Group database) | ⬜ waits for the final bundle ID (App Group IDs are tied to it) |
 
 ## Phase 5 — Morning & records
 | # | Screen / item | Status |
@@ -115,3 +117,9 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 - Snooze for mission alarms is not offered at all (a mission alarm can't be skipped); plain alarms snooze inside the app
   with a limit, using a `.fixed` one-off system alarm (`AlarmKitScheduler.scheduleSnooze`).
 - Quick alarms use a new stored field `fixedFireDate` (SchemaV2) so "in 1 minute" rings at the exact second.
+- Phase 3: no schema change was needed. Photo/Barcode registrations use `MissionConfig.textPayload/dataPayload`
+  (planned in SchemaV1), and the Wake-Up Check uses `WakeAlarm.wakeUpCheckMinutes` (also already there).
+- The "mute button during missions" was dropped: the alarm is already silent while you work, and comes back after
+  15 s idle (longer for walking missions).
+- Vision's photo fingerprints don't work in the Simulator; the Simulator uses a simple pixel matcher (`PixelPhotoMatcher`).
+- Home/lock-screen widgets (31) wait for the final bundle ID, because they need an App Group.

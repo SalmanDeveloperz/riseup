@@ -34,6 +34,7 @@
 | Shared | `Shared/` | Compiled into BOTH the app and the widget extension. Only small types + colours |
 | Widget extension | `RiseUpWidgets/` | Lock screen / Dynamic Island alarm UI (a separate program iOS runs) |
 | Tools | `Tools/` | Scripts that are NOT part of the app (e.g. the sound generator) |
+| Tests | `RiseUpTests/` | Swift Testing unit tests (run with ⌘U, shared `Alarm` scheme) |
 
 ## 2. Startup sequence
 
@@ -44,14 +45,16 @@ RiseUpApp
  │    ├─ AlarmRepository(mainContext) + WakeRecordRepository(mainContext)
  │    ├─ AlarmKitScheduler()
  │    ├─ AlarmSyncService(repository, scheduler)
- │    ├─ AudioService()
- │    └─ CoreMotionShakeDetector()
+ │    ├─ AudioService() + SpeechTimeAnnouncer()
+ │    ├─ MissionServices(shake, steps, squat, photoMatcher)   ← Vision on iPhone, pixels in the Simulator
+ │    └─ AppSettings()                                         ← UserDefaults
  ├─ AppCoordinator()
  └─ RootView  (.environment(dependencies), .environment(coordinator))
       ├─ TabView: Alarms | Morning | Sleep | Settings   ← coordinator.selectedTab
       │    Alarms ↔ coordinator.alarmsPath, Settings ↔ coordinator.settingsPath
       ├─ .sheet(item: coordinator.sheet)             sound picker · quick alarm · mission picker
       ├─ .fullScreenCover(item: coordinator.fullScreen)   ringing → missions → success
+      ├─ .onChange(settings.hasCompletedOnboarding) → coordinator.presentOnboarding
       ├─ .onChange(AlarmLaunchRouter.pendingAlarmID) → coordinator.presentRinging
       └─ .onChange(scenePhase) → alarmSync.sync() → ringing alarm? → coordinator.presentRinging
 
@@ -105,15 +108,15 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 | Stored in SwiftData | Written by | Read by |
 |---|---|---|
 | `WakeAlarm` (time, repeat days, label, enabled, sound, snooze, wake-up check, `fixedFireDate` for quick alarms) | Alarm Editor, List toggle/delete, Quick Alarm, Sync, Ringing (one-time off / quick delete), Lab | List, Editor, Ringing, Sync |
-| `MissionConfig` (type, difficulty, repetitions, order, payloads) | Editor Save via `AlarmRepository.replaceMissions` (from Mission Picker drafts) | Editor, Ringing → missions |
+| `MissionConfig` (type, difficulty, repetitions, order, **textPayload** = barcode, **dataPayload** = photo fingerprint + thumbnail) | Editor Save via `AlarmRepository.replaceMissions` (from Mission Picker drafts + registrations) | Editor, Ringing → missions |
 | `WakeRecord` (alarm, ring start, dismissed at, snoozes, missions, mission seconds, mood) | `RingingViewModel` via `WakeRecordRepository` | Records, Stats, Morning (Phase 5) |
 | `SleepSession` (Phase 8) | Sleep tracker | Sleep report |
 
 | Not in SwiftData | Where | Why |
 |---|---|---|
-| Settings (24h, onboarding done…) | `@AppStorage` | small key-value data |
+| Settings (onboarding done, Time Pressure, default sound/snooze, goal) | `AppSettings` → UserDefaults | small key-value data |
 | Premium status | StoreKit 2 entitlements | Apple is the source of truth |
 | Photos for photo mission | Files in Application Support | keeps the database small |
 | Alarm sounds | App bundle (`Alarm/Resources/Sounds`) | AlarmKit plays them from the bundle |
-| Backup + snooze alarm IDs | Calculated (`AlarmKitScheduler.backupID` / `snoozeID`) | nothing to keep in sync |
+| Backup, snooze and wake-up-check alarm IDs | Calculated (`backupID` / `snoozeID` / `wakeUpCheckID`) | nothing to keep in sync |
 | Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |

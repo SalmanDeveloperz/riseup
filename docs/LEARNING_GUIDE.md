@@ -123,3 +123,27 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | Widget extension + shared folder | A second program in the app; shares source files, not objects | `RiseUpWidgets/`, `Shared/` |
 | Live Activity (`ActivityConfiguration`, `DynamicIsland`) | System UI drawn by our extension from data iOS stores | `AlarmLiveActivity.swift` |
 | `Text(date, style: .timer)` | A countdown iOS updates by itself (widgets can't run timers) | `AlarmTimingText` |
+
+## Learned in Phase 3 + 4
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Unit tests (Swift Testing) | `@Test` functions with `#expect`; ⌘U runs them all | `RiseUpTests/` |
+| Parameterised tests | `@Test(arguments:)` runs one test for many inputs | `ScheduleCalculatorTests.countdownText` |
+| Pure logic = testable logic | Generators and counters with no UI are easy to test 100s of times | `MemoryPatternGenerator`, `SquatRepCounter` |
+| `@Sendable` closures | A closure that may run on any thread; needed for background callbacks | `CoreMotionStepCounter.start` |
+| `@concurrent` | Run an async function OFF the main thread (Swift 6.2) | `VisionPhotoMatcher.makeFingerprint` |
+| `UIViewControllerRepresentable` | Show a UIKit screen (camera, scanner) in SwiftUI | `PhotoCapture.swift`, `BarcodeScanScreen.swift` |
+| Delegates + Coordinator | UIKit reports events to a helper object that forwards them to SwiftUI | `CameraPicker.Coordinator` |
+| Custom `ViewModifier` | Package a behaviour as `.photoCapture(...)` | `PhotoCapture.swift` |
+| `#if targetEnvironment(simulator)` | Code decided at BUILD time for Simulator vs device | `MissionEnvironment` |
+| Vision feature prints | Numbers that describe a photo; compare with `distance(to:)` | `VisionPhotoMatcher` |
+| VisionKit `DataScannerViewController` | Live camera that reads barcodes / QR codes | `BarcodeScanScreen` |
+| CoreMotion: pedometer vs device motion | Steps need permission; raw acceleration doesn't | `StepCounter`, `SquatDetector` |
+| Dot product, low-pass filter | Measure along gravity; smooth jittery sensor data | `CoreMotionSquatDetector` |
+| `AVSpeechSynthesizer` | The built-in iOS voice | `SpeechTimeAnnouncer` |
+| UserDefaults + `@Observable` + `didSet` | Small settings that show on screen and save instantly | `AppSettings` |
+| Fallback / graceful degradation | When a feature can't run, offer a fair alternative instead of failing | `MissionView.replacement` |
+| Pre-permission screen | Explain before the one-time system popup | `OnboardingView` page 3 |
+| `scenePhase` re-check | Refresh when the user returns from the Settings app | `AlarmHealthCheckView` |
+| Type erasure (`AnyButtonStyle`) | Wrap different types in one so `?:` can choose between them | `AlarmHealthCheckView.swift` |
+| Generic constraint to reach protocol members | Inside `<R: VisionRequest>`, protocol members become visible | (tried for Vision, see HOW_IT_WORKS Bug 8) |
