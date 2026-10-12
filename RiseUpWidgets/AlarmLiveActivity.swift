@@ -70,7 +70,7 @@ struct AlarmLiveActivity: Widget {
                 Image(systemName: info.systemImage)
                     .foregroundStyle(Theme.Colors.neonPink)
             } compactTrailing: {
-                AlarmTimingText(info: info)
+                AlarmTimingText(info: info, isCompact: true)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.Colors.neonPink)
                     // WHY a max width: a timer text is as wide as "00:00:00" by default,
@@ -151,13 +151,17 @@ struct AlarmActivityInfo {
 /// The ring time ("6:30 AM"), a live countdown ("4:59") or the paused time left.
 struct AlarmTimingText: View {
     let info: AlarmActivityInfo
+    /// The compact Dynamic Island has room for "6:30" but not "6:30 AM".
+    var isCompact = false
 
     var body: some View {
         switch info.timing {
         case .ringing(let hour, let minute):
             // Build today's date at hour:minute only to FORMAT it in the user's style (12/24 h).
             let date = Calendar.current.date(bySettingHour: hour, minute: minute, second: 0, of: .now) ?? .now
-            Text(date, style: .time)
+            // WHY two formats: in the compact island "11:42 AM" was cut to "11:42…" (seen in testing).
+            // LEARN: `.hour(.defaultDigits(amPM: .omitted))` = the hour without "AM"/"PM".
+            Text(date, format: isCompact ? .dateTime.hour(.defaultDigits(amPM: .omitted)).minute() : .dateTime.hour().minute())
                 .monospacedDigit()
         case .counting(let until):
             // LEARN: `Text(_:style: .timer)` is updated by iOS every second, even though
