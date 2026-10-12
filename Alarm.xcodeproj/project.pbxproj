@@ -18,6 +18,13 @@
 			remoteGlobalIDString = 5E1D0A10307507BF00067D67;
 			remoteInfo = RiseUpWidgets;
 		};
+		7E570A03307507BF00067D67 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 220634A4307507BF00067D67 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 220634AB307507BF00067D67;
+			remoteInfo = Alarm;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +44,7 @@
 /* Begin PBXFileReference section */
 		220634AC307507BF00067D67 /* Alarm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Alarm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RiseUpWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7E570A02307507BF00067D67 /* RiseUpTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RiseUpTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -53,6 +61,11 @@
 		5E1D0A06307507BF00067D67 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		7E570A05307507BF00067D67 /* RiseUpTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RiseUpTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -72,6 +85,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7E570A07307507BF00067D67 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -81,6 +101,7 @@
 				220634AE307507BF00067D67 /* Alarm */,
 				5E1D0A06307507BF00067D67 /* Shared */,
 				5E1D0A05307507BF00067D67 /* RiseUpWidgets */,
+				7E570A05307507BF00067D67 /* RiseUpTests */,
 				220634AD307507BF00067D67 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +111,7 @@
 			children = (
 				220634AC307507BF00067D67 /* Alarm.app */,
 				5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */,
+				7E570A02307507BF00067D67 /* RiseUpTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -145,6 +167,29 @@
 			productReference = 5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		7E570A10307507BF00067D67 /* RiseUpTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E570A16307507BF00067D67 /* Build configuration list for PBXNativeTarget "RiseUpTests" */;
+			buildPhases = (
+				7E570A11307507BF00067D67 /* Sources */,
+				7E570A07307507BF00067D67 /* Frameworks */,
+				7E570A12307507BF00067D67 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7E570A13307507BF00067D67 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				7E570A05307507BF00067D67 /* RiseUpTests */,
+			);
+			name = RiseUpTests;
+			packageProductDependencies = (
+			);
+			productName = RiseUpTests;
+			productReference = 7E570A02307507BF00067D67 /* RiseUpTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -160,6 +205,10 @@
 					};
 					5E1D0A10307507BF00067D67 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					7E570A10307507BF00067D67 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 220634AB307507BF00067D67;
 					};
 				};
 			};
@@ -179,6 +228,7 @@
 			targets = (
 				220634AB307507BF00067D67 /* Alarm */,
 				5E1D0A10307507BF00067D67 /* RiseUpWidgets */,
+				7E570A10307507BF00067D67 /* RiseUpTests */,
 			);
 		};
 /* End PBXProject section */
@@ -192,6 +242,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		5E1D0A12307507BF00067D67 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E570A12307507BF00067D67 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -215,6 +272,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7E570A11307507BF00067D67 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -222,6 +286,11 @@
 			isa = PBXTargetDependency;
 			target = 5E1D0A10307507BF00067D67 /* RiseUpWidgets */;
 			targetProxy = 5E1D0A03307507BF00067D67 /* PBXContainerItemProxy */;
+		};
+		7E570A13307507BF00067D67 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 220634AB307507BF00067D67 /* Alarm */;
+			targetProxy = 7E570A03307507BF00067D67 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -485,6 +554,52 @@
 			};
 			name = Release;
 		};
+		7E570A14307507BF00067D67 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6UZ27A869C;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.testProject.AlarmTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Alarm.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Alarm";
+			};
+			name = Debug;
+		};
+		7E570A15307507BF00067D67 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6UZ27A869C;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.testProject.AlarmTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Alarm.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Alarm";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -511,6 +626,15 @@
 			buildConfigurations = (
 				5E1D0A14307507BF00067D67 /* Debug */,
 				5E1D0A15307507BF00067D67 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7E570A16307507BF00067D67 /* Build configuration list for PBXNativeTarget "RiseUpTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7E570A14307507BF00067D67 /* Debug */,
+				7E570A15307507BF00067D67 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
