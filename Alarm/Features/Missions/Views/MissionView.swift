@@ -35,6 +35,8 @@ struct MissionView: View {
     let services: MissionServices
     let onInteraction: () -> Void
     let onComplete: () -> Void
+    /// Tells the parent "this is a Math mission now" (RingingViewModel shortens the quiet time).
+    var onReplaced: () -> Void = {}
 
     /// Non-nil → a Math mission is shown INSTEAD of `mission`.
     @State private var replacement: Replacement?
@@ -79,8 +81,14 @@ struct MissionView: View {
 
     // LEARN: these two closures are handed to the sensor/camera missions. Calling one
     // changes `replacement` (@State), and SwiftUI redraws `body` with the Math branch above.
-    private var useFallback: () -> Void { { replacement = .unavailable } }
-    private var giveUp: () -> Void { { replacement = .gaveUp } }
+    private var useFallback: () -> Void { { replace(with: .unavailable) } }
+    private var giveUp: () -> Void { { replace(with: .gaveUp) } }
+
+    private func replace(with newReplacement: Replacement) {
+        guard replacement == nil else { return }   // only ever swap once
+        replacement = newReplacement
+        onReplaced()                               // → RingingViewModel.currentMissionReplaced()
+    }
 
     @ViewBuilder
     private var original: some View {

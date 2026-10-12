@@ -138,11 +138,25 @@ final class AppCoordinator {
 
     // MARK: - Full screen
 
-    /// Shows the ringing/mission flow for an alarm, on top of everything.
+    /// Shows the ringing/mission flow for an alarm, on top of everything (even onboarding).
     ///
-    /// ← CALLED BY: RootView when AlarmLaunchRouter receives "Start Mission" from the lock screen
+    /// ← CALLED BY: RootView when AlarmLaunchRouter receives "Start Mission" from the lock screen,
+    ///              or when a sync finds an alarm ringing; AlarmListViewModel.resumeMission
+    ///
+    /// WHY close a sheet first (found in code review): SwiftUI won't show a full-screen cover
+    /// while a sheet (mission picker, sound picker…) is up. "Start Mission" has already silenced
+    /// the system alarm, so the user would get silence and no mission. We close the sheet, wait
+    /// for its slide-down animation, then show the ringing screen.
     func presentRinging(alarmID: UUID) {
-        fullScreen = .ringing(alarmID: alarmID)
+        guard sheet != nil else {
+            fullScreen = .ringing(alarmID: alarmID)
+            return
+        }
+        dismissSheet()
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))   // the sheet's dismiss animation
+            self?.fullScreen = .ringing(alarmID: alarmID)
+        }
     }
 
     /// Shows onboarding on top of everything (first launch, or "Replay intro" in Settings).

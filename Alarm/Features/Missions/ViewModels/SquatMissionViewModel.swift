@@ -30,6 +30,8 @@ final class SquatMissionViewModel {
     private let onComplete: () -> Void
     private let onUnavailable: () -> Void
     private var isDone = false
+    /// True between start() and stop()/done: this ViewModel owns the sensor right now.
+    private var isRunning = false
 
     init(mission: MissionDraft, detector: any SquatDetecting,
          onInteraction: @escaping () -> Void, onComplete: @escaping () -> Void,
@@ -47,13 +49,20 @@ final class SquatMissionViewModel {
             if MissionEnvironment.isSimulator { canSimulate = true } else { onUnavailable() }
             return
         }
+        isRunning = true
         detector.start { [weak self] in
             self?.registerSquat()
         }
     }
 
     /// ← CALLED BY: SquatMissionView `.onDisappear`
+    /// WHY the `isRunning` check (found in code review): two Squat missions in a row share ONE
+    /// sensor. The first mission's view disappears AFTER the second one started; without this
+    /// check its stop() would switch the sensor off under the second mission, and the user
+    /// could never finish it.
     func stop() {
+        guard isRunning else { return }
+        isRunning = false
         detector.stop()
     }
 
@@ -64,7 +73,7 @@ final class SquatMissionViewModel {
         count += 1
         if count >= target {
             isDone = true
-            detector.stop()
+            stop()
             onComplete()                    // → RingingViewModel.missionFinished()
         }
     }

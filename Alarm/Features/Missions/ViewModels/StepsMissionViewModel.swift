@@ -33,6 +33,8 @@ final class StepsMissionViewModel {
     private let onComplete: () -> Void
     private let onUnavailable: () -> Void
     private var isDone = false
+    /// True between start() and stop()/done: this ViewModel owns the pedometer right now.
+    private var isRunning = false
 
     init(mission: MissionDraft, counter: any StepCounting,
          onInteraction: @escaping () -> Void, onComplete: @escaping () -> Void,
@@ -51,6 +53,7 @@ final class StepsMissionViewModel {
             if MissionEnvironment.isSimulator { canSimulate = true } else { onUnavailable() }
             return
         }
+        isRunning = true
         counter.start(
             onSteps: { [weak self] total in self?.update(total) },
             onUnavailable: { [weak self] in
@@ -61,9 +64,15 @@ final class StepsMissionViewModel {
         )
     }
 
-    /// ← CALLED BY: StepsMissionView `.onDisappear` (battery!)
+    /// ← CALLED BY: StepsMissionView `.onDisappear`
+    /// WHY the `isRunning` check (found in code review): two Steps missions in a row share ONE
+    /// sensor. The first mission's view disappears AFTER the second one started; without this
+    /// check its stop() would switch the sensor off under the second mission, and the user
+    /// could never finish it.
     func stop() {
-        counter.stop()
+        guard isRunning else { return }
+        isRunning = false
+        counter.stop()            // battery!
     }
 
     /// ← CALLED BY: the Simulator button (5 steps per tap)
@@ -78,7 +87,7 @@ final class StepsMissionViewModel {
         onInteraction()                      // walking counts as "still awake"
         if steps >= target {
             isDone = true
-            counter.stop()
+            stop()
             onComplete()                     // → RingingViewModel.missionFinished()
         }
     }

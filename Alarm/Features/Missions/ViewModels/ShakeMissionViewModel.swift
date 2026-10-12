@@ -33,6 +33,8 @@ final class ShakeMissionViewModel {
     private let onComplete: () -> Void
     private let onUnavailable: () -> Void
     private var isDone = false
+    /// True between start() and stop()/done: this ViewModel owns the sensor right now.
+    private var isRunning = false
 
     init(mission: MissionDraft, detector: any ShakeDetecting,
          onInteraction: @escaping () -> Void, onComplete: @escaping () -> Void,
@@ -52,15 +54,21 @@ final class ShakeMissionViewModel {
             if MissionEnvironment.isSimulator { canSimulate = true } else { onUnavailable() }
             return
         }
+        isRunning = true
         detector.start(difficulty: difficulty) { [weak self] in
             self?.registerShake()                       // ← one call per detected shake
         }
     }
 
     /// ← CALLED BY: ShakeMissionView `.onDisappear`
-    /// WHY always stop: a running motion sensor drains the battery.
+    /// WHY the `isRunning` check (found in code review): two Shake missions in a row share ONE
+    /// sensor. The first mission's view disappears AFTER the second one started; without this
+    /// check its stop() would switch the sensor off under the second mission, and the user
+    /// could never finish it.
     func stop() {
-        detector.stop()
+        guard isRunning else { return }
+        isRunning = false
+        detector.stop()           // battery: never leave the sensor running
     }
 
     /// One shake detected (from the sensor, or the Simulator button).
@@ -70,7 +78,7 @@ final class ShakeMissionViewModel {
         count += 1
         if count >= target {
             isDone = true
-            detector.stop()
+            stop()
             onComplete()                                // → RingingViewModel.missionFinished()
         }
     }

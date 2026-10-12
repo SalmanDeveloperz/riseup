@@ -102,6 +102,14 @@ final class OnboardingViewModel {
         if permission == .authorized { next() }  // straight on to the first alarm
     }
 
+    /// Re-reads the permission (no popup).
+    /// ← CALLED BY: OnboardingView when the app comes back from the Settings app.
+    /// WHY (found in code review): "Open Settings" → allow → back. Without re-reading, the page
+    /// still said "denied" and the first alarm was quietly created switched off.
+    func refreshPermission() {
+        permission = scheduler.permission
+    }
+
     // MARK: - Page 4: first alarm
 
     /// "Rings in 9h 12m" under the wheel.
@@ -118,6 +126,7 @@ final class OnboardingViewModel {
         guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
+        refreshPermission()                                                  // the answer may have changed
 
         let parts = Calendar.current.dateComponents([.hour, .minute], from: time)
         let alarm = WakeAlarm(

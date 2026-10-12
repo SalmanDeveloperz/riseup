@@ -112,7 +112,10 @@ struct RootView: View {
             guard scenePhase == .active else { return }
             Task {
                 await dependencies.alarmSync.sync()
-                if coordinator.fullScreen == nil, let ringingID = dependencies.alarmSync.ringingAlarmID() {
+                // WHY `.onboarding` too (found in code review): a ringing alarm must win over the
+                // intro, or a user opening the app at 6 a.m. would see "Welcome!" and no mission.
+                let canShowRinging = coordinator.fullScreen == nil || coordinator.fullScreen == .onboarding
+                if canShowRinging, let ringingID = dependencies.alarmSync.ringingAlarmID() {
                     coordinator.presentRinging(alarmID: ringingID)
                 }
             }

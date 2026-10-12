@@ -54,6 +54,9 @@ struct AlarmLiveActivity: Widget {
                     AlarmTimingText(info: info)
                         .font(.system(.title, design: .rounded, weight: .bold))
                         .foregroundStyle(Theme.Gradients.sunrise)
+                        // WHY: "11:54 AM" was cut to "11:54…" in testing. Shrink to fit instead.
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
@@ -213,6 +216,8 @@ struct AlarmLockScreenView: View {
 
             AlarmTimingText(info: info)
                 .font(.system(size: 34, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
                 .foregroundStyle(Theme.Gradients.sunrise)
                 .frame(maxWidth: 110, alignment: .trailing)
         }

@@ -118,12 +118,19 @@ final class RingingViewModel {
     /// When the time was last spoken ("Time Pressure"). `nil` = not yet in this wake-up.
     private var lastAnnouncement: Date?
     private var hasStarted = false
+    /// WHY (found in code review): a double tap on "I'm up", or a mission reporting "done"
+    /// twice, could run finish() twice at once: backups re-armed twice, the record saved twice.
+    private var isFinishing = false
+    /// Missions that were swapped for Math (sensor missing, or "Can't match?").
+    private var replacedMissionIndices: Set<Int> = []
 
     /// Seconds without touching the screen before the alarm comes back during the CURRENT
     /// mission: 15 s for most, longer for walking missions (→ MissionType.idleSecondsAllowed).
     /// TRY: return 5 here and watch the alarm come back quickly when you stop.
     var idleSecondsBeforeAlarmReturns: TimeInterval {
-        currentMission?.type.idleSecondsAllowed ?? 15
+        // A mission replaced by Math is a Math mission now: no walking, so the normal 15 s.
+        if case .mission(let index) = phase, replacedMissionIndices.contains(index) { return 15 }
+        return currentMission?.type.idleSecondsAllowed ?? 15
     }
 
     init(alarmID: UUID, repository: AlarmRepository, records: WakeRecordRepository,
@@ -209,6 +216,13 @@ final class RingingViewModel {
         }
     }
 
+    /// The current mission was swapped for Math by MissionView (its safety net).
+    /// ← CALLED BY: MissionView's `onReplaced` (via RingingView)
+    func currentMissionReplaced() {
+        if case .mission(let index) = phase { replacedMissionIndices.insert(index) }
+        lastInteraction = .now
+    }
+
     /// The current mission is solved → next one, or success after the last.
     func missionFinished() {
         guard case .mission(let index) = phase, let info else { return }
@@ -241,6 +255,8 @@ final class RingingViewModel {
     // MARK: - Private
 
     private func finish() async {
+        guard !isFinishing else { return }
+        isFinishing = true
         stopWatchdog()
         audio.stopAlarm()
 

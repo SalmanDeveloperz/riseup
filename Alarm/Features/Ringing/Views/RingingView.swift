@@ -179,7 +179,8 @@ struct RingingView: View {
                 mission: mission,
                 services: viewModel.missionServices,
                 onInteraction: { viewModel.userInteracted() },   // → keeps the alarm quiet
-                onComplete: { viewModel.missionFinished() }      // → next mission or success
+                onComplete: { viewModel.missionFinished() },     // → next mission or success
+                onReplaced: { viewModel.currentMissionReplaced() } // → normal 15 s quiet time
             )
             // WHY `.id`: a new mission = a brand-new mission view with fresh state.
             .id(mission.id)

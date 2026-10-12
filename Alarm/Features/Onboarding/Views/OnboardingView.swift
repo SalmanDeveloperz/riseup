@@ -21,6 +21,8 @@ import UIKit
 struct OnboardingView: View {
     @State private var viewModel: OnboardingViewModel
     @Environment(\.openURL) private var openURL
+    /// To re-check the permission when the user comes back from the Settings app.
+    @Environment(\.scenePhase) private var scenePhase
     /// Drives the welcome sun's slow pulse.
     @State private var isGlowing = false
 
@@ -53,6 +55,9 @@ struct OnboardingView: View {
         .appBackground()
         .animation(.spring(duration: 0.45), value: viewModel.page)
         .sensoryFeedback(.selection, trigger: viewModel.page)
+        .onChange(of: scenePhase) {
+            if scenePhase == .active { viewModel.refreshPermission() }   // back from Settings?
+        }
         .alert("First alarm", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.dismissError() } }

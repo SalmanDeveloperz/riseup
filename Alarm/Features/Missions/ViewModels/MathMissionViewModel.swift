@@ -32,6 +32,8 @@ final class MathMissionViewModel {
     private let difficulty: MissionDifficulty
     private let onInteraction: () -> Void
     private let onComplete: () -> Void
+    /// Report "done" exactly once (a second report would skip the next mission).
+    private var isDone = false
 
     init(mission: MissionDraft, onInteraction: @escaping () -> Void, onComplete: @escaping () -> Void) {
         self.total = mission.repetitions
@@ -57,12 +59,13 @@ final class MathMissionViewModel {
     /// ← CALLED BY: the ✓ key
     func submit() {
         onInteraction()
-        guard let value = Int(input) else { return }
+        guard !isDone, let value = Int(input) else { return }
         if value == problem.answer {
             solved += 1
             rightAnswerCount += 1
             input = ""
             if solved >= total {
+                isDone = true
                 onComplete()                       // → RingingViewModel.missionFinished()
             } else {
                 problem = MathProblemGenerator.make(difficulty)

@@ -35,6 +35,9 @@ final class TypingMissionViewModel {
 
     private let onInteraction: () -> Void
     private let onComplete: () -> Void
+    /// WHY: after the last phrase, typing a letter and deleting it would "match" again and report
+    /// done a SECOND time, which would skip the NEXT mission. Report done exactly once.
+    private var isDone = false
 
     init(mission: MissionDraft, onInteraction: @escaping () -> Void, onComplete: @escaping () -> Void) {
         self.phrases = TypingPhrases.pick(mission.repetitions, difficulty: mission.difficulty)
@@ -43,9 +46,10 @@ final class TypingMissionViewModel {
     }
 
     private func checkMatch() {
-        guard TypingPhrases.matches(typed, phrase: phrase) else { return }
+        guard !isDone, TypingPhrases.matches(typed, phrase: phrase) else { return }
         solvedCount += 1
         if solvedCount >= phrases.count {
+            isDone = true
             onComplete()                                 // → RingingViewModel.missionFinished()
         } else {
             index += 1

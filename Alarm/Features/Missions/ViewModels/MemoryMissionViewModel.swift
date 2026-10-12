@@ -86,8 +86,12 @@ final class MemoryMissionViewModel {
 
     /// ← CALLED BY: MemoryMissionView `.onAppear`
     func start() {
-        guard pattern.isEmpty else { return }   // onAppear can fire twice
-        startRound()
+        guard roundsDone < total else { return }
+        // Fresh start, OR coming back after stop() cancelled a pending timer (found in code
+        // review: the round could stay frozen in "memorize" with every tile disabled).
+        if pattern.isEmpty || (timer == nil && phase != .recall) {
+            startRound()
+        }
     }
 
     /// ← CALLED BY: MemoryMissionView `.onDisappear`
@@ -163,6 +167,7 @@ final class MemoryMissionViewModel {
         timer = Task { [weak self] in
             try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled, let self else { return }
+            self.timer = nil                    // nothing pending any more (see start())
             action(self)
         }
     }
