@@ -171,6 +171,6 @@ enum SchemaV1: VersionedSchema {
     }
 }
 
-// The short names `WakeAlarm` / `MissionConfig` now point at SchemaV2 (see SchemaV2.swift).
+// The short names `WakeAlarm` / `MissionConfig` now point at the newest schema (see SchemaV3.swift).
 // WHY keep this file at all: SwiftData needs the OLD shape to recognise and upgrade
 // databases created by older app versions. Never edit SchemaV1 again: it's frozen history.

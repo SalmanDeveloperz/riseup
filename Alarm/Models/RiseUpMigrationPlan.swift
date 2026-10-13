@@ -22,11 +22,11 @@ import SwiftData
 /// ← USED BY: ModelContainerFactory.make()
 enum RiseUpMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2]
+        [migrateV1toV2, migrateV2toV3]
     }
 
     /// V1 → V2: adds `WakeAlarm.fixedFireDate` (nil for existing alarms) and the empty
@@ -34,5 +34,12 @@ enum RiseUpMigrationPlan: SchemaMigrationPlan {
     static let migrateV1toV2 = MigrationStage.lightweight(
         fromVersion: SchemaV1.self,
         toVersion: SchemaV2.self
+    )
+
+    /// V2 → V3 (2026-10-13): adds `WakeAlarm.wallpaperID`. Existing alarms get `nil`, which
+    /// means "use the default wallpaper from Settings". Lightweight again.
+    static let migrateV2toV3 = MigrationStage.lightweight(
+        fromVersion: SchemaV2.self,
+        toVersion: SchemaV3.self
     )
 }

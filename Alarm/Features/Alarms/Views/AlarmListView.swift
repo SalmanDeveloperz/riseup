@@ -27,6 +27,8 @@ struct AlarmListView: View {
     /// LEARN: `@State` keeps the SAME ViewModel alive while this screen exists, even
     /// though SwiftUI re-creates this `struct` many times. See AlarmLabView for more.
     @State private var viewModel: AlarmListViewModel
+    /// Developer mode (Debug builds only) → shows the debug buttons. → DeveloperTools.swift
+    @Environment(\.showsDeveloperTools) private var showsDeveloperTools
 
     init(viewModel: AlarmListViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -65,7 +67,9 @@ struct AlarmListView: View {
             // WHY the #if is HERE and not only inside `debugToolbar` (found when building the App
             // Store version): an empty toolbar builder doesn't compile, so the Release build failed.
             #if DEBUG
-            debugToolbar
+            if showsDeveloperTools {                      // Developer mode only (Settings: tap the version 7×)
+                debugToolbar
+            }
             #endif
         }
         // Runs every time this screen becomes visible (first launch, back from the editor,

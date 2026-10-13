@@ -44,6 +44,15 @@ final class SettingsViewModel {
     }
 
     var defaultSoundTitle: String { settings.defaultSound.title }
+    var defaultWallpaperTitle: String { settings.defaultWallpaper.title }
+
+    /// Debug builds: show the Developer tools? (App Store builds never contain them.)
+    var showsDeveloperTools: Bool { settings.showsDeveloperTools }
+    /// A short message after toggling Developer mode ("Developer mode on").
+    private(set) var developerToast: String?
+    /// Taps on the version number; 7 in a row toggles Developer mode (like Android's build number).
+    @ObservationIgnored private var versionTaps = 0
+    @ObservationIgnored private var lastVersionTap = Date.distantPast
 
     static let snoozeOptions = AlarmEditorViewModel.snoozeMinuteOptions
 
@@ -63,6 +72,33 @@ final class SettingsViewModel {
             self?.settings.defaultSound = sound
         }
     }
+
+    /// ← CALLED BY: "Alarm wallpaper" row → Wallpaper Picker (no "Default" row: this IS the default)
+    /// → saved in AppSettings; every alarm without its own wallpaper uses it.
+    func chooseDefaultWallpaper() {
+        coordinator.presentWallpaperPicker(selected: settings.defaultWallpaper, allowsDefault: false) { [weak self] wallpaper in
+            self?.settings.defaultWallpaper = wallpaper ?? .standard
+        }
+    }
+
+    /// ← CALLED BY: tapping the version number in the footer.
+    ///
+    /// WHY hidden (Salman's request): the 🐞 menu, Developer section and "sample data" buttons
+    /// made demo builds look unfinished. They now stay hidden until a developer taps the version
+    /// 7 times (within a few seconds of each other). Only in Debug builds; App Store builds have
+    /// no developer tools at all.
+    func versionTapped(now: Date = .now) {
+        #if DEBUG
+        versionTaps = now.timeIntervalSince(lastVersionTap) < 1.5 ? versionTaps + 1 : 1
+        lastVersionTap = now
+        guard versionTaps >= 7 else { return }
+        versionTaps = 0
+        settings.showsDeveloperTools.toggle()
+        developerToast = settings.showsDeveloperTools ? "Developer mode on" : "Developer mode off"
+        #endif
+    }
+
+    func dismissDeveloperToast() { developerToast = nil }
 
     /// ← CALLED BY: "Replay intro". RootView notices the flag and shows onboarding again.
     func replayOnboarding() {

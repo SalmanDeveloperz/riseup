@@ -16,6 +16,7 @@
 //    FROM HERE:
 //    → Save   → viewModel.save()   → permission → AlarmRepository → AlarmKitScheduler → pop
 //    → Sound row      → viewModel.chooseSound()  → Sound Picker sheet → result into draft.sound
+//    → Wallpaper row  → viewModel.chooseWallpaper() → Wallpaper Picker sheet → result into draft.wallpaper
 //    → Add mission    → viewModel.addMission()   → Mission Picker sheet → result into draft.missions
 //    → Cancel → viewModel.cancel() → pop (draft thrown away)
 //    → Delete → viewModel.delete() → AlarmKitScheduler.cancel + AlarmRepository.delete → pop
@@ -53,6 +54,7 @@ struct AlarmEditorView: View {
                 labelCard
                 missionCard
                 soundCard
+                wallpaperCard
                 snoozeCard
                 wakeUpCheckCard
                 if viewModel.isEditing {
@@ -74,6 +76,7 @@ struct AlarmEditorView: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbarContent }
         .onAppear { viewModel.refreshLock() }
+        .task { await viewModel.loadWallpaperPhoto() }
         .alert("Alarm", isPresented: isShowingError) {
             Button("OK") { viewModel.dismissError() }
         } message: {
@@ -235,6 +238,33 @@ struct AlarmEditorView: View {
         .buttonStyle(.plain)
     }
 
+    /// The Ringing screen's wallpaper, with a tiny live preview.
+    private var wallpaperCard: some View {
+        Button {
+            viewModel.chooseWallpaper()                   // → coordinator → Wallpaper Picker sheet
+        } label: {
+            GlowCard {
+                HStack(spacing: Theme.Spacing.md) {
+                    WallpaperView(wallpaper: viewModel.effectiveWallpaper, photo: viewModel.wallpaperPhoto, isThumbnail: true)
+                        .frame(width: 32, height: 52)
+                        .clipShape(.rect(cornerRadius: 8, style: .continuous))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Wallpaper").font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
+                        Text(viewModel.wallpaperSubtitle).font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    Spacer()
+                    Text(viewModel.wallpaperTitle)
+                        .font(.riseBody)
+                        .foregroundStyle(Theme.Colors.neonPink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Image(systemName: "chevron.right").foregroundStyle(Theme.Colors.textTertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     private var snoozeCard: some View {
         GlowCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
@@ -389,6 +419,7 @@ struct AlarmEditorView: View {
             repository: dependencies.alarmRepository,
             scheduler: dependencies.alarmScheduler,
             settings: dependencies.settings,
+            wallpaperStore: dependencies.wallpaperStore,
             coordinator: AppCoordinator()
         ))
     }
@@ -406,6 +437,7 @@ struct AlarmEditorView: View {
             repository: dependencies.alarmRepository,
             scheduler: dependencies.alarmScheduler,
             settings: dependencies.settings,
+            wallpaperStore: dependencies.wallpaperStore,
             coordinator: AppCoordinator()
         ))
     }

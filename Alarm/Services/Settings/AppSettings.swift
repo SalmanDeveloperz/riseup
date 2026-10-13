@@ -5,7 +5,8 @@
 //  LAYER: Service (app preferences, saved in UserDefaults)
 //  WHAT:  Small settings that aren't alarms: onboarding finished?, speak the time during
 //         missions?, default sound and snooze for new alarms, the wake-up goal from onboarding,
-//         bedtime reminder (on/off + time) and the last sleep-sound mix (Phase 6).
+//         bedtime reminder (on/off + time) and the last sleep-sound mix (Phase 6), the default
+//         alarm wallpaper and the hidden Developer mode switch.
 //  DATA:  UserDefaults (a tiny key-value store iOS keeps for every app). NOT SwiftData.
 //
 //  CONNECTIONS:
@@ -76,6 +77,8 @@ final class AppSettings {
         static let bedtimeReminderOn = "bedtimeReminderOn"
         static let bedtimeMinuteOfDay = "bedtimeMinuteOfDay"
         static let lastSleepMix = "lastSleepMix"
+        static let defaultWallpaper = "defaultWallpaper"
+        static let showsDeveloperTools = "showsDeveloperTools"
     }
 
     @ObservationIgnored private let store: UserDefaults
@@ -121,6 +124,19 @@ final class AppSettings {
         didSet { store.set(lastSleepMix, forKey: Key.lastSleepMix) }
     }
 
+    /// The wallpaper behind the Ringing screen for alarms that don't choose their own.
+    /// TRY: change the fallback `Wallpaper.standard` in the init to `.surprise`.
+    var defaultWallpaper: Wallpaper {
+        didSet { store.set(defaultWallpaper.rawValue, forKey: Key.defaultWallpaper) }
+    }
+
+    /// Debug builds only: shows the 🐞 menu, Developer section and "sample data" buttons.
+    /// Off by default, so the app looks like the real thing in demos. Turned on by tapping the
+    /// version number in Settings 7 times. (App Store builds don't contain these tools at all.)
+    var showsDeveloperTools: Bool {
+        didSet { store.set(showsDeveloperTools, forKey: Key.showsDeveloperTools) }
+    }
+
     init(store: UserDefaults = .standard) {
         self.store = store
         // LEARN: `object(forKey:) as? Bool ?? true` = "the saved value, or `true` if never saved".
@@ -133,5 +149,7 @@ final class AppSettings {
         bedtimeReminderOn = store.bool(forKey: Key.bedtimeReminderOn)
         bedtimeMinuteOfDay = store.object(forKey: Key.bedtimeMinuteOfDay) as? Int ?? 22 * 60 + 30
         lastSleepMix = store.dictionary(forKey: Key.lastSleepMix) as? [String: Double] ?? [:]
+        defaultWallpaper = store.string(forKey: Key.defaultWallpaper).flatMap(Wallpaper.init(rawValue:)) ?? .standard
+        showsDeveloperTools = store.bool(forKey: Key.showsDeveloperTools)
     }
 }

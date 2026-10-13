@@ -50,6 +50,10 @@ struct SettingsView: View {
                             value: viewModel.defaultSoundTitle) {
                     viewModel.chooseDefaultSound()                   // → Sound Picker sheet
                 }
+                SettingsRow(title: "Alarm wallpaper", subtitle: "Live and animated, or your own photo",
+                            systemImage: "photo.artframe", value: viewModel.defaultWallpaperTitle) {
+                    viewModel.chooseDefaultWallpaper()               // → Wallpaper Picker sheet
+                }
                 GlowCard {
                     HStack {
                         Label("Snooze length", systemImage: "zzz")
@@ -80,7 +84,9 @@ struct SettingsView: View {
 
                 // WHY `#if DEBUG`: these tools exist only in builds run from Xcode.
                 // They're removed automatically from the App Store build (Release configuration).
+                // Even in Debug they hide until Developer mode is on (tap the version 7 times).
                 #if DEBUG
+                if viewModel.showsDeveloperTools {
                 SettingsSectionHeader(title: "Developer")
                 SettingsRow(title: "AlarmKit Lab", subtitle: "Test real alarms on this iPhone",
                             systemImage: "flask.fill") {
@@ -90,6 +96,7 @@ struct SettingsView: View {
                             systemImage: "paintpalette.fill") {
                     viewModel.open(.designGallery)
                 }
+                }
                 #endif
 
                 VStack(spacing: Theme.Spacing.xs) {
@@ -97,8 +104,21 @@ struct SettingsView: View {
                     Text("RiseUp \(viewModel.appVersion)")
                         .font(.riseCaption)
                         .foregroundStyle(Theme.Colors.textTertiary)
+                    if let toast = viewModel.developerToast {
+                        Text(toast)
+                            .font(.riseCaption.weight(.semibold))
+                            .foregroundStyle(Theme.Colors.neonPink)
+                            .transition(.opacity)
+                            .task {
+                                try? await Task.sleep(for: .seconds(2))
+                                viewModel.dismissDeveloperToast()
+                            }
+                    }
                 }
                 .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+                .onTapGesture { viewModel.versionTapped() }          // 7 taps → Developer mode
+                .animation(.easeInOut, value: viewModel.developerToast)
                 .padding(.top, Theme.Spacing.lg)
             }
             .padding(Theme.Spacing.lg)

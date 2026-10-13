@@ -14,6 +14,8 @@ import SwiftUI
 
 struct RecordsView: View {
     @State private var viewModel: RecordsViewModel
+    /// Developer mode (Debug builds only) → shows the debug buttons. → DeveloperTools.swift
+    @Environment(\.showsDeveloperTools) private var showsDeveloperTools
 
     init(viewModel: RecordsViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -45,7 +47,7 @@ struct RecordsView: View {
                 dayDetails
 
                 #if DEBUG
-                if !viewModel.hasHistory {
+                if !viewModel.hasHistory && showsDeveloperTools {
                     Button("Add sample data (Debug)") { viewModel.addSampleData() }
                         .buttonStyle(.ghost)
                 }

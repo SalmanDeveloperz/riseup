@@ -103,6 +103,9 @@ enum SheetRoute: Hashable, Identifiable {
     case missionPicker(editing: MissionDraft?)
     /// Now Playing: sleep-sound volumes, sleep timer, pause/stop (Screen #20).
     case sleepPlayer
+    /// Choose the wallpaper behind the Ringing screen (Screen #32). `selected == nil` = "Default".
+    /// `allowsDefault`: true from the alarm editor, false when choosing Settings' default itself.
+    case wallpaperPicker(selected: Wallpaper?, allowsDefault: Bool)
 
     var id: Self { self }
 }

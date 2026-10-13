@@ -25,6 +25,8 @@ struct RingingView: View {
     @State private var isPulsing = false
     /// LEARN: the iPhone's "Reduce Motion" setting. When on, we skip endless pulsing.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Developer mode (Debug builds only) → shows "Close (debug)". → DeveloperTools.swift
+    @Environment(\.showsDeveloperTools) private var showsDeveloperTools
 
     init(viewModel: RingingViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -32,7 +34,7 @@ struct RingingView: View {
 
     var body: some View {
         ZStack {
-            AppBackground()
+            background
             content
                 .padding(Theme.Spacing.lg)
         }
@@ -45,6 +47,34 @@ struct RingingView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+
+    /// The alarm's wallpaper (#32), alive and getting more energetic the longer it rings.
+    ///   ringing → full wallpaper + ramp · mission → dimmed, so the task stands out · success → full energy
+    @ViewBuilder
+    private var background: some View {
+        if let info = viewModel.info {
+            let energy: WallpaperEnergy = {
+                if case .success = viewModel.phase { return .fixed(1) }      // celebrate!
+                return .ramp(start: viewModel.ringStartedAt, duration: RingingViewModel.wallpaperRampSeconds)
+            }()
+            WallpaperView(wallpaper: info.wallpaper, photo: viewModel.wallpaperPhoto,
+                          energy: energy, showsScrim: true)
+                .ignoresSafeArea()
+                .overlay {
+                    // WHY dim during missions: maths and typing need focus; the wallpaper stays as a hint.
+                    Color.black.opacity(isInMission ? 0.72 : 0)
+                        .ignoresSafeArea()
+                        .animation(.easeInOut(duration: 0.4), value: isInMission)
+                }
+        } else {
+            AppBackground()
+        }
+    }
+
+    private var isInMission: Bool {
+        if case .mission = viewModel.phase { return true }
+        return false
     }
 
     @ViewBuilder
@@ -75,11 +105,13 @@ struct RingingView: View {
     private func ringing(_ info: RingingViewModel.RingInfo) -> some View {
         VStack(spacing: Theme.Spacing.lg) {
             #if DEBUG
-            HStack {
-                Spacer()
-                Button("Close (debug)") { viewModel.debugClose() }
-                    .font(.riseCaption)
-                    .foregroundStyle(Theme.Colors.textTertiary)
+            if showsDeveloperTools {
+                HStack {
+                    Spacer()
+                    Button("Close (debug)") { viewModel.debugClose() }
+                        .font(.riseCaption)
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                }
             }
             #endif
 
@@ -229,6 +261,7 @@ struct RingingView: View {
         timeAnnouncer: dependencies.timeAnnouncer,
         sleepSounds: dependencies.sleepSounds,
         settings: dependencies.settings,
+        wallpaperStore: dependencies.wallpaperStore,
         missionServices: dependencies.missionServices,
         coordinator: AppCoordinator()
     ))

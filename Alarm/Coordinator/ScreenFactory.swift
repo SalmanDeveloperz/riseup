@@ -100,6 +100,7 @@ struct ScreenFactory {
                 repository: dependencies.alarmRepository,
                 scheduler: dependencies.alarmScheduler,
                 settings: dependencies.settings,          // defaults for NEW alarms
+                wallpaperStore: dependencies.wallpaperStore,  // photo for the Wallpaper row's preview
                 coordinator: coordinator
             ))
         }
@@ -173,6 +174,15 @@ struct ScreenFactory {
                 services: dependencies.missionServices,   // sensors for "Try it", Vision for photo registration
                 coordinator: coordinator
             ))
+        case .wallpaperPicker(let selected, let allowsDefault):
+            // Screen #32. The result goes back through coordinator.completeWallpaperPicker.
+            WallpaperPickerView(viewModel: WallpaperPickerViewModel(
+                selected: selected,
+                allowsDefault: allowsDefault,
+                defaultWallpaper: dependencies.settings.defaultWallpaper,   // what "Default" means
+                store: dependencies.wallpaperStore,                        // the user's own photos
+                coordinator: coordinator
+            ))
         case .sleepPlayer:
             // Screen #20, Now Playing. Same player service as the Sleep tab, so both stay in sync.
             SleepPlayerView(viewModel: SleepPlayerViewModel(
@@ -199,6 +209,7 @@ struct ScreenFactory {
                 timeAnnouncer: dependencies.timeAnnouncer,
                 sleepSounds: dependencies.sleepSounds,   // the alarm stops last night's sleep sounds
                 settings: dependencies.settings,
+                wallpaperStore: dependencies.wallpaperStore,
                 missionServices: dependencies.missionServices,
                 coordinator: coordinator
             ))

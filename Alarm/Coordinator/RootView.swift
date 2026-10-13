@@ -126,9 +126,6 @@ struct RootView: View {
                 }
             }
         }
-        // WHY (found in the code review): after flying to another time zone, or when the clock
-        // jumps, mission backups (fixed moments) must move with the alarm. A sync re-arms them.
-        // LEARN: `.onReceive` runs the closure every time the publisher sends a notification.
         // Phase 7: if the database had to be repaired at launch, say so once (never a silent loss).
         .alert("Your data", isPresented: Binding(
             get: { dependencies.databaseNotice != nil },
@@ -138,12 +135,27 @@ struct RootView: View {
         } message: {
             Text(dependencies.databaseNotice ?? "")
         }
+        // WHY (found in the code review): after flying to another time zone, or when the clock
+        // jumps, mission backups (fixed moments) must move with the alarm. A sync re-arms them.
+        // LEARN: `.onReceive` runs the closure every time the publisher sends a notification.
         .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
             Task { await dependencies.alarmSync.sync() }      // → ensureBackupChain checks dates
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             Task { await dependencies.alarmSync.sync() }
         }
+        // Developer mode (Debug builds only): every screen and sheet below can read it.
+        // LAST in the chain on purpose, so sheets and full-screen covers get it too. → DeveloperTools.swift
+        .environment(\.showsDeveloperTools, isDebugBuild && dependencies.settings.showsDeveloperTools)
+    }
+
+    /// LEARN: `#if DEBUG` picks code at BUILD time; this turns it into a normal Bool.
+    private var isDebugBuild: Bool {
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
     }
 }
 

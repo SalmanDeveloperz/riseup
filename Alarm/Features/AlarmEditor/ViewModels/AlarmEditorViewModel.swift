@@ -28,6 +28,7 @@
 //
 
 import Foundation
+import UIKit
 import Observation
 
 @Observable
@@ -68,6 +69,10 @@ final class AlarmEditorViewModel {
     private let repository: AlarmRepository
     private let scheduler: any AlarmScheduling
     private let coordinator: AppCoordinator
+    private let settings: AppSettings
+    private let wallpaperStore: any WallpaperStoring
+    /// The photo for a `.photo` wallpaper, for the little preview in the Wallpaper row.
+    private(set) var wallpaperPhoto: UIImage?
 
     /// WHY: after "saved but switched off" the alert's OK button should also close the editor.
     private var closesAfterError = false
@@ -78,11 +83,13 @@ final class AlarmEditorViewModel {
     private let originalFixedFireDate: Date?
 
     init(alarmID: UUID?, repository: AlarmRepository, scheduler: any AlarmScheduling,
-         settings: AppSettings, coordinator: AppCoordinator) {
+         settings: AppSettings, wallpaperStore: any WallpaperStoring, coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
         self.scheduler = scheduler
         self.coordinator = coordinator
+        self.settings = settings
+        self.wallpaperStore = wallpaperStore
 
         // Fill the draft. LEARN: in an `init`, every stored property must get a value
         // before we can call methods on `self`, so we use `static` helpers here.
@@ -176,6 +183,40 @@ final class AlarmEditorViewModel {
     func chooseSound() {
         coordinator.presentSoundPicker(selected: draft.sound) { [weak self] sound in
             self?.draft.sound = sound
+        }
+    }
+
+    // MARK: - Wallpaper (#32)
+
+    /// What will really show: the alarm's own choice, or the Settings default.
+    var effectiveWallpaper: Wallpaper { draft.wallpaper ?? settings.defaultWallpaper }
+
+    /// Row value: the wallpaper's name ("Aurora").
+    var wallpaperTitle: String { effectiveWallpaper.title }
+
+    /// Row subtitle: says when the name comes from the Settings default.
+    /// WHY (found in the Simulator): "Default · Golden Hour" didn't fit next to the title.
+    var wallpaperSubtitle: String {
+        draft.wallpaper == nil ? "Default from Settings" : "Comes alive when the alarm rings"
+    }
+
+    /// Opens the Wallpaper Picker; the choice comes back into `draft.wallpaper`.
+    /// ← CALLED BY: the Wallpaper row
+    /// → AppCoordinator.presentWallpaperPicker → WallpaperPickerViewModel → completeWallpaperPicker → closure
+    func chooseWallpaper() {
+        coordinator.presentWallpaperPicker(selected: draft.wallpaper, allowsDefault: true) { [weak self] wallpaper in
+            self?.draft.wallpaper = wallpaper
+            Task { await self?.loadWallpaperPhoto() }
+        }
+    }
+
+    /// Loads the photo for the row's preview (off the main thread, cached by the store).
+    /// ← CALLED BY: AlarmEditorView `.task`, and after a new choice
+    func loadWallpaperPhoto() async {
+        if case .photo(let id) = effectiveWallpaper {
+            wallpaperPhoto = await wallpaperStore.image(for: id)
+        } else {
+            wallpaperPhoto = nil
         }
     }
 
@@ -359,7 +400,8 @@ final class AlarmEditorViewModel {
             snoozeMinutes: alarm.snoozeMinutes,
             maxSnoozeCount: alarm.maxSnoozeCount,
             missions: alarm.sortedMissions.map(MissionDraft.init),  // → MissionDraft.init(_ config:) copies every field, payloads too
-            wakeUpCheckMinutes: alarm.wakeUpCheckMinutes
+            wakeUpCheckMinutes: alarm.wakeUpCheckMinutes,
+            wallpaper: alarm.wallpaperID.flatMap(Wallpaper.init(rawValue:))
         )
     }
 
@@ -375,6 +417,7 @@ final class AlarmEditorViewModel {
         alarm.snoozeMinutes = draft.snoozeMinutes
         alarm.maxSnoozeCount = draft.maxSnoozeCount
         alarm.wakeUpCheckMinutes = draft.wakeUpCheckMinutes
+        alarm.wallpaperID = draft.wallpaper?.rawValue
     }
 
     /// Draft → brand-new WakeAlarm.
@@ -388,7 +431,8 @@ final class AlarmEditorViewModel {
             isSnoozeEnabled: draft.isSnoozeEnabled,
             snoozeMinutes: draft.snoozeMinutes,
             maxSnoozeCount: draft.maxSnoozeCount,
-            wakeUpCheckMinutes: draft.wakeUpCheckMinutes
+            wakeUpCheckMinutes: draft.wakeUpCheckMinutes,
+            wallpaperID: draft.wallpaper?.rawValue
         )
     }
 }

@@ -28,6 +28,7 @@
 
 import Foundation
 import Observation
+import UIKit
 
 @Observable
 final class RingingViewModel {
@@ -49,6 +50,8 @@ final class RingingViewModel {
         let isSnoozeEnabled: Bool
         let snoozeMinutes: Int
         let maxSnoozeCount: Int
+        /// The wallpaper behind this alarm (its own choice or the Settings default; "Surprise" already resolved).
+        var wallpaper: Wallpaper = .standard
     }
 
     /// Shown on the success screen.
@@ -74,6 +77,10 @@ final class RingingViewModel {
     private(set) var errorMessage: String?
     /// Morning check-in (#17), chosen on the success screen.
     private(set) var mood: Mood?
+    /// When the alarm started ringing on this screen: the wallpaper's energy ramp starts here.
+    private(set) var ringStartedAt = Date.now
+    /// The decoded photo when the wallpaper is one of the user's photos.
+    private(set) var wallpaperPhoto: UIImage?
 
     var currentMission: MissionDraft? {
         if case .mission(let index) = phase, let info, index < info.missions.count {
@@ -112,6 +119,7 @@ final class RingingViewModel {
     private let timeAnnouncer: any TimeAnnouncing
     private let sleepSounds: any SleepSoundPlaying
     private let settings: AppSettings
+    private let wallpaperStore: any WallpaperStoring
     private let coordinator: AppCoordinator
 
     private var record: WakeRecord?
@@ -141,7 +149,7 @@ final class RingingViewModel {
     init(alarmID: UUID, repository: AlarmRepository, records: WakeRecordRepository,
          scheduler: any AlarmScheduling, audio: any AudioPlaying,
          timeAnnouncer: any TimeAnnouncing, sleepSounds: any SleepSoundPlaying, settings: AppSettings,
-         missionServices: MissionServices, coordinator: AppCoordinator) {
+         wallpaperStore: any WallpaperStoring, missionServices: MissionServices, coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
         self.records = records
@@ -150,6 +158,7 @@ final class RingingViewModel {
         self.timeAnnouncer = timeAnnouncer
         self.sleepSounds = sleepSounds
         self.settings = settings
+        self.wallpaperStore = wallpaperStore
         self.missionServices = missionServices
         self.coordinator = coordinator
     }
@@ -168,8 +177,11 @@ final class RingingViewModel {
             sound: AlarmSound.from(alarm.soundName),
             isSnoozeEnabled: alarm.isSnoozeEnabled,
             snoozeMinutes: alarm.snoozeMinutes,
-            maxSnoozeCount: alarm.maxSnoozeCount
+            maxSnoozeCount: alarm.maxSnoozeCount,
+            wallpaper: (alarm.wallpaperID.flatMap(Wallpaper.init(rawValue:)) ?? settings.defaultWallpaper).resolved()
         )
+        ringStartedAt = .now
+        loadWallpaperPhoto()                          // → WallpaperStore (background), usually instant
 
         // 1. iOS's alarm off, ours on. (WHY: see the header comment.)
         // Rain sounds from the night before must not play over the alarm. → SleepSoundPlayer
@@ -244,6 +256,16 @@ final class RingingViewModel {
         } else {
             Task { await finish() }
         }
+    }
+
+    // MARK: - Wallpaper (#32)
+
+    /// How long the wallpaper takes to go from calm to "wide awake". TRY: 20 for a faster build-up.
+    static let wallpaperRampSeconds: TimeInterval = 40
+
+    private func loadWallpaperPhoto() {
+        guard case .photo(let id) = info?.wallpaper else { return }
+        Task { wallpaperPhoto = await wallpaperStore.image(for: id) }
     }
 
     // MARK: - Success / close

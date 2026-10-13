@@ -65,6 +65,7 @@ final class AppCoordinator {
     // `@ObservationIgnored`: no view displays these, so SwiftUI needn't watch them.
     @ObservationIgnored private var onSoundPicked: ((AlarmSound) -> Void)?
     @ObservationIgnored private var onMissionPicked: ((MissionDraft) -> Void)?
+    @ObservationIgnored private var onWallpaperPicked: ((Wallpaper?) -> Void)?
 
     // MARK: - Alarms tab
 
@@ -134,6 +135,19 @@ final class AppCoordinator {
         dismissSheet()
     }
 
+    /// Opens the Wallpaper Picker. `onPick` gets the choice (`nil` = "Default") when the user confirms.
+    /// ← CALLED BY: AlarmEditorViewModel.chooseWallpaper(), SettingsViewModel.chooseDefaultWallpaper()
+    func presentWallpaperPicker(selected: Wallpaper?, allowsDefault: Bool, onPick: @escaping (Wallpaper?) -> Void) {
+        onWallpaperPicked = onPick
+        sheet = .wallpaperPicker(selected: selected, allowsDefault: allowsDefault)
+    }
+
+    /// ← CALLED BY: WallpaperPickerViewModel.done() / use(_:) → delivers the result, closes the sheet.
+    func completeWallpaperPicker(with wallpaper: Wallpaper?) {
+        onWallpaperPicked?(wallpaper)
+        dismissSheet()
+    }
+
     /// Opens Now Playing for the sleep sounds (Screen #20).
     /// ← CALLED BY: SleepViewModel.openPlayer()
     func presentSleepPlayer() {
@@ -152,6 +166,7 @@ final class AppCoordinator {
         sheet = nil
         onSoundPicked = nil
         onMissionPicked = nil
+        onWallpaperPicked = nil
     }
 
     // MARK: - Full screen

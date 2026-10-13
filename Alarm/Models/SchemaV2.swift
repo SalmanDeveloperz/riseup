@@ -3,7 +3,8 @@
 //  RiseUp
 //
 //  LAYER: Model (SwiftData)
-//  WHAT:  Version 2 of the database: the CURRENT shape.
+//  WHAT:  Version 2 of the database. FROZEN since 2026-10-13: SchemaV3 is the current shape.
+//         Never change this file again: it must keep describing V2 database files exactly.
 //         Changes from V1:
 //           • WakeAlarm gets `fixedFireDate` (Quick Alarm: ring at an exact moment, e.g. in 10 min)
 //           • NEW table `WakeRecord`: one row per wake-up (when it rang, snoozes, mission time)
@@ -205,11 +206,3 @@ enum SchemaV2: VersionedSchema {
         }
     }
 }
-
-// MARK: - Current model names
-
-// LEARN: the rest of the app writes `WakeAlarm`, never `SchemaV2.WakeAlarm`. When a
-// SchemaV3 arrives, only these lines change.
-typealias WakeAlarm = SchemaV2.WakeAlarm
-typealias MissionConfig = SchemaV2.MissionConfig
-typealias WakeRecord = SchemaV2.WakeRecord

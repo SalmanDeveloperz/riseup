@@ -41,6 +41,8 @@ nonisolated struct AlarmDraft: Equatable {
     var missions: [MissionDraft]
     /// Wake-Up Check (#18): minutes after getting up to ring "Are you up?". 0 = off.
     var wakeUpCheckMinutes: Int = 0
+    /// The Ringing screen's wallpaper (#32). `nil` = the default from Settings.
+    var wallpaper: Wallpaper? = nil
 
     /// Settings for a brand-new alarm: the current time, rings once, snooze × 3.
     /// Sound and snooze length come from Settings → "New alarms" (AppSettings).

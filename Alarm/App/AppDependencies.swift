@@ -27,6 +27,7 @@
 //    settings              → small preferences in UserDefaults (AppSettings)
 //    sleepSounds           → the sleep-sound mixer + sleep timer (SleepSoundPlayer / Mock)
 //    bedtimeReminder       → the daily "time to wind down" notification (NotificationBedtimeReminder / Mock)
+//    wallpaperStore        → the user's own alarm-wallpaper photos (FileWallpaperStore / Mock)
 //
 
 import Foundation
@@ -49,6 +50,8 @@ final class AppDependencies {
     let settings: AppSettings
     let sleepSounds: any SleepSoundPlaying
     let bedtimeReminder: any BedtimeReminding
+    /// The user's own wallpaper photos (files). → WallpaperStore.swift
+    let wallpaperStore: any WallpaperStoring
     /// A message for the user if the database had to be repaired at launch (shown once by RootView).
     /// nil = everything was fine (almost always).
     private(set) var databaseNotice: String?
@@ -61,7 +64,8 @@ final class AppDependencies {
         missionServices: MissionServices,
         settings: AppSettings,
         sleepSounds: any SleepSoundPlaying,
-        bedtimeReminder: any BedtimeReminding
+        bedtimeReminder: any BedtimeReminding,
+        wallpaperStore: any WallpaperStoring
     ) {
         self.modelContainer = modelContainer
         self.alarmRepository = AlarmRepository(context: modelContainer.mainContext)
@@ -75,6 +79,7 @@ final class AppDependencies {
         self.settings = settings
         self.sleepSounds = sleepSounds
         self.bedtimeReminder = bedtimeReminder
+        self.wallpaperStore = wallpaperStore
     }
 
     /// The real app: database on disk + real AlarmKit, audio, sensors and camera matching.
@@ -95,7 +100,8 @@ final class AppDependencies {
             ),
             settings: AppSettings(),
             sleepSounds: SleepSoundPlayer(),
-            bedtimeReminder: NotificationBedtimeReminder()
+            bedtimeReminder: NotificationBedtimeReminder(),
+            wallpaperStore: FileWallpaperStore()
         )
         dependencies.databaseNotice = notice
         return dependencies
@@ -141,7 +147,8 @@ final class AppDependencies {
             // A throwaway settings store, so previews never change the real app's settings.
             settings: AppSettings(store: UserDefaults(suiteName: "RiseUpPreview") ?? .standard),
             sleepSounds: MockSleepSoundPlayer(),
-            bedtimeReminder: MockBedtimeReminder()
+            bedtimeReminder: MockBedtimeReminder(),
+            wallpaperStore: MockWallpaperStore()
         )
     }
 }

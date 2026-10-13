@@ -16,6 +16,8 @@ import SwiftUI
 
 struct StatsView: View {
     @State private var viewModel: StatsViewModel
+    /// Developer mode (Debug builds only) → shows the debug buttons. → DeveloperTools.swift
+    @Environment(\.showsDeveloperTools) private var showsDeveloperTools
 
     init(viewModel: StatsViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -165,8 +167,10 @@ struct StatsView: View {
                 .foregroundStyle(Theme.Colors.textSecondary)
                 .multilineTextAlignment(.center)
             #if DEBUG
-            Button("Add sample data (Debug)") { viewModel.addSampleData() }
-                .buttonStyle(.ghost)
+            if showsDeveloperTools {
+                Button("Add sample data (Debug)") { viewModel.addSampleData() }
+                    .buttonStyle(.ghost)
+            }
             #endif
         }
         .frame(maxWidth: .infinity)
