@@ -25,6 +25,8 @@
 //                  coordinator.sheet        ↔ sheet (sound picker, quick alarm, mission picker)
 //                  coordinator.fullScreen   ↔ fullScreenCover (ringing flow)
 //    → RUNS:       AlarmSyncService.sync() on launch and every return to the foreground
+//                  WidgetBridge.update after each sync and when RiseUp goes to the background
+//    ← LINKS:      riseup://… from the widgets → DeepLink → coordinator.open
 //    → SHOWS:      onboarding while AppSettings.hasCompletedOnboarding is false
 //    → ASKS:       ScreenFactory to build every screen
 //
@@ -115,9 +117,14 @@ struct RootView: View {
         // WHY: an unanswered alarm keeps ringing forever (spike finding). If the user opens
         // RiseUp instead of tapping "Start Mission", we still take them to the mission.
         .onChange(of: scenePhase, initial: true) {
+            // Leaving RiseUp: the moment the user can see their widgets again. → WidgetBridge
+            if scenePhase == .background {
+                Task { await updateWidgets() }
+            }
             guard scenePhase == .active else { return }
             Task {
                 await dependencies.alarmSync.sync()
+                await updateWidgets()                           // → the widgets show the synced truth
                 // WHY `.onboarding` too (found in code review): a ringing alarm must win over the
                 // intro, or a user opening the app at 6 a.m. would see "Welcome!" and no mission.
                 let canShowRinging = coordinator.fullScreen == nil || coordinator.fullScreen == .onboarding
@@ -125,6 +132,10 @@ struct RootView: View {
                     coordinator.presentRinging(alarmID: ringingID)
                 }
             }
+        }
+        // A widget was tapped: iOS opened RiseUp with a riseup://… link. → DeepLink → AppCoordinator.open
+        .onOpenURL { url in
+            if let link = DeepLink(url: url) { coordinator.open(link) }
         }
         // Phase 7: if the database had to be repaired at launch, say so once (never a silent loss).
         .alert("Your data", isPresented: Binding(
@@ -147,6 +158,13 @@ struct RootView: View {
         // Developer mode (Debug builds only): every screen and sheet below can read it.
         // LAST in the chain on purpose, so sheets and full-screen covers get it too. → DeveloperTools.swift
         .environment(\.showsDeveloperTools, isDebugBuild && dependencies.settings.showsDeveloperTools)
+    }
+
+    /// Hands the widgets the current alarms (+ wallpaper pictures). → WidgetBridge
+    private func updateWidgets() async {
+        await WidgetBridge.update(alarms: dependencies.alarmRepository.alarms,
+                                  settings: dependencies.settings,
+                                  wallpaperStore: dependencies.wallpaperStore)
     }
 
     /// LEARN: `#if DEBUG` picks code at BUILD time; this turns it into a normal Bool.

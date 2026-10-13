@@ -156,10 +156,32 @@ final class AppCoordinator {
         sheet = .sleepPlayer
     }
 
-    /// Opens the Quick Alarm sheet.
-    /// ← CALLED BY: AlarmListViewModel.quickAlarmTapped()
-    func presentQuickAlarm() {
-        sheet = .quickAlarm
+    /// Opens the Quick Alarm sheet, optionally preset to `minutes`.
+    /// ← CALLED BY: AlarmListViewModel.quickAlarmTapped(), open(.nap) (a widget's nap button)
+    func presentQuickAlarm(minutes: Int? = nil) {
+        sheet = .quickAlarm(minutes: minutes)
+    }
+
+    // MARK: - Links from widgets
+
+    /// Opens what a widget link asks for (see DeepLink).
+    /// ← CALLED BY: RootView `.onOpenURL`
+    /// WHY ignored during a wake-up: a widget tap must never cover the Ringing screen or a mission.
+    func open(_ link: DeepLink) {
+        if case .ringing = fullScreen { return }
+        // WHY (found in the Simulator): a sheet left open earlier stayed on top of the editor the
+        // link opened. A link means "show me THIS", so whatever was open closes first.
+        dismissSheet()
+        switch link {
+        case .newAlarm:
+            showAlarmEditor(alarmID: nil)
+        case .alarm(let id):
+            alarmsPath.removeAll()                    // not on top of another open editor
+            showAlarmEditor(alarmID: id)              // the editor shows the lock if a wake-up is pending
+        case .nap(let minutes):
+            selectedTab = .alarms
+            presentQuickAlarm(minutes: minutes)
+        }
     }
 
     /// Closes any sheet and forgets pending callbacks.

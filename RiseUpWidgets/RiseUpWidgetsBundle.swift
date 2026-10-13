@@ -9,6 +9,7 @@
 //  CONNECTIONS:
 //    ← STARTED BY: iOS, when it needs to draw one of our widgets (the app may be closed!)
 //    → PROVIDES:   AlarmLiveActivity (lock screen + Dynamic Island alarm UI)
+//                  NextAlarmWidget (home screen + lock screen widgets, #31)
 //
 //  LEARN: A widget extension is a SECOND, tiny program bundled inside the app
 //  (RiseUp.app/PlugIns/RiseUpWidgets.appex). iOS runs it on its own to draw widgets
@@ -28,6 +29,6 @@ import WidgetKit
 struct RiseUpWidgetsBundle: WidgetBundle {
     var body: some Widget {
         AlarmLiveActivity()
-        // TRY (Phase 4): add a "next alarm" home-screen widget here.
+        NextAlarmWidget()       // the "Next alarm" widget in the home/lock screen widget gallery
     }
 }

@@ -97,8 +97,8 @@ enum SettingsRoute: Hashable {
 enum SheetRoute: Hashable, Identifiable {
     /// Choose an alarm sound (Screen #13). Starts with `selected` highlighted.
     case soundPicker(selected: AlarmSound)
-    /// "Ring in 10 minutes" (Screen #7).
-    case quickAlarm
+    /// "Ring in 10 minutes" (Screen #7). `minutes`: preset from a widget's nap button (nil = the usual 10).
+    case quickAlarm(minutes: Int?)
     /// Choose a mission and its settings (Screens #9 + #10). `editing` = change an existing one.
     case missionPicker(editing: MissionDraft?)
     /// Now Playing: sleep-sound volumes, sleep timer, pause/stop (Screen #20).

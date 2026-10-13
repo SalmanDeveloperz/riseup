@@ -161,9 +161,10 @@ struct ScreenFactory {
                 audio: dependencies.audio,
                 coordinator: coordinator
             ))
-        case .quickAlarm:
-            // Screen #7.
+        case .quickAlarm(let minutes):
+            // Screen #7. `minutes` comes from a widget's nap button (nil = the usual 10).
             QuickAlarmView(viewModel: QuickAlarmViewModel(
+                minutes: minutes,
                 repository: dependencies.alarmRepository,
                 scheduler: dependencies.alarmScheduler,
                 coordinator: coordinator

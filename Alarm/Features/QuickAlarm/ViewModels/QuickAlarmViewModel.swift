@@ -37,7 +37,8 @@ final class QuickAlarmViewModel {
     private let scheduler: any AlarmScheduling
     private let coordinator: AppCoordinator
 
-    init(repository: AlarmRepository, scheduler: any AlarmScheduling, coordinator: AppCoordinator) {
+    init(minutes: Int? = nil, repository: AlarmRepository, scheduler: any AlarmScheduling, coordinator: AppCoordinator) {
+        if let minutes { self.minutes = min(Self.range.upperBound, max(Self.range.lowerBound, minutes)) }
         self.repository = repository
         self.scheduler = scheduler
         self.coordinator = coordinator
