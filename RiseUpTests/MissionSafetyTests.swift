@@ -91,8 +91,14 @@ struct MissionSafetyTests {
         viewModel.stop()                 // screen disappeared while the pattern was showing
         viewModel.start()                // …and came back
 
-        // Wait a little longer than the "memorize" time (2 s on Easy).
-        try await Task.sleep(for: .seconds(viewModel.level.showSeconds + 0.5))
+        // Wait for the "memorize" time (2 s on Easy) to pass.
+        // WHY a polling loop with a generous limit (found when the test suite grew): other tests
+        // running at the same moment can delay this timer a little. We check every 0.1 s and give
+        // up only after showSeconds + 4 s, so a busy machine can't make the test fail by accident.
+        let deadline = Date.now.addingTimeInterval(viewModel.level.showSeconds + 4)
+        while viewModel.phase != .recall && Date.now < deadline {
+            try await Task.sleep(for: .milliseconds(100))
+        }
         // Before the fix, start() did nothing here: no timer, stuck in .memorize, tiles disabled.
         #expect(viewModel.phase == .recall)
     }
