@@ -62,8 +62,9 @@ Add a new one instead (see `AlarmSound.swift`).
 | All in-app icons | SF Symbols | Free to use in apps on Apple platforms (not as the app icon) |
 | App icon (normal, dark, tinted) + in-app logo `AppLogo` | Drawn by `Tools/generate_app_icon.swift` (CoreGraphics) | Our own work: no restrictions |
 
-**The logo:** a sun rising over the horizon that is also a clock face: tick marks, and one hand shaped like an
-upward arrow pointing to 12 ("wake time" + "Rise Up"), rays, a glowing horizon and a reflection. Colours are
+**The logo (v2, 2026-10-13):** a ringing twin-bell alarm clock (bells, hammer knob, feet and ringing arcs, so it
+reads as "alarm" at a glance) whose face is a sunrise: the sun on the horizon, one hand shaped like an upward
+arrow pointing to 12 ("wake time" + "Rise Up"), rays, hour dots and a reflection. Colours are
 `Theme.Gradients.sunrise` on Theme's night navy. To change it: edit the numbers at the top of the script, run
 `swift Tools/generate_app_icon.swift`, rebuild. It writes all 3 icon versions and the in-app logo at once.
 
