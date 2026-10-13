@@ -27,6 +27,7 @@ struct RingingFlowTests {
     let repository: AlarmRepository
     let records: WakeRecordRepository
     let scheduler = MockAlarmScheduler()
+    let sleepSounds = MockSleepSoundPlayer()
 
     init() throws {
         let container = try ModelContainerFactory.make(inMemory: true)
@@ -42,6 +43,7 @@ struct RingingFlowTests {
             scheduler: scheduler,
             audio: MockAudioService(),
             timeAnnouncer: MockTimeAnnouncer(),
+            sleepSounds: sleepSounds,
             settings: AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!),
             missionServices: .preview(),
             coordinator: AppCoordinator()
@@ -84,6 +86,17 @@ struct RingingFlowTests {
         #expect(summary.wakeUpCheckMinutes == 0, "Success must not promise a check that can't ring")
         #expect(scheduler.wakeUpChecks[alarm.id] == nil)
         #expect(repository.alarms.isEmpty)
+    }
+
+    @Test("An alarm ringing stops the sleep sounds from the night before")
+    func alarmStopsSleepSounds() throws {
+        let alarm = WakeAlarm(hour: 7, minute: 0)
+        try repository.insert(alarm)
+        sleepSounds.toggle(.rain)
+
+        makeViewModel(for: alarm).start()
+
+        #expect(sleepSounds.activeSounds.isEmpty)
     }
 
     @Test("Snooze stops being offered at the limit")

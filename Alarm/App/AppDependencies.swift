@@ -25,6 +25,8 @@
 //    timeAnnouncer         → speaks the time during missions (SpeechTimeAnnouncer / Mock)
 //    missionServices       → sensors + camera matching for missions (MissionServices)
 //    settings              → small preferences in UserDefaults (AppSettings)
+//    sleepSounds           → the sleep-sound mixer + sleep timer (SleepSoundPlayer / Mock)
+//    bedtimeReminder       → the daily "time to wind down" notification (NotificationBedtimeReminder / Mock)
 //
 
 import Foundation
@@ -45,6 +47,8 @@ final class AppDependencies {
     let timeAnnouncer: any TimeAnnouncing
     let missionServices: MissionServices
     let settings: AppSettings
+    let sleepSounds: any SleepSoundPlaying
+    let bedtimeReminder: any BedtimeReminding
 
     init(
         modelContainer: ModelContainer,
@@ -52,7 +56,9 @@ final class AppDependencies {
         audio: any AudioPlaying,
         timeAnnouncer: any TimeAnnouncing,
         missionServices: MissionServices,
-        settings: AppSettings
+        settings: AppSettings,
+        sleepSounds: any SleepSoundPlaying,
+        bedtimeReminder: any BedtimeReminding
     ) {
         self.modelContainer = modelContainer
         self.alarmRepository = AlarmRepository(context: modelContainer.mainContext)
@@ -64,6 +70,8 @@ final class AppDependencies {
         self.timeAnnouncer = timeAnnouncer
         self.missionServices = missionServices
         self.settings = settings
+        self.sleepSounds = sleepSounds
+        self.bedtimeReminder = bedtimeReminder
     }
 
     /// The real app: database on disk + real AlarmKit, audio, sensors and camera matching.
@@ -82,7 +90,9 @@ final class AppDependencies {
                     // (see PixelPhotoMatcher). Real iPhones always use Vision.
                     photoMatcher: MissionEnvironment.isSimulator ? PixelPhotoMatcher() : VisionPhotoMatcher()
                 ),
-                settings: AppSettings()
+                settings: AppSettings(),
+                sleepSounds: SleepSoundPlayer(),
+                bedtimeReminder: NotificationBedtimeReminder()
             )
         } catch {
             // WHY crash here? Without its database the app can't do anything useful, and
@@ -103,7 +113,9 @@ final class AppDependencies {
             timeAnnouncer: MockTimeAnnouncer(),
             missionServices: .preview(),
             // A throwaway settings store, so previews never change the real app's settings.
-            settings: AppSettings(store: UserDefaults(suiteName: "RiseUpPreview") ?? .standard)
+            settings: AppSettings(store: UserDefaults(suiteName: "RiseUpPreview") ?? .standard),
+            sleepSounds: MockSleepSoundPlayer(),
+            bedtimeReminder: MockBedtimeReminder()
         )
     }
 }

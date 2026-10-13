@@ -110,6 +110,7 @@ final class RingingViewModel {
     private let scheduler: any AlarmScheduling
     private let audio: any AudioPlaying
     private let timeAnnouncer: any TimeAnnouncing
+    private let sleepSounds: any SleepSoundPlaying
     private let settings: AppSettings
     private let coordinator: AppCoordinator
 
@@ -137,7 +138,7 @@ final class RingingViewModel {
 
     init(alarmID: UUID, repository: AlarmRepository, records: WakeRecordRepository,
          scheduler: any AlarmScheduling, audio: any AudioPlaying,
-         timeAnnouncer: any TimeAnnouncing, settings: AppSettings,
+         timeAnnouncer: any TimeAnnouncing, sleepSounds: any SleepSoundPlaying, settings: AppSettings,
          missionServices: MissionServices, coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
@@ -145,6 +146,7 @@ final class RingingViewModel {
         self.scheduler = scheduler
         self.audio = audio
         self.timeAnnouncer = timeAnnouncer
+        self.sleepSounds = sleepSounds
         self.settings = settings
         self.missionServices = missionServices
         self.coordinator = coordinator
@@ -168,6 +170,8 @@ final class RingingViewModel {
         )
 
         // 1. iOS's alarm off, ours on. (WHY: see the header comment.)
+        // Rain sounds from the night before must not play over the alarm. → SleepSoundPlayer
+        sleepSounds.stopAll()
         scheduler.stopRinging(alarm)
         audio.startAlarm(AlarmSound.from(alarm.soundName), rampUp: true)
 

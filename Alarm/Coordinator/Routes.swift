@@ -101,6 +101,8 @@ enum SheetRoute: Hashable, Identifiable {
     case quickAlarm
     /// Choose a mission and its settings (Screens #9 + #10). `editing` = change an existing one.
     case missionPicker(editing: MissionDraft?)
+    /// Now Playing: sleep-sound volumes, sleep timer, pause/stop (Screen #20).
+    case sleepPlayer
 
     var id: Self { self }
 }

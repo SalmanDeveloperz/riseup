@@ -223,6 +223,7 @@ struct RingingView: View {
         scheduler: dependencies.alarmScheduler,
         audio: dependencies.audio,
         timeAnnouncer: dependencies.timeAnnouncer,
+        sleepSounds: dependencies.sleepSounds,
         settings: dependencies.settings,
         missionServices: dependencies.missionServices,
         coordinator: AppCoordinator()

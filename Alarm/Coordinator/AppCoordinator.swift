@@ -134,6 +134,12 @@ final class AppCoordinator {
         dismissSheet()
     }
 
+    /// Opens Now Playing for the sleep sounds (Screen #20).
+    /// ← CALLED BY: SleepViewModel.openPlayer()
+    func presentSleepPlayer() {
+        sheet = .sleepPlayer
+    }
+
     /// Opens the Quick Alarm sheet.
     /// ← CALLED BY: AlarmListViewModel.quickAlarmTapped()
     func presentQuickAlarm() {

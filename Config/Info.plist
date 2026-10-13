@@ -16,5 +16,11 @@
 	<!-- Text shown in the system "Allow RiseUp to schedule alarms?" popup (AlarmKit). -->
 	<key>NSAlarmKitUsageDescription</key>
 	<string>RiseUp schedules your alarms so they ring on time, even in Silent mode or when the app is closed.</string>
+	<!-- Phase 6: keep playing sleep sounds when the phone is locked (iOS would otherwise
+	     pause the app a few seconds after the screen turns off). -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>

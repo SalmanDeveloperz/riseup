@@ -60,12 +60,17 @@ struct ScreenFactory {
                 coordinator: coordinator
             ))
         case .sleep:
-            ComingSoonView(
-                title: "Sleep",
-                systemImage: AppTab.sleep.systemImage,
-                phase: 6,
-                message: "Relaxing sleep sounds with a timer, and later sleep tracking."
-            )
+            // Screen #19, Sleep sounds. Its ViewModel gets:
+            //   player      → the long-lived mixer (music survives leaving this screen)
+            //   settings    → last mix + bedtime reminder switch/time
+            //   reminder    → schedules the daily "wind down" notification
+            //   coordinator → to open the Now Playing sheet (#20)
+            SleepView(viewModel: SleepViewModel(
+                player: dependencies.sleepSounds,
+                settings: dependencies.settings,
+                reminder: dependencies.bedtimeReminder,
+                coordinator: coordinator
+            ))
         case .settings:
             // Screen #26. Its ViewModel gets:
             //   settings    → Time Pressure, defaults for new alarms (UserDefaults)
@@ -168,6 +173,13 @@ struct ScreenFactory {
                 services: dependencies.missionServices,   // sensors for "Try it", Vision for photo registration
                 coordinator: coordinator
             ))
+        case .sleepPlayer:
+            // Screen #20, Now Playing. Same player service as the Sleep tab, so both stay in sync.
+            SleepPlayerView(viewModel: SleepPlayerViewModel(
+                player: dependencies.sleepSounds,
+                settings: dependencies.settings,
+                coordinator: coordinator
+            ))
         }
     }
 
@@ -185,6 +197,7 @@ struct ScreenFactory {
                 scheduler: dependencies.alarmScheduler,
                 audio: dependencies.audio,
                 timeAnnouncer: dependencies.timeAnnouncer,
+                sleepSounds: dependencies.sleepSounds,   // the alarm stops last night's sleep sounds
                 settings: dependencies.settings,
                 missionServices: dependencies.missionServices,
                 coordinator: coordinator

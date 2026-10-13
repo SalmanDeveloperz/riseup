@@ -4,7 +4,8 @@
 //
 //  LAYER: Service (app preferences, saved in UserDefaults)
 //  WHAT:  Small settings that aren't alarms: onboarding finished?, speak the time during
-//         missions?, default sound and snooze for new alarms, the wake-up goal from onboarding.
+//         missions?, default sound and snooze for new alarms, the wake-up goal from onboarding,
+//         bedtime reminder (on/off + time) and the last sleep-sound mix (Phase 6).
 //  DATA:  UserDefaults (a tiny key-value store iOS keeps for every app). NOT SwiftData.
 //
 //  CONNECTIONS:
@@ -72,6 +73,9 @@ final class AppSettings {
         static let defaultSound = "defaultSound"
         static let defaultSnoozeMinutes = "defaultSnoozeMinutes"
         static let wakeGoal = "wakeGoal"
+        static let bedtimeReminderOn = "bedtimeReminderOn"
+        static let bedtimeMinuteOfDay = "bedtimeMinuteOfDay"
+        static let lastSleepMix = "lastSleepMix"
     }
 
     @ObservationIgnored private let store: UserDefaults
@@ -101,6 +105,22 @@ final class AppSettings {
         didSet { store.set(wakeGoal?.rawValue, forKey: Key.wakeGoal) }
     }
 
+    /// Phase 6: daily "time to wind down" notification on/off.
+    var bedtimeReminderOn: Bool {
+        didSet { store.set(bedtimeReminderOn, forKey: Key.bedtimeReminderOn) }
+    }
+
+    /// Phase 6: bedtime as minutes after midnight (22:30 → 1350). TRY: change the 1350 default below.
+    var bedtimeMinuteOfDay: Int {
+        didSet { store.set(bedtimeMinuteOfDay, forKey: Key.bedtimeMinuteOfDay) }
+    }
+
+    /// Phase 6: the last sleep-sound mix ("sleep_rain" → 0.7), for "Play last mix".
+    /// LEARN: UserDefaults can store simple dictionaries like [String: Double] directly.
+    var lastSleepMix: [String: Double] {
+        didSet { store.set(lastSleepMix, forKey: Key.lastSleepMix) }
+    }
+
     init(store: UserDefaults = .standard) {
         self.store = store
         // LEARN: `object(forKey:) as? Bool ?? true` = "the saved value, or `true` if never saved".
@@ -110,5 +130,8 @@ final class AppSettings {
         defaultSound = AlarmSound(rawValue: store.string(forKey: Key.defaultSound) ?? "") ?? .radar
         defaultSnoozeMinutes = store.object(forKey: Key.defaultSnoozeMinutes) as? Int ?? 5
         wakeGoal = store.string(forKey: Key.wakeGoal).flatMap(WakeGoal.init(rawValue:))
+        bedtimeReminderOn = store.bool(forKey: Key.bedtimeReminderOn)
+        bedtimeMinuteOfDay = store.object(forKey: Key.bedtimeMinuteOfDay) as? Int ?? 22 * 60 + 30
+        lastSleepMix = store.dictionary(forKey: Key.lastSleepMix) as? [String: Double] ?? [:]
     }
 }
