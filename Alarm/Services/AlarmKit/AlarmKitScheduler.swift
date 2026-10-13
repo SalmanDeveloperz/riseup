@@ -31,6 +31,7 @@
 
 import ActivityKit
 import AlarmKit
+import SwiftData            // only to check a WakeAlarm wasn't deleted while we waited (isStillWanted)
 import Foundation
 import SwiftUI
 
@@ -61,8 +62,10 @@ final class AlarmKitScheduler: AlarmScheduling {
         }
     }
 
-    /// IDs of alarms whose `schedule(_:)` call hasn't finished yet.
-    private var alarmIDsBeingScheduled: Set<UUID> = []
+    /// How many `schedule(_:)` calls are still running per alarm.
+    /// WHY a count and not a Set (found in the code review): with two calls for the same alarm,
+    /// the first one to finish removed the ID while the second was still busy.
+    private var alarmIDsBeingScheduled: [UUID: Int] = [:]
 
     // MARK: - Scheduling
 
@@ -71,35 +74,62 @@ final class AlarmKitScheduler: AlarmScheduling {
         // ← READ BY: isScheduling(_:) → AlarmListViewModel's reconcile step skips busy alarms.
         // LEARN: `defer` runs when the function exits, even through an error, so the
         // ID can never get stuck in the set.
-        alarmIDsBeingScheduled.insert(alarm.id)
-        defer { alarmIDsBeingScheduled.remove(alarm.id) }
+        let id = alarm.id                      // copied now: the model could be deleted while we wait
+        alarmIDsBeingScheduled[id, default: 0] += 1
+        defer {
+            alarmIDsBeingScheduled[id, default: 1] -= 1
+            if alarmIDsBeingScheduled[id] == 0 { alarmIDsBeingScheduled[id] = nil }
+        }
 
         // Start clean: remove any older version of this alarm (main + backups).
-        cancel(alarm)
+        cancel(alarmID: id)
         guard alarm.isEnabled else { return }
 
-        try await scheduleMainAlarm(for: alarm)
+        // WHY all-or-nothing (found in the code review): if a backup failed after the main alarm
+        // was scheduled, the caller showed the alarm as OFF but the leftovers still rang.
+        do {
+            try await scheduleMainAlarm(for: alarm)
+            // WHY check again after every `await`: while iOS was busy, the user may have switched
+            // the alarm off or deleted it. Then whatever we just scheduled must go.
+            guard Self.isStillWanted(alarm) else { cancel(alarmID: id); return }
 
-        if alarm.hasMissions {
-            try await scheduleBackupChain(for: alarm, afterDate: .now)
+            if alarm.hasMissions {
+                try await scheduleBackupChain(for: alarm, afterDate: .now)
+                guard Self.isStillWanted(alarm) else { cancel(alarmID: id); return }
+            }
+        } catch {
+            cancel(alarmID: id)
+            throw error
         }
     }
 
+    /// Still in the database (not deleted) and still switched on?
+    /// LEARN: a deleted SwiftData object loses its `modelContext`. Reading its other
+    /// properties after that can crash, so we check this FIRST.
+    private static func isStillWanted(_ alarm: WakeAlarm) -> Bool {
+        alarm.modelContext != nil && !alarm.isDeleted && alarm.isEnabled
+    }
+
     func isScheduling(_ alarm: WakeAlarm) -> Bool {
-        alarmIDsBeingScheduled.contains(alarm.id)
+        alarmIDsBeingScheduled[alarm.id] != nil
     }
 
     func cancel(_ alarm: WakeAlarm) {
+        cancel(alarmID: alarm.id)
+    }
+
+    /// Removes the main alarm, its snooze, wake-up check and backups from iOS.
+    private func cancel(alarmID: UUID) {
         // WHY `try?`: `cancel` throws if the alarm isn't scheduled (already fired, never
         // scheduled…). That's fine for us; the goal "make sure it's gone" is reached either way.
-        try? AlarmManager.shared.cancel(id: alarm.id)
-        try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
-        try? AlarmManager.shared.cancel(id: Self.wakeUpCheckID(for: alarm.id))
-        cancelBackupChain(for: alarm)
+        try? AlarmManager.shared.cancel(id: alarmID)
+        try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarmID))
+        try? AlarmManager.shared.cancel(id: Self.wakeUpCheckID(for: alarmID))
+        cancelBackupChain(alarmID: alarmID)
     }
 
     func missionCompleted(for alarm: WakeAlarm) async throws {
-        cancelBackupChain(for: alarm)
+        cancelBackupChain(alarmID: alarm.id)
         try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
 
         // Repeating alarms need tomorrow's (or next week's) chain armed right away.
@@ -137,11 +167,11 @@ final class AlarmKitScheduler: AlarmScheduling {
     }
 
     func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
-        var ids: Set<UUID> = [alarm.id, Self.snoozeID(for: alarm.id)]
-        for index in Self.backupOffsetsInMinutes.indices {
-            ids.insert(Self.backupID(for: alarm.id, index: index))
-        }
-        return ids
+        backupSystemAlarmIDs(for: alarm).union([alarm.id, Self.snoozeID(for: alarm.id)])
+    }
+
+    func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
+        Set(Self.backupOffsetsInMinutes.indices.map { Self.backupID(for: alarm.id, index: $0) })
     }
 
     func stopRinging(_ alarm: WakeAlarm) {
@@ -166,11 +196,25 @@ final class AlarmKitScheduler: AlarmScheduling {
 
     func ensureBackupChain(for alarm: WakeAlarm) async throws {
         guard alarm.isEnabled, alarm.hasMissions else { return }
+        // A mission is in progress: its chain is doing its job, don't touch it.
+        if hasPendingMission(alarm) { return }
         let system = systemAlarms()
+        let firstBackup = system[Self.backupID(for: alarm.id, index: 0)]?.fixedDate
         let hasAnyBackup = Self.backupOffsetsInMinutes.indices.contains {
             system[Self.backupID(for: alarm.id, index: $0)] != nil
         }
-        if !hasAnyBackup {
+
+        // WHY compare the DATE too (found in the code review): backups are fixed moments, the
+        // main alarm is a clock time. After flying to another time zone (or changing the clock),
+        // the main alarm moves but the backups didn't, and rang "Mission not finished!" before
+        // the real alarm. If backup 1 isn't exactly where it should be, re-arm the chain.
+        var isOnTime = false
+        if let firstBackup, let mainDate = alarm.nextFireDate(after: .now),
+           let expected = AlarmScheduleCalculator.backupDates(after: mainDate, offsetsInMinutes: Self.backupOffsetsInMinutes).first {
+            isOnTime = abs(firstBackup.timeIntervalSince(expected)) < 60
+        }
+        if !hasAnyBackup || !isOnTime {
+            cancelBackupChain(alarmID: alarm.id)
             try await scheduleBackupChain(for: alarm, afterDate: .now)
         }
     }
@@ -225,9 +269,20 @@ final class AlarmKitScheduler: AlarmScheduling {
     func cancelSystemAlarms(notIn keeping: Set<UUID>) {
         // WHY skip lab IDs: the AlarmKit Lab schedules test alarms that belong to no
         // WakeAlarm. Without this, a sync would delete them before they ring.
-        for id in systemAlarms().keys where !keeping.contains(id) && !Self.isLabTestID(id) {
+        for id in systemAlarms().keys where !keeping.contains(id) && !Self.isDebugLabAlarm(id) {
             try? AlarmManager.shared.cancel(id: id)
         }
+    }
+
+    /// WHY Debug only (found in the code review): "first byte is 0x1A" is also true for about
+    /// 1 in 256 RANDOM IDs. In the App Store version (no Lab) such a real alarm's leftovers
+    /// would never be cleaned up, so the exception only exists where the Lab exists.
+    private static func isDebugLabAlarm(_ id: UUID) -> Bool {
+        #if DEBUG
+        return isLabTestID(id)
+        #else
+        return false
+        #endif
     }
 
     // MARK: - Main alarm
@@ -291,9 +346,9 @@ final class AlarmKitScheduler: AlarmScheduling {
         }
     }
 
-    private func cancelBackupChain(for alarm: WakeAlarm) {
+    private func cancelBackupChain(alarmID: UUID) {
         for index in Self.backupOffsetsInMinutes.indices {
-            try? AlarmManager.shared.cancel(id: Self.backupID(for: alarm.id, index: index))
+            try? AlarmManager.shared.cancel(id: Self.backupID(for: alarmID, index: index))
         }
     }
 

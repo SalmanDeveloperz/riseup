@@ -45,6 +45,24 @@ final class AudioService: AudioPlaying {
 
     /// Volume the ramp is currently at (mute → 0, unmute → back to this).
     private var currentVolume: Float = 1
+    private var interruptionObserver: NSObjectProtocol?
+
+    init() {
+        // WHY (found in the code review): a phone call during a mission pauses our alarm sound,
+        // and nothing started it again afterwards, so the user could quietly fall back asleep.
+        // When iOS says the interruption is over, the alarm continues.
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let ended = (note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt) == AVAudioSession.InterruptionType.ended.rawValue
+            // LEARN: `queue: .main` → this runs on the main thread; assumeIsolated tells Swift so.
+            MainActor.assumeIsolated {
+                guard ended, let self, let player = self.alarmPlayer, !player.isPlaying else { return }
+                self.activateSession()
+                player.play()
+            }
+        }
+    }
 
     // MARK: - Preview
 
@@ -113,15 +131,22 @@ final class AudioService: AudioPlaying {
         // "riseup_radar.caf" → resource "riseup_radar", extension "caf"
         let base = (name as NSString).deletingPathExtension
         let ext = (name as NSString).pathExtension
-        guard let url = Bundle.main.url(forResource: base, withExtension: ext) else { return nil }
-        return try? AVAudioPlayer(contentsOf: url)
+        guard let url = Bundle.main.url(forResource: base, withExtension: ext),
+              let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
+        player.prepareToPlay()          // loads the first audio now, so `play()` starts instantly
+        return player
     }
 
     /// WHY `.playback`: this category plays sound even when the iPhone's Silent switch is
     /// on. Exactly what an alarm needs. (The default category would be muted by Silent mode.)
+    ///
+    /// WHY the category is set only once (found in the smoothness review): setting it on every
+    /// tap made each sound preview start a little late.
     private func activateSession() {
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default)
+        if session.category != .playback {
+            try? session.setCategory(.playback, mode: .default)
+        }
         try? session.setActive(true)
     }
 }

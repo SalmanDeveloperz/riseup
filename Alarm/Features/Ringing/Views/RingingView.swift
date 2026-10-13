@@ -23,6 +23,8 @@ struct RingingView: View {
     @State private var viewModel: RingingViewModel
     /// Drives the breathing glow behind the clock.
     @State private var isPulsing = false
+    /// LEARN: the iPhone's "Reduce Motion" setting. When on, we skip endless pulsing.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(viewModel: RingingViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -100,6 +102,7 @@ struct RingingView: View {
                     .scaleEffect(isPulsing ? 1.25 : 0.85)
             }
             .onAppear {
+                guard !reduceMotion else { return }     // calm, still glow for motion-sensitive users
                 withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { isPulsing = true }
             }
 
@@ -124,6 +127,7 @@ struct RingingView: View {
                         Text("Snooze \(info.snoozeMinutes) min · \(viewModel.snoozesLeft) left")
                     }
                     .buttonStyle(.ghost)
+                    .disabled(viewModel.isSnoozing)
                 } else if info.isSnoozeEnabled {
                     Text("No snoozes left. Time to get up!")
                         .font(.riseCaption)

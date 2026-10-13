@@ -21,11 +21,19 @@ final class MockAlarmScheduler: AlarmScheduling {
 
     func requestPermission() async -> AlarmPermission { permission }
 
+    /// Tests can make scheduling "slow" like the real AlarmKit, to reproduce race conditions.
+    var scheduleDelay: Duration?
+
     func schedule(_ alarm: WakeAlarm) async throws {
-        if alarm.isEnabled {
-            scheduledIDs.insert(alarm.id)
+        // Like the real scheduler: decide first; only switching ON waits for iOS
+        // (switching off just cancels, instantly).
+        let wantsOn = alarm.isEnabled
+        let id = alarm.id
+        if wantsOn, let scheduleDelay { try? await Task.sleep(for: scheduleDelay) }
+        if wantsOn {
+            scheduledIDs.insert(id)
         } else {
-            scheduledIDs.remove(alarm.id)
+            scheduledIDs.remove(id)
         }
     }
 
@@ -49,6 +57,7 @@ final class MockAlarmScheduler: AlarmScheduling {
     func systemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [alarm.id] }
 
     func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [alarm.id] }
+    func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [] }
 
     /// Alarms that got a wake-up check, with its minutes (tests can check it).
     private(set) var wakeUpChecks: [UUID: Int] = [:]

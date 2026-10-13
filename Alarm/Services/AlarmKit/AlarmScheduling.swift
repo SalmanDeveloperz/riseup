@@ -106,6 +106,10 @@ protocol AlarmScheduling: AnyObject {
     /// ← USED BY: AlarmSyncService.ringingAlarmID, stopRinging, hasPendingMission
     func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
 
+    /// Only the backup-chain IDs (+1, +2, +3, +5, +8 min) of this alarm.
+    /// ← USED BY: AlarmSyncService (drops a switched-off alarm's backups unless its mission is pending)
+    func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
+
     /// Silences every system alarm of this WakeAlarm that is ringing right now
     /// (the app takes over with its own sound on the Ringing screen).
     /// ← USED BY: RingingViewModel.start()

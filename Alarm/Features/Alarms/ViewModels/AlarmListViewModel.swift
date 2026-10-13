@@ -99,6 +99,26 @@ final class AlarmListViewModel {
     /// → AlarmScheduling.schedule(alarm)  (on = schedule, off = cancel)
     /// → AlarmRepository.save()
     func setEnabled(_ isEnabled: Bool, alarmID: UUID) async {
+        // WHY one change at a time per alarm (found in the review): flipping on→off quickly
+        // started two iOS calls at once; the slower one could win and leave a system alarm
+        // scheduled while the card said "off". Now a tap that arrives mid-change waits its
+        // turn, and only the LAST wish is applied.
+        guard !togglesInFlight.contains(alarmID) else {
+            queuedToggles[alarmID] = isEnabled
+            return
+        }
+        togglesInFlight.insert(alarmID)
+        await applyEnabled(isEnabled, alarmID: alarmID)
+        togglesInFlight.remove(alarmID)
+        if let next = queuedToggles.removeValue(forKey: alarmID), next != liveAlarm(id: alarmID)?.isEnabled {
+            await setEnabled(next, alarmID: alarmID)
+        }
+    }
+
+    @ObservationIgnored private var togglesInFlight: Set<UUID> = []
+    @ObservationIgnored private var queuedToggles: [UUID: Bool] = [:]
+
+    private func applyEnabled(_ isEnabled: Bool, alarmID: UUID) async {
         guard let alarm = liveAlarm(id: alarmID) else { return }
 
         // Mission lock: no switching off while its mission is pending.

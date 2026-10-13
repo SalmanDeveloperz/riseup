@@ -61,7 +61,12 @@ final class AlarmSyncService {
         var didChange = false
         var finishedQuickAlarms: [WakeAlarm] = []
 
-        for alarm in repository.alarms {
+        // WHY loop over IDs (found in the code review): this loop `await`s. Meanwhile other code
+        // (e.g. finishing a quick alarm) may DELETE a later alarm; touching a deleted SwiftData
+        // object crashes. So each round looks the alarm up fresh in the live list (which drops
+        // deleted alarms the moment they're deleted) and skips it if it's gone.
+        for alarmID in repository.alarms.map(\.id) {
+            guard let alarm = repository.alarms.first(where: { $0.id == alarmID }) else { continue }
             // Race-condition guard (see HOW_IT_WORKS.md, Bug 3).
             if scheduler.isScheduling(alarm) { continue }
 
@@ -125,6 +130,12 @@ final class AlarmSyncService {
             var ids = scheduler.systemAlarmIDs(for: alarm)
             if !alarm.isEnabled {
                 ids.remove(alarm.id)   // a switched-off alarm's MAIN ring must not happen
+                // Its backups may only stay while its mission is really pending (it rang, the
+                // user hasn't finished). Otherwise they're leftovers that would ring for an
+                // alarm that is off (found in the code review).
+                if !scheduler.hasPendingMission(alarm) {
+                    ids.subtract(scheduler.backupSystemAlarmIDs(for: alarm))
+                }
             }
             keep.formUnion(ids)
         }

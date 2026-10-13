@@ -124,6 +124,8 @@ final class RingingViewModel {
     /// WHY (found in code review): a double tap on "I'm up", or a mission reporting "done"
     /// twice, could run finish() twice at once: backups re-armed twice, the record saved twice.
     private var isFinishing = false
+    /// True while a snooze is being scheduled (the button is disabled meanwhile).
+    private(set) var isSnoozing = false
     /// Missions that were swapped for Math (sensor missing, or "Can't match?").
     private var replacedMissionIndices: Set<Int> = []
 
@@ -198,7 +200,11 @@ final class RingingViewModel {
 
     /// ← CALLED BY: "Snooze"
     func snooze() async {
-        guard canSnooze, let info, let alarm = try? repository.fetch(id: alarmID) else { return }
+        // WHY `isSnoozing` (found in the review): two quick taps used to schedule TWO snoozes
+        // and count 2 against the limit.
+        guard !isSnoozing, canSnooze, let info, let alarm = try? repository.fetch(id: alarmID) else { return }
+        isSnoozing = true
+        defer { isSnoozing = false }
         do {
             try await scheduler.scheduleSnooze(for: alarm, minutes: info.snoozeMinutes)
             snoozeCount += 1
@@ -331,6 +337,13 @@ final class RingingViewModel {
                     self.isIdleWarning = true
                     self.isQuiet = false
                     self.audio.setAlarmMuted(false)   // → it rings again until they continue
+                }
+                // WHY (found in the code review): a long mission (walking, hard maths…) ran into the
+                // +1/+2/+3 min backups, and iOS's alert popped over the mission. While the user is
+                // busy IN the app, silence them. `stop` (not cancel): later backups stay armed in
+                // case the user leaves the app without finishing.
+                if case .mission = self.phase, let alarm = try? self.repository.fetch(id: self.alarmID) {
+                    self.scheduler.stopRinging(alarm)  // → AlarmKit: only stops ones that are ringing
                 }
                 self.announceTimeIfDue()
             }
