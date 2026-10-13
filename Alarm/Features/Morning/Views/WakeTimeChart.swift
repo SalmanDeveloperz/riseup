@@ -50,15 +50,8 @@ struct WakeTimeChart: View {
                 .symbolSize(60)
             }
         }
-        // WHY "+ 1 day": each dot sits in the MIDDLE of its day. Ending the axis at midnight of
-        // the last day cut today's dot in half (seen in testing).
-        .chartXScale(domain: (points.first?.day ?? .now)...((points.last?.day ?? .now).addingTimeInterval(86_400)))
-        .chartXAxis {
-            AxisMarks(values: .stride(by: .day, count: labelsEveryDay ? 1 : 5)) { _ in
-                AxisValueLabel(format: labelsEveryDay ? .dateTime.weekday(.narrow) : .dateTime.day().month(.abbreviated))
-                    .foregroundStyle(Theme.Colors.textTertiary)
-            }
-        }
+        .chartXScale(domain: ChartDays.domain(for: points))
+        .chartXAxis { ChartDays.axis(for: points, everyDay: labelsEveryDay) }
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
                 AxisGridLine().foregroundStyle(Theme.Colors.hairline)
@@ -77,5 +70,44 @@ struct WakeTimeChart: View {
             }
         }
         .accessibilityLabel("Wake-up times per day")
+    }
+}
+
+// MARK: - Day axis shared by every day-by-day chart
+
+/// Keeps the day labels ("M", "T", "W"…) exactly under their dots and bars.
+/// ← USED BY: WakeTimeChart, StatsView (snooze + mood charts), so all charts line up the same way.
+///
+/// WHY (Salman spotted it): a mark with `unit: .day` is drawn in the MIDDLE of its day (at noon),
+/// but `.stride(by: .day)` puts labels at MIDNIGHT, the START of the day. Every letter sat half a
+/// day to the left of its dot. Now the labels are placed at noon too.
+enum ChartDays {
+    /// From midnight of the first day to midnight AFTER the last day.
+    /// WHY "+ 1 day": ending at midnight of the last day cut today's dot in half (seen in testing).
+    static func domain(for points: [WakeDayPoint], calendar: Calendar = .current) -> ClosedRange<Date> {
+        let first = points.first?.day ?? calendar.startOfDay(for: .now)
+        let last = points.last?.day ?? first
+        let end = calendar.date(byAdding: .day, value: 1, to: last) ?? last.addingTimeInterval(86_400)
+        return first...end
+    }
+
+    /// Noon of every `step`-th day, counted back from the LAST day so today always has a label.
+    static func labelDates(for points: [WakeDayPoint], step: Int, calendar: Calendar = .current) -> [Date] {
+        guard !points.isEmpty else { return [] }
+        let step = max(step, 1)
+        return stride(from: (points.count - 1) % step, to: points.count, by: step).map { index in
+            calendar.date(byAdding: .hour, value: 12, to: points[index].day) ?? points[index].day
+        }
+    }
+
+    /// The x-axis: one label per day (7-day charts) or every 5th day (30-day charts).
+    /// LEARN: `AxisContentBuilder` works like `@ViewBuilder`, but for chart axes.
+    @AxisContentBuilder
+    static func axis(for points: [WakeDayPoint], everyDay: Bool) -> some AxisContent {
+        AxisMarks(values: labelDates(for: points, step: everyDay ? 1 : 5)) { _ in
+            AxisValueLabel(format: everyDay ? .dateTime.weekday(.narrow) : .dateTime.day().month(.abbreviated),
+                           anchor: .top)                     // centred under the noon position
+                .foregroundStyle(Theme.Colors.textTertiary)
+        }
     }
 }

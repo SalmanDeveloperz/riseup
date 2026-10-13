@@ -347,6 +347,11 @@ each sound's RMS ("average loudness") and scales it to the same value (0.15). **
 Records' "next month" arrow was `.disabled` on the current month, but our explicit pink colour hid SwiftUI's grey
 disabled look. Fix: dim it ourselves with `.opacity`. **Rule:** a custom colour means you style every state.
 
+### Bug 26: Day letters sat half a day left of their dots (Salman spotted it)
+A dot or bar drawn with `unit: .day` sits in the MIDDLE of its day (noon), but `.stride(by: .day)` labels sit at
+MIDNIGHT (the start). Fix: `ChartDays` (in `WakeTimeChart.swift`) puts labels at noon, and every chart uses it, so
+they all line up the same way. **Rule:** when two things should line up, make them use the same code.
+
 ### Bugs 20–25: found by a code review of Phases 5–6
 - **The reminder switched itself back ON.** Tap ON (the permission popup waits) → tap OFF → the first call woke up
   and scheduled the reminder anyway. Fix: number each tap; after an `await`, only the newest one may act

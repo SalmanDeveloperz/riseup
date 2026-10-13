@@ -106,7 +106,8 @@ struct StatsView: View {
             .foregroundStyle(Theme.Gradients.sunrise)
             .cornerRadius(4)
         }
-        .chartXAxis { dayAxis }
+        .chartXScale(domain: ChartDays.domain(for: viewModel.points(now: now)))
+        .chartXAxis { dayAxis(now: now) }
         .chartYAxis {
             AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { _ in
                 AxisGridLine().foregroundStyle(Theme.Colors.hairline)
@@ -126,8 +127,9 @@ struct StatsView: View {
             .foregroundStyle(Theme.Gradients.success)
             .cornerRadius(4)
         }
-        .chartXScale(domain: (viewModel.points(now: now).first?.day ?? now)...(Calendar.current.startOfDay(for: now).addingTimeInterval(86_400)))
-        .chartXAxis { dayAxis }
+        // Whole range, even if only one day has a mood (so one bar doesn't fill the chart).
+        .chartXScale(domain: ChartDays.domain(for: viewModel.points(now: now)))
+        .chartXAxis { dayAxis(now: now) }
         .chartYScale(domain: 0...5)
         .chartYAxis {
             AxisMarks(position: .leading, values: [1, 3, 5]) { value in
@@ -146,11 +148,9 @@ struct StatsView: View {
         }
     }
 
-    private var dayAxis: some AxisContent {
-        AxisMarks(values: .stride(by: .day, count: viewModel.range == .week ? 1 : 5)) { _ in
-            AxisValueLabel(format: viewModel.range == .week ? .dateTime.weekday(.narrow) : .dateTime.day().month(.abbreviated))
-                .foregroundStyle(Theme.Colors.textTertiary)
-        }
+    /// Same day labels as the wake-up chart, so all three charts line up (see `ChartDays`).
+    private func dayAxis(now: Date) -> some AxisContent {
+        ChartDays.axis(for: viewModel.points(now: now), everyDay: viewModel.range == .week)
     }
 
     // MARK: - Empty
