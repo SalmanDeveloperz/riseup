@@ -65,6 +65,14 @@ enum AlarmsRoute: Hashable {
     case editor(alarmID: UUID?)
 }
 
+/// Screens pushed inside the Morning tab (Phase 5).
+enum MorningRoute: Hashable {
+    /// Month calendar of wake-ups (Screen #24).
+    case records
+    /// Charts: wake-up time, snoozes, mood (Screen #25).
+    case stats
+}
+
 /// Screens pushed inside the Settings tab.
 enum SettingsRoute: Hashable {
     /// "Why didn't my alarm ring?": checks permissions and schedules, offers fixes (Screen #28).

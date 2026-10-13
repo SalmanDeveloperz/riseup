@@ -4,11 +4,12 @@
 //
 //  LAYER: View (Screen #16)
 //  WHAT:  "You're up!" celebration: confetti, the wake-up time, mission time, snoozes,
-//         and a "Start my day" button.
+//         a "How do you feel?" mood check-in (#17), and a "Start my day" button.
 //  DATA:  shows a RingingViewModel.WakeSummary (a value), already saved as a WakeRecord.
 //
 //  CONNECTIONS:
 //    ← SHOWN BY: RingingView when viewModel.phase == .success
+//    → onMood:   RingingViewModel.setMood → WakeRecordRepository (Morning tab, Stats)
 //    → onClose:  RingingViewModel.close() → AppCoordinator.dismissFullScreen()
 //
 
@@ -16,6 +17,9 @@ import SwiftUI
 
 struct SuccessView: View {
     let summary: RingingViewModel.WakeSummary
+    /// The mood chosen so far (nil = none yet).
+    var mood: Mood? = nil
+    var onMood: (Mood) -> Void = { _ in }
     let onClose: () -> Void
 
     @State private var appeared = false
@@ -58,6 +62,8 @@ struct SuccessView: View {
                         .background(Theme.Colors.surface, in: .capsule)
                 }
 
+                moodPicker
+
                 Spacer()
 
                 Button {
@@ -77,6 +83,36 @@ struct SuccessView: View {
             withAnimation(.spring(duration: 0.6)) { appeared = true }
         }
         .sensoryFeedback(.success, trigger: appeared)
+    }
+
+    /// "How do you feel?" with five big emoji buttons. Optional: "Start my day" works without it.
+    private var moodPicker: some View {
+        VStack(spacing: Theme.Spacing.xs) {
+            Text(mood.map { "Feeling \($0.title.lowercased()). Noted!" } ?? "How do you feel?")
+                .font(.riseHeadline)
+                .foregroundStyle(Theme.Colors.textSecondary)
+                .contentTransition(.opacity)
+            HStack(spacing: Theme.Spacing.sm) {
+                ForEach(Mood.allCases) { option in
+                    Button {
+                        onMood(option)
+                    } label: {
+                        Text(option.emoji)
+                            .font(.system(size: 34))
+                            .frame(width: 54, height: 54)
+                            .background(mood == option ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surface),
+                                        in: .circle)
+                            .scaleEffect(mood == option ? 1.12 : (mood == nil ? 1 : 0.9))
+                            .opacity(mood == nil || mood == option ? 1 : 0.5)
+                    }
+                    .buttonStyle(PressScaleButtonStyle())
+                    .accessibilityLabel(option.title)
+                    .accessibilityAddTraits(mood == option ? .isSelected : [])
+                }
+            }
+            .animation(.spring(duration: 0.3), value: mood)
+        }
+        .sensoryFeedback(.selection, trigger: mood)
     }
 
     private func statTile(value: String, label: String, icon: String) -> some View {
@@ -104,7 +140,8 @@ struct SuccessView: View {
 }
 
 #Preview {
-    SuccessView(summary: .init(wokeAt: .now, missionSeconds: 42, missionsCompleted: 2, snoozeCount: 0, wakeUpCheckMinutes: 5), onClose: {})
+    SuccessView(summary: .init(wokeAt: .now, missionSeconds: 42, missionsCompleted: 2, snoozeCount: 0, wakeUpCheckMinutes: 5),
+                mood: .good, onClose: {})
         .padding()
         .appBackground()
 }

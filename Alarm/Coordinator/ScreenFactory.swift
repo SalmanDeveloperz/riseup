@@ -53,12 +53,12 @@ struct ScreenFactory {
                 coordinator: coordinator
             ))
         case .morning:
-            ComingSoonView(
-                title: "Morning",
-                systemImage: AppTab.morning.systemImage,
-                phase: 5,
-                message: "Weather, quote of the day, wake-up streaks and records."
-            )
+            // Screen #23, Morning panel. Reads wake-up history + the next alarm.
+            MorningView(viewModel: MorningViewModel(
+                records: dependencies.wakeRecordRepository,
+                alarms: dependencies.alarmRepository,
+                coordinator: coordinator
+            ))
         case .sleep:
             ComingSoonView(
                 title: "Sleep",
@@ -97,6 +97,18 @@ struct ScreenFactory {
                 settings: dependencies.settings,          // defaults for NEW alarms
                 coordinator: coordinator
             ))
+        }
+    }
+
+    /// Screens pushed in the Morning tab (Phase 5).
+    /// ← CALLED BY: RootView's `.navigationDestination(for: MorningRoute.self)`
+    @ViewBuilder
+    func makeScreen(for route: MorningRoute) -> some View {
+        switch route {
+        case .records:
+            RecordsView(viewModel: RecordsViewModel(records: dependencies.wakeRecordRepository))   // #24
+        case .stats:
+            StatsView(viewModel: StatsViewModel(records: dependencies.wakeRecordRepository))       // #25
         }
     }
 

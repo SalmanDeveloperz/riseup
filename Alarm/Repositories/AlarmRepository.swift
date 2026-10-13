@@ -101,6 +101,19 @@ final class AlarmRepository {
         return try context.fetch(descriptor).first
     }
 
+    /// The enabled alarm that rings soonest after `date`, as a value.
+    /// ← USED BY: AlarmListViewModel (header), MorningViewModel ("Next alarm")
+    /// WHY here: two screens need the same answer; one place means they can never disagree.
+    func nextAlarm(after date: Date) -> NextAlarmInfo? {
+        alarms
+            .filter(\.isEnabled)
+            .compactMap { alarm in
+                // LEARN: `.map` on an optional: if a date exists, wrap it in a NextAlarmInfo.
+                alarm.nextFireDate(after: date).map { NextAlarmInfo(title: alarm.displayTitle, fireDate: $0) }
+            }
+            .min { $0.fireDate < $1.fireDate }
+    }
+
     // MARK: - Write
 
     /// Adds a new alarm (and its missions), saves to disk and refreshes `alarms`.

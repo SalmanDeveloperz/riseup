@@ -59,7 +59,12 @@ struct RingingView: View {
                 missionStage(mission)
             }
         case .success(let summary):
-            SuccessView(summary: summary) { viewModel.close() }
+            SuccessView(
+                summary: summary,
+                mood: viewModel.mood,
+                onMood: { viewModel.setMood($0) },               // → saved with this wake-up
+                onClose: { viewModel.close() }
+            )
         }
     }
 

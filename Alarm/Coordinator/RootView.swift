@@ -20,6 +20,7 @@
 //                  AlarmLaunchRouter.shared (written by StartMissionIntent)
 //    → BINDS:      coordinator.selectedTab  ↔ TabView
 //                  coordinator.alarmsPath   ↔ Alarms tab NavigationStack
+//                  coordinator.morningPath  ↔ Morning tab NavigationStack
 //                  coordinator.settingsPath ↔ Settings tab NavigationStack
 //                  coordinator.sheet        ↔ sheet (sound picker, quick alarm, mission picker)
 //                  coordinator.fullScreen   ↔ fullScreenCover (ringing flow)
@@ -63,7 +64,12 @@ struct RootView: View {
             }
 
             Tab(AppTab.morning.title, systemImage: AppTab.morning.systemImage, value: AppTab.morning) {
-                NavigationStack { factory.makeRoot(for: .morning) }
+                NavigationStack(path: $coordinator.morningPath) {
+                    factory.makeRoot(for: .morning)
+                        .navigationDestination(for: MorningRoute.self) { route in
+                            factory.makeScreen(for: route)
+                        }
+                }
             }
 
             Tab(AppTab.sleep.title, systemImage: AppTab.sleep.systemImage, value: AppTab.sleep) {

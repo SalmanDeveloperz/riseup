@@ -42,6 +42,9 @@ final class AppCoordinator {
     /// → bound in RootView: `NavigationStack(path: $coordinator.alarmsPath)`
     var alarmsPath: [AlarmsRoute] = []
 
+    /// Navigation stack of the Morning tab. Empty = the Morning panel is showing.
+    var morningPath: [MorningRoute] = []
+
     /// Navigation stack of the Settings tab. Empty = root screen.
     /// LEARN: a typed array (`[SettingsRoute]`) instead of `NavigationPath`, so you can
     /// print it and see exactly which screens are open.
@@ -77,6 +80,15 @@ final class AppCoordinator {
     /// Goes back one screen in the Alarms tab (e.g. after saving an alarm).
     func popAlarms() {
         _ = alarmsPath.popLast()
+    }
+
+    // MARK: - Morning tab
+
+    /// Opens Records or Stats in the Morning tab.
+    /// ← CALLED BY: MorningViewModel.open(_:)
+    func show(_ route: MorningRoute) {
+        selectedTab = .morning
+        morningPath.append(route)
     }
 
     // MARK: - Settings tab

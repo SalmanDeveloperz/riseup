@@ -77,13 +77,7 @@ final class AlarmListViewModel {
     /// ← CALLED BY: AlarmListView inside a `TimelineView`, once per minute.
     /// → WakeAlarm.nextFireDate (handles normal AND quick alarms)
     func nextAlarm(after date: Date) -> NextAlarmInfo? {
-        repository.alarms
-            .filter(\.isEnabled)
-            .compactMap { alarm in
-                // LEARN: `.map` on an optional: if a date exists, wrap it in a NextAlarmInfo.
-                alarm.nextFireDate(after: date).map { NextAlarmInfo(title: alarm.displayTitle, fireDate: $0) }
-            }
-            .min { $0.fireDate < $1.fireDate }
+        repository.nextAlarm(after: date)          // shared with the Morning tab
     }
 
     /// The alarm whose mission is waiting to be done right now (ringing or backups due), if any.

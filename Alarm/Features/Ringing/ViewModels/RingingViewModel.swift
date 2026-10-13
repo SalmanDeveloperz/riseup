@@ -72,6 +72,8 @@ final class RingingViewModel {
     private(set) var isIdleWarning = false
     private(set) var snoozeCount = 0
     private(set) var errorMessage: String?
+    /// Morning check-in (#17), chosen on the success screen.
+    private(set) var mood: Mood?
 
     var currentMission: MissionDraft? {
         if case .mission(let index) = phase, let info, index < info.missions.count {
@@ -235,6 +237,14 @@ final class RingingViewModel {
     }
 
     // MARK: - Success / close
+
+    /// ← CALLED BY: a mood button on the success screen (Morning check-in, #17)
+    /// → WakeRecordRepository.setMood → WakeRecord.moodRawValue → Morning tab & Stats
+    func setMood(_ newMood: Mood) {
+        mood = newMood
+        guard let record else { return }
+        try? records.setMood(newMood, forRecordID: record.id)
+    }
 
     /// ← CALLED BY: "Start my day" on the success screen
     func close() {
