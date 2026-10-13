@@ -164,14 +164,15 @@ through the closure, a closed editor could stay in memory. `weak` = "call me if 
    idle 15 s          → sound back + red banner
    mission solved     → missionFinished()  → next mission, or finish()
  finish()
-   → scheduler.missionCompleted(alarm)     cancel today's backups + snooze; re-arm next occurrence
+   → scheduler.wakeUpCompleted(alarm)      cancel today's backups + snooze; re-arm next occurrence
    → one-time: isEnabled = false · quick: deleted
    → WakeRecord: dismissedAt, missionSeconds, missionsCompleted
    → phase = .success → SuccessView (confetti) → "Start my day" → dismissFullScreen()
 
-If the user pressed STOP instead: backups ring at 06:31, 06:32, 06:33, 06:35, 06:38.
-Meanwhile the alarm is LOCKED (hasPendingMission): no switching off, deleting or editing,
-and the Alarm List shows "Finish your mission".
+If the user pressed STOP (or a side/volume button) instead: backups ring at 06:30:30, 06:31, 06:31:30,
+06:32, 06:33, 06:35, 06:38, 06:42 (since #34; see Trace P).
+Meanwhile the alarm is LOCKED (hasPendingWakeUp): no switching off, deleting or editing,
+and the Alarm List shows "Finish waking up".
 ```
 
 ### Trace I: A sensor mission that can't run (the safety net)
@@ -260,7 +261,8 @@ These happened while building the Alarm List, and they're the best system-design
   was "due soon", so you couldn't switch off an alarm that hadn't rung yet.
 - **Rule: describe the real event, not a time window near it.** A mission is pending if one of the alarm's system
   alarms is *alerting*, or if the *main ring time* (backup date − its offset) has already passed.
-  That logic now lives in `AlarmKitScheduler.hasPendingMission`, next to the backup offsets it depends on.
+  That logic now lives in `AlarmKitScheduler.hasPendingWakeUp` (renamed from `hasPendingMission` in #34) and the
+  pure rule `AlarmScheduleCalculator.isWakeUpPending`.
 
 ### Bug 6: The countdown said "2m" for a whole minute
 - **What happened:** the header used `TimelineView(.everyMinute)`'s `context.date`, which is the start of the
@@ -397,6 +399,58 @@ Savanna Drums used `drum.fill`, which isn't an SF Symbol: the icon would just be
 The dark "halo" that keeps the clock readable was a full-screen layer, so it also dimmed suns and snowy peaks.
 Fix: `clockHalo()` sits behind the clock only. Its first version showed the edges of its square; a bigger frame
 squeezed into an oval (`scaleEffect(y: 0.7)`) fades out before the edge.
+
+### Trace P: A sleepy press on the volume button (Wake-up guarantee, #34)
+```
+07:00:00  main alarm rings (locked phone)          secondary button "Wake up" (or "Start Mission")
+07:00:05  user presses volume down → iOS silences it (Apple's rule; no app can block this)
+07:00:30  backup 0 rings "Still in bed? Tap Wake up"   (each press only silences the one ringing)
+07:00:40  user taps "Wake up" → StartMissionIntent → RiseUp opens → Ringing screen
+          RingingViewModel.start(): stopRinging · our sound (media volume) · startKeepAlive()
+          every 30 s while in front: scheduler.holdBackupChain → serially { cancel chain; first backup = now + 75 s }
+07:01:10  "I'm up" → finish(): stopKeepAliveAndWait() → wakeUpCompleted (chain gone; tomorrow armed)
+If the user locks the phone on the Ringing screen instead: scenePhase → background → no more holds →
+the next backup rings within ~75 s. The keep-alive is a dead man's switch.
+```
+
+### Trace Q: The home screen widget shows tomorrow's alarm on its wallpaper (#31)
+```
+RootView: app → background (or after a sync) → WidgetBridge.update
+  plan(): ON alarms → every ring in 8 days → (event, wallpaper resolved per day)
+  still(): new wallpaper? ImageRenderer(WallpaperStill) → App Group /Wallpapers/wp1-live.goldenHour.jpg
+  WidgetSnapshot.save() → App Group UserDefaults; changed → WidgetCenter.reloadTimelines
+iOS → RiseUpWidgets → NextAlarmProvider.getTimeline → entries at now + just after each ring
+  → SmallView: TOMORROW · 7:00 AM · "in 13 hr, 4 min" (Text(date, style: .relative) ticks by itself)
+Tap → riseup://alarm/<id> → RootView .onOpenURL → DeepLink → AppCoordinator.open → editor
+```
+
+### Bug 43: One press on the volume button ended the alarm (Salman's iPhone)
+- **What happened:** screen off, alarm ringing, volume down → silence for good. Alarms without missions had no
+  backups, and no way into the app (so the wallpaper never showed either).
+- **Why:** AlarmKit lets Stop, the side button and the volume buttons silence ANY app's alarm. Apple's rule.
+- **Fix:** the Wake-up guarantee (#34): every alarm re-rings 30 s later until you're up inside RiseUp, and every
+  ring has a button into the app. **Rule:** when iOS won't let you prevent something, make it not matter.
+
+### Bug 44: A keep-alive could re-arm the chain after "I'm up" (found while designing it)
+- **The trap:** the Ringing screen re-arms the chain every 30 s. If "I'm up" cancelled the chain while a re-arm was
+  half-way (waiting for iOS), the re-arm finished afterwards and the alarm rang again for someone already up.
+- **Fix:** chain jobs run one at a time per alarm (`serially`), every cancel bumps a version that busy jobs check,
+  and `finish()` awaits `stopKeepAliveAndWait()` first. **Rule:** after every `await`, ask "is this still wanted?"
+  (same lesson as Bug 20).
+
+### Bug 45: Widget text didn't fit (found in the Simulator)
+- "TOMORROW" next to two mission icons wrapped onto two lines; the large widget's three two-line rows pushed the
+  header off the top and the nap buttons off the bottom; the time sat on the bright sun.
+- **Fix:** `lineLimit(1)` + `minimumScaleFactor`, one-line rows in the large widget (`AnyLayout`), darker
+  scrim and a double shadow on the time. **Rule:** look at every widget size, with real data.
+
+### Bug 46: A widget link opened the editor under an old sheet
+- A Quick Alarm sheet left open stayed on top of the editor that a widget tap opened.
+- **Fix:** `AppCoordinator.open(_:)` closes any sheet first (test `coordinatorOpensLinks`).
+
+### Lesson: an icon must say what the app is
+The first icon (a sunrise) was beautiful but didn't say "alarm" (Salman noticed). v2 keeps the sunrise and the
+up-arrow, inside a ringing twin-bell alarm clock: the category is clear in 0.1 s, the brand in 1 s.
 
 ### Bug 26: Day letters sat half a day left of their dots (Salman spotted it)
 A dot or bar drawn with `unit: .day` sits in the MIDDLE of its day (noon), but `.stride(by: .day)` labels sit at

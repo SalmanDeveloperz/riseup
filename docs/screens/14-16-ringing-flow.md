@@ -42,7 +42,7 @@ RingingView ── owns ──► RingingViewModel
           onComplete    → missionFinished()  (next, or finish)
   Snooze → AlarmScheduling.scheduleSnooze(minutes:) → close
   finish()
-      ├─► AlarmScheduling.missionCompleted(alarm)  (cancel backups + snooze; re-arm tomorrow)
+      ├─► AlarmScheduling.wakeUpCompleted(alarm)   (cancel backups + snooze; re-arm tomorrow)
       ├─► quick alarm → delete · one-time → switch off
       ├─► WakeRecord: dismissedAt, missionSeconds, missionsCompleted
       └─► phase = .success → SuccessView → close() → AppCoordinator.dismissFullScreen()
@@ -58,7 +58,7 @@ RingingView ── owns ──► RingingViewModel
 7. `Features/Ringing/Views/SuccessView.swift` + `DesignSystem/Components/ConfettiView.swift` (`Canvas` + `TimelineView`)
 8. `Services/Audio/AudioService.swift`: the alarm loop, ramp and mute
 9. `Repositories/WakeRecordRepository.swift` + `Models/SchemaV2.swift` (`WakeRecord`)
-10. `Services/AlarmKit/AlarmKitScheduler.swift`: `stopRinging`, `scheduleSnooze`, `missionCompleted`, `hasPendingMission`
+10. `Services/AlarmKit/AlarmKitScheduler.swift`: `stopRinging`, `scheduleSnooze`, `wakeUpCompleted`, `hasPendingWakeUp` (renamed in #34)
 
 ## Data
 | Reads | Writes |

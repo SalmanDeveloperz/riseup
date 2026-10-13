@@ -227,3 +227,21 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | Result structs | send back several answers at once (`WallpaperChoice`: wallpaper + optional sound) | `Wallpaper.swift` |
 | Harmonic & noise synthesis | sum of overtones = an instrument; shaped noise = rain, surf, breath | `Tools/generate_sounds.py` |
 | Testing string names | `UIImage(systemName:)` returns `nil` for a typo the compiler can't see | test `symbolsExist` |
+
+## Learned building the Wake-up guarantee (#34) and widgets (#31)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Dead man's switch | keep pushing a deadline while you're alive; stop pushing and it fires | `RingingViewModel` keep-alive |
+| `scenePhase` | is the app in front, inactive or in the background? | `RingingView`, `RootView` |
+| Serial async queue | each Task awaits the previous one, so jobs never interleave | `AlarmKitScheduler.serially` |
+| Version counter | bump on cancel; a busy job compares and gives up | `AlarmKitScheduler.chainVersions` |
+| Inferring state | iOS doesn't say "it rang", so read it from what's left (the backups) | `AlarmScheduleCalculator.isWakeUpPending` |
+| WidgetKit timeline | entries with dates; iOS draws each at its time, even with the app closed | `NextAlarmProvider` |
+| `Text(date, style: .relative)` | a countdown iOS keeps updating without waking the widget | `Countdown` |
+| App Groups | a folder + UserDefaults shared by the app and its extension | `Config/*.entitlements`, `WidgetShared` |
+| `containerBackground(for: .widget)` | the widget's background (a picture, or clear on the lock screen) | `NextAlarmWidget` |
+| `Link` vs `widgetURL` | parts of a widget open different links; small widgets have one | `MediumView`, `SmallView` |
+| URL schemes + `.onOpenURL` | `riseup://…` opens the app on a specific screen | `DeepLink`, `RootView` |
+| `AnyLayout` | switch between HStack and VStack without repeating the children | `UpcomingRow` |
+| `AVAudioSession.outputVolume` | read (never set) the media volume | `AudioService`, volume hint |
+

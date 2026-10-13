@@ -12,7 +12,7 @@
 ## Connection map
 ```
 RingingViewModel.finish()
-  → scheduler.missionCompleted(alarm)                    (backups off, tomorrow re-armed)
+  → scheduler.wakeUpCompleted(alarm)                     (backups off, tomorrow re-armed)
   → alarm.wakeUpCheckMinutes > 0 ?
        → scheduler.scheduleWakeUpCheck(alarm, minutes)   (.fixed alarm, ID = wakeUpCheckID)
   → WakeSummary.wakeUpCheckMinutes → SuccessView note

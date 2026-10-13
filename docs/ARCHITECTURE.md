@@ -80,17 +80,18 @@ User saves alarm 06:30 Mon–Fri with Math mission
   → ViewModel: repository.insert(alarm); scheduler.schedule(alarm)
   → AlarmKitScheduler:
        main alarm   id = alarm.id        .relative 06:30 weekly(Mon–Fri)   button "Start Mission"
-       backup 0..4  id = backupID(alarm.id, i)  .fixed next-occurrence + 1,2,3,5,8 min
+       backup 0..7  id = backupID(alarm.id, i)  .fixed next ring + 30 s, 1, 1.5, 2, 3, 5, 8, 12 min
 
 06:30 alarm rings (system UI; works when locked, silent or app closed)
   ├─ "Start Mission" → StartMissionIntent.perform()
   │     → AlarmManager.stop(ringing id)
   │     → AlarmLaunchRouter.shared.requestRinging(alarm.id)
   │     → RootView → coordinator.presentRinging → Ringing screen (app plays the sound now)
-  │     → mission solved → scheduler.missionCompleted(alarm)
+  │     → mission solved → scheduler.wakeUpCompleted(alarm)
   │          → cancel today's backups + snooze → arm backups for next occurrence
-  ├─ "Stop" (skips mission) → backups ring at 06:31, 06:32, … until the mission is done
-  │     (meanwhile the alarm is locked: hasPendingMission → can't switch off / delete / edit)
+  ├─ "Stop" or a side/volume button → backups ring at 06:30:30, 06:31, 06:31:30 … until you're up in RiseUp
+  │     (meanwhile the alarm is locked: hasPendingWakeUp → can't switch off / delete / edit)
+  │     (Wake-up guarantee: plain alarms get the chain too, and a "Wake up" button instead of "Start Mission")
   └─ app opened any other way → RootView sync → ringingAlarmID() → Ringing screen
 
 Plain alarm (no missions): Ringing screen → "I'm up", or "Snooze" (limited)
@@ -124,5 +125,6 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 | Wallpaper photos | Files in Application Support/Wallpapers (`WallpaperStore`) | big pictures stay out of the database |
 | Live wallpapers | Code (`Features/Wallpapers/Renderers`) | nothing to store or download |
 | Saved (♥) wallpapers | `AppSettings.savedWallpapers` (UserDefaults) | a short list of strings, a preference |
+| Widget data (next rings + wallpaper pictures) | App Group `group.com.testProject.Alarm`: UserDefaults JSON + JPEG files (`WidgetBridge` → `Shared/WidgetSnapshot.swift`) | the widget extension can't open the app's database |
 | Backup, snooze and wake-up-check alarm IDs | Calculated (`backupID` / `snoozeID` / `wakeUpCheckID`) | nothing to keep in sync |
 | Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |
