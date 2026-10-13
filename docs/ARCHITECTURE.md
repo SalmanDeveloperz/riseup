@@ -109,14 +109,17 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 |---|---|---|
 | `WakeAlarm` (time, repeat days, label, enabled, sound, snooze, wake-up check, `fixedFireDate` for quick alarms) | Alarm Editor, List toggle/delete, Quick Alarm, Sync, Ringing (one-time off / quick delete), Lab | List, Editor, Ringing, Sync |
 | `MissionConfig` (type, difficulty, repetitions, order, **textPayload** = barcode, **dataPayload** = photo fingerprint + thumbnail) | Editor Save via `AlarmRepository.replaceMissions` (from Mission Picker drafts + registrations) | Editor, Ringing → missions |
-| `WakeRecord` (alarm, ring start, dismissed at, snoozes, missions, mission seconds, mood) | `RingingViewModel` via `WakeRecordRepository` | Records, Stats, Morning (Phase 5) |
+| `WakeRecord` (alarm, ring start, dismissed at, snoozes, missions, mission seconds, mood) | `RingingViewModel` via `WakeRecordRepository` (mood: success screen + Morning tab) | Morning, Records, Stats through `WakeRecordRepository.entries` (`WakeEntry` values) |
 | `SleepSession` (Phase 8) | Sleep tracker | Sleep report |
 
 | Not in SwiftData | Where | Why |
 |---|---|---|
-| Settings (onboarding done, Time Pressure, default sound/snooze, goal) | `AppSettings` → UserDefaults | small key-value data |
+| Settings (onboarding done, Time Pressure, default sound/snooze, goal, bedtime reminder, last sleep mix) | `AppSettings` → UserDefaults | small key-value data |
+| The sleep mix that is playing now (sounds, volumes, timer) | `SleepSoundPlayer` (in memory, long-lived service) | must outlive the screens; nothing to keep after a restart except "last mix" |
+| Bedtime reminder | One pending `UNNotificationRequest` (`riseup.bedtime`) in iOS | iOS delivers it even when the app is closed |
 | Premium status | StoreKit 2 entitlements | Apple is the source of truth |
 | Photos for photo mission | Files in Application Support | keeps the database small |
 | Alarm sounds | App bundle (`Alarm/Resources/Sounds`) | AlarmKit plays them from the bundle |
+| Sleep sounds | App bundle (`Alarm/Resources/SleepSounds`) | played by `AVAudioPlayer`, looping |
 | Backup, snooze and wake-up-check alarm IDs | Calculated (`backupID` / `snoozeID` / `wakeUpCheckID`) | nothing to keep in sync |
 | Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |

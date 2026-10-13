@@ -147,3 +147,26 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | `scenePhase` re-check | Refresh when the user returns from the Settings app | `AlarmHealthCheckView` |
 | Type erasure (`AnyButtonStyle`) | Wrap different types in one so `?:` can choose between them | `AlarmHealthCheckView.swift` |
 | Generic constraint to reach protocol members | Inside `<R: VisionRequest>`, protocol members become visible | (tried for Vision, see HOW_IT_WORKS Bug 8) |
+
+## Learned in Phase 5 + 6
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Swift Charts (`LineMark`, `PointMark`, `BarMark`) | A chart is a list of marks; each mark maps values to x/y | `WakeTimeChart`, `StatsView` |
+| Chart scales & axes | `chartXScale(domain:)` sets the visible range; `chartYAxis` styles labels | `WakeTimeChart` |
+| Time of day on an axis | Turn "minutes after midnight" into a Date on one reference day | `WakeTimeChart.time(_:)` |
+| `Calendar` maths | `startOfDay`, `date(byAdding:)`, `firstWeekday`: never add 86 400 s for "tomorrow" in logic | `WakeStats`, `RecordsViewModel` |
+| Injecting `now` and `calendar` | Pass the time in, so tests can freeze it | `WakeStats.currentStreak(_:now:calendar:)` |
+| Computed statistics from a live list | No stored copies: screens recompute from `entries`, so they never go stale | `MorningViewModel`, `StatsViewModel` |
+| `LazyVGrid` | A grid that lays out cells in columns | `SleepView`, `RecordsView` |
+| `AVAudioPlayer` mixing | One player per sound, all playing at once; `numberOfLoops = -1` loops forever | `SleepSoundPlayer` |
+| Fades | `setVolume(_:fadeDuration:)` changes volume smoothly | `SleepSoundPlayer.toggle/remove` |
+| `AVAudioSession` `.playback` | Plays in Silent mode and while locked | `SleepSoundPlayer.activateSession` |
+| Background modes | `UIBackgroundModes: audio` keeps the app running while it plays | `Config/Info.plist` |
+| Audio interruptions | iOS tells you when a call stops your audio | `SleepSoundPlayer.init` |
+| Now Playing + remote commands | Lock-screen title and Play/Pause buttons | `SleepSoundPlayer.updateNowPlaying` |
+| Local notifications | `UNCalendarNotificationTrigger(repeats: true)` = every day at a time | `NotificationBedtimeReminder` |
+| `TimelineView(.periodic)` | Redraw every second for a countdown | `SleepPlayerView.playButton` |
+| `safeAreaInset(edge:)` | Pin a bar to an edge and let the scroll content end above it | `SleepView` |
+| `Duration.formatted(.time(pattern:))` | "12:34" from a number of seconds | `SleepPlayerViewModel.remainingText` |
+| Custom `Binding(get:set:)` | Connect a control to ViewModel methods instead of a property | `SleepPlayerView` sliders, `SleepView` toggle |
+| Loudness (RMS) normalisation | Scale every sound to the same average level | `Tools/generate_sleep_sounds.py` |

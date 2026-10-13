@@ -211,6 +211,26 @@ RootView .onChange(of: settings.hasCompletedOnboarding, initial: true)
 Next launches: the flag is true → no onboarding. Settings → Replay intro sets it to false again.
 ```
 
+### Trace L: Picking a mood → the Morning tab and Stats update by themselves
+```
+SuccessView 🙂 tap → onMood(.good) → RingingViewModel.setMood(.good)
+  → WakeRecordRepository.setMood(.good, forRecordID:) → record.moodRawValue = 4 → save()
+  → save() calls refresh() → entries = fetched records mapped to WakeEntry values   (live list replaced)
+MorningViewModel.todayEntry(now:) and StatsViewModel.points(now:) are COMPUTED from records.entries
+  → @Observable notices `entries` changed → MorningView and StatsView redraw. Nobody had to "send" anything.
+```
+
+### Trace M: Rain at bedtime → lock screen → alarm in the morning
+```
+SleepView tile tap → SleepViewModel.toggle(.rain) → SleepSoundPlayer.toggle(.rain)
+  → AVAudioSession .playback (works in Silent mode) → AVAudioPlayer loops sleep_rain.caf, fades 0 → 0.7
+  → MPNowPlayingInfoCenter: "Rain" on the lock screen · settings.lastSleepMix = ["sleep_rain": 0.7]
+Phone locked → UIBackgroundModes: audio keeps RiseUp running while it plays
+Lock screen ⏸ → MPRemoteCommandCenter (any thread) → Task { @MainActor in player.pause() }
+Sleep timer 30 min → Task.sleep(29.5 min) → fade 30 s → stopAll()
+…or the alarm rings first → RingingView → RingingViewModel.start() → sleepSounds.stopAll()
+```
+
 ---
 
 ## Part 4 · Real bugs we hit, and the design rule each one taught us
@@ -303,6 +323,42 @@ closure would be *assumed* main-actor, and Swift 6 checks that at runtime: **cra
 `@Sendable` and hop back with `Task { @MainActor in … }` (see `StepCounter.swift`). APIs that let you choose
 `to: .main` (motion updates) are simpler: then `MainActor.assumeIsolated` is enough.
 
+### Lesson: some state must outlive every screen
+A ViewModel lives exactly as long as its screen. The sleep-sound mix (and its timer) must keep going after you
+leave the Sleep tab and lock the phone, so it lives in `SleepSoundPlayer`, created once in `AppDependencies`.
+Both Sleep screens just read it, so they can never disagree. **Rule:** if it must keep running when the screen
+is gone, it's a service.
+
+### Bug 16: Tiles jumped under the finger (Simulator)
+The "now playing" bar and the "max 3 sounds" hint appeared ABOVE the sound grid, pushing every tile down right
+after a tap, so the next tap landed on a different sound. Fix: a bottom `safeAreaInset` mini player (like Apple
+Music). **Rule:** never insert content above the thing the user is tapping.
+
+### Bug 17: Today's dot was cut in half (charts)
+The chart's x-axis ended at midnight at the START of today, but a day's dot is drawn in the middle of its day.
+Fix: the axis ends one day later (`WakeTimeChart`). Also: Swift Charts already draws times top-down (earlier
+higher). We first "reversed" it, which did nothing visible and confused us. Read the axis labels before "fixing".
+
+### Bug 18: White noise was 3× louder than rain
+Each generated sound had a different loudness, so a mix needed fiddling with sliders. Fix: the generator measures
+each sound's RMS ("average loudness") and scales it to the same value (0.15). **Rule:** measure; don't trust your ears.
+
+### Bug 19: An arrow that looked tappable but wasn't
+Records' "next month" arrow was `.disabled` on the current month, but our explicit pink colour hid SwiftUI's grey
+disabled look. Fix: dim it ourselves with `.opacity`. **Rule:** a custom colour means you style every state.
+
+### Bugs 20–25: found by a code review of Phases 5–6
+- **The reminder switched itself back ON.** Tap ON (the permission popup waits) → tap OFF → the first call woke up
+  and scheduled the reminder anyway. Fix: number each tap; after an `await`, only the newest one may act
+  (`SleepViewModel.setReminder`, test `reminderRace`). **Rule:** after every `await`, ask "is this still wanted?"
+- **A volume change lost to a running fade.** `player.volume = x` doesn't stop a fade in progress, so cancelling
+  the timer during its last 30 s still faded to silence. Fix: a 0.1 s fade replaces the old one.
+- **A timer that ended while the app slept** could stop a mix resumed from the lock screen. Fix: `resume()` drops it.
+- **Average of 23:50 and 00:10 was noon.** Times wrap around midnight. Fix: average them on a clock face
+  (`WakeStats.averageWakeMinute`, test `averageAcrossMidnight`).
+- **A second hint vanished early** (it used the first hint's 4-second timer). Fix: `.task(id: message)`.
+- **Records showed a day from another month** after ‹ ›. Fix: changing month clears the selection.
+
 ---
 
 ## Part 5 · Where to put new code (decision table)
@@ -322,3 +378,6 @@ closure would be *assumed* main-actor, and Swift 6 checks that at runtime: **cra
 | A new mission | `MissionType` case → rules in `MissionDraft.swift` → ViewModel + View in `Features/Missions` → `MissionView` switch; sensors via `MissionServices` |
 | A small app setting | `AppSettings` (UserDefaults) + a row in `SettingsView` |
 | Logic you want to be sure about | a test in `RiseUpTests/` (⌘U) |
+| Something that must keep running after its screen closes (music, a timer) | a long-lived service in `AppDependencies` (like `SleepSoundPlayer`) |
+| A daily reminder / banner | a service using `UNUserNotificationCenter` (like `BedtimeReminder`) |
+| Statistics from the history | a pure function in `WakeStats` + a test |
