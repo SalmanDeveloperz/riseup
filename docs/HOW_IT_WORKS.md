@@ -323,6 +323,11 @@ closure would be *assumed* main-actor, and Swift 6 checks that at runtime: **cra
 `@Sendable` and hop back with `Task { @MainActor in … }` (see `StepCounter.swift`). APIs that let you choose
 `to: .main` (motion updates) are simpler: then `MainActor.assumeIsolated` is enough.
 
+### Lesson: hardware on its own queue
+`CameraSession` is `nonisolated` with a private `DispatchQueue`: every slow camera call happens there, and
+`withCheckedContinuation` turns "call me back" into `await`. The screen stays responsive no matter how long
+the hardware takes. The same idea applies to anything slow that Apple doesn't already make async.
+
 ### Lesson: some state must outlive every screen
 A ViewModel lives exactly as long as its screen. The sleep-sound mix (and its timer) must keep going after you
 leave the Sleep tab and lock the phone, so it lives in `SleepSoundPlayer`, created once in `AppDependencies`.
@@ -351,6 +356,40 @@ disabled look. Fix: dim it ourselves with `.opacity`. **Rule:** a custom colour 
 A dot or bar drawn with `unit: .day` sits in the MIDDLE of its day (noon), but `.stride(by: .day)` labels sit at
 MIDNIGHT (the start). Fix: `ChartDays` (in `WakeTimeChart.swift`) puts labels at noon, and every chart uses it, so
 they all line up the same way. **Rule:** when two things should line up, make them use the same code.
+
+### Bug 27: "Did it crash?" The camera froze the app (Salman's iPhone test)
+Apple's `UIImagePickerController` starts the camera hardware ON THE MAIN THREAD; the first time that can take
+1–3 s, and the screen can't even draw a spinner meanwhile. Fix: our own `CameraScreen` appears instantly ("Starting
+camera…") while `CameraSession` starts the camera on its own background queue, and it is pre-warmed while you read
+the mission screen. Photos come back already shrunk (ImageIO). **Rule:** slow system work never runs on the main
+thread, and the user always sees that something is happening.
+
+### Bug 28: The App Store build didn't compile
+Every test used Debug builds. In Release, `#if DEBUG` emptied the Alarm List's toolbar builder, and an empty
+toolbar builder is a compile error. Fix: the `#if` now wraps the whole toolbar item. **Rule:** before a milestone,
+build the Release configuration too (`xcodebuild -configuration Release …`).
+
+### Bugs 29–36: found by the pre-launch review of the alarm core
+- **Ghost alarm:** switching ON then quickly OFF: the slow "ON" finished last and left an alarm in iOS while the
+  card said OFF. Fix: one change at a time per alarm (later taps wait their turn), AND the scheduler re-checks
+  "still on? still exists?" after every `await`. Test: `LaunchReadinessTests.noGhostAlarm`.
+- **Half-scheduled alarm:** if a backup failed, the main alarm stayed scheduled. Fix: all-or-nothing.
+- **Leftover backups** of a switched-off alarm survived the sync. Fix: kept only while its mission is pending.
+- **Time zones:** backups are fixed moments, the main alarm is a clock time. After a flight the backups rang
+  BEFORE the alarm. Fix: the sync re-arms backups whose time is off, and runs when the time zone or clock changes.
+- **Backups over a mission:** a long mission was interrupted by iOS's +1/+2/+3 min backup alerts. Fix: while
+  you're busy in the mission, ringing backups are stopped (not cancelled: they still protect you if you leave).
+- **Database crash loop:** `fatalError` if the database couldn't open. Fix: retry → set the damaged file aside →
+  fresh start → in-memory as a last resort, with a message to the user.
+- **1 in 256 alarms** looked like a debug Lab alarm to the cleanup. Fix: the Lab exception only exists in Debug.
+- **Phone call during a mission** silenced the alarm for good. Fix: it resumes when the call ends.
+
+### Bugs 37–40: found by the smoothness review
+- The editor asked the database AND iOS on every redraw (every tick of the time wheel). Fix: checked once.
+- Two quick taps on Snooze = two snoozes. Fix: `isSnoozing` guard.
+- Neon switches only reacted on the small capsule. Fix: the whole row, at least 44 pt tall.
+- Card shadows traced every letter inside the card (slow scrolling). Fix: the shadow is on the background shape.
+Plus: Reduce Motion respected, VoiceOver reads the Math keypad, bigger tap targets, day chips grow with text size.
 
 ### Bugs 20–25: found by a code review of Phases 5–6
 - **The reminder switched itself back ON.** Tap ON (the permission popup waits) → tap OFF → the first call woke up
@@ -386,3 +425,5 @@ they all line up the same way. **Rule:** when two things should line up, make th
 | Something that must keep running after its screen closes (music, a timer) | a long-lived service in `AppDependencies` (like `SleepSoundPlayer`) |
 | A daily reminder / banner | a service using `UNUserNotificationCenter` (like `BedtimeReminder`) |
 | Statistics from the history | a pure function in `WakeStats` + a test |
+| Slow hardware work (camera, files) | off the main thread: a `nonisolated` helper with its own queue, or `@concurrent` |
+| A new alarm sound | a function in `Tools/generate_sounds.py` → run it → a case in `AlarmSound` → a row in `docs/ASSETS.md` |

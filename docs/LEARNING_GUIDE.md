@@ -173,3 +173,24 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | `AxisMarks(values:)` + `AxisContentBuilder` | Put axis labels at exact positions; share one axis between charts | `ChartDays` in `WakeTimeChart.swift` |
 | CoreGraphics drawing | Paths, gradients and clipping: how the app icon is drawn | `Tools/generate_app_icon.swift` |
 | App icon appearances | One 1024 px icon each for normal, dark and tinted Home Screens | `Assets.xcassets/AppIcon.appiconset` |
+
+## Learned in Phase 7 (launch readiness)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| `AVCaptureSession` | The live camera; we start/stop it ourselves on a background queue | `CameraSession` |
+| `withCheckedContinuation` | Turn a callback ("call me when done") into `await` | `CameraSession.start/capturePhoto` |
+| `nonisolated` + `@unchecked Sendable` | A class that deliberately works off the main actor, protected by its own queue | `CameraSession` |
+| ImageIO thumbnails | Shrink a big photo without decoding all of it | `PhotoProcessor.uprightImage` |
+| Pre-warming | Do slow setup early, while the user is still reading | `CameraAccess.prepareCamera()` |
+| Race conditions with `await` | After every `await`, the world may have changed: re-check | `AlarmKitScheduler.schedule`, `AlarmListViewModel.setEnabled` |
+| All-or-nothing | On a partial failure, undo the parts that worked | `AlarmKitScheduler.schedule` |
+| `NotificationCenter` publishers | React to system events like a time-zone change | `RootView` `.onReceive` |
+| Audio interruptions | Phone calls pause audio; resume when they end | `AudioService.init` |
+| Graceful failure | Never `fatalError` in production; recover and tell the user | `AppDependencies.openDatabase` |
+| `@ScaledMetric` | A size that grows with the user's text size | `RepeatDaysPicker.chipSize` |
+| Reduce Motion | `accessibilityReduceMotion`: skip endless animations when it's on | `RingingView`, `SleepView`, `AppLogo` |
+| 44-pt tap targets | Apple's minimum comfortable touch size | `NeonToggleStyle`, editor buttons |
+| Debug vs Release | `#if DEBUG` code vanishes in the App Store build; build both | `AlarmListView` toolbar |
+| Privacy manifest | `PrivacyInfo.xcprivacy`: tracking, data and API reasons for App Review | `Alarm/PrivacyInfo.xcprivacy` |
+| Launch screen | `UILaunchScreen` + a colour asset = no white flash | `Config/Info.plist` |
+| Karplus–Strong, FM, bell partials | Classic ways to synthesise plucked strings, electric piano and bells | `Tools/generate_sounds.py` |

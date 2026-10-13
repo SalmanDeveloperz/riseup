@@ -47,6 +47,10 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
 - Callbacks from Apple frameworks that run on background threads must be `@Sendable` closures that hop back with
   `Task { @MainActor in … }` (Swift 6 runtime crash otherwise).
 - Small preferences live in `AppSettings` (UserDefaults), not SwiftData.
+- Camera: missions use `.photoCapture` → `CameraScreen` → `CameraSession` (background queue). Never
+  `UIImagePickerController` (it froze the app). Slow hardware/file work never runs on the main thread.
+- After every `await` in code that schedules alarms, re-check that the alarm still exists and is still wanted.
+- RiseUp is free: no StoreKit, no paywall. Never `fatalError` in production code paths.
 
 ## Comment conventions (required in every file)
 - File header: what the file is, its LAYER, what DATA it touches, and a **CONNECTIONS** block:
@@ -75,3 +79,5 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
   `docs/ROADMAP.md` status → add new traces/lessons to `docs/HOW_IT_WORKS.md`.
 - Verify alarms on a real iPhone (locked, silent, app killed). The Simulator is for UI only.
 - Build check: `xcodebuild -scheme Alarm -destination 'generic/platform=iOS Simulator' build`
+- Before a milestone also build Release: `xcodebuild -scheme Alarm -configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build`
+- Launch steps and store texts: `docs/APP_STORE.md`.
