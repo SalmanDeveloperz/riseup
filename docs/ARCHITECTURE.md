@@ -107,7 +107,7 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 
 | Stored in SwiftData | Written by | Read by |
 |---|---|---|
-| `WakeAlarm` (time, repeat days, label, enabled, sound, snooze, wake-up check, `fixedFireDate` for quick alarms) | Alarm Editor, List toggle/delete, Quick Alarm, Sync, Ringing (one-time off / quick delete), Lab | List, Editor, Ringing, Sync |
+| `WakeAlarm` (time, repeat days, label, enabled, sound, snooze, wake-up check, `fixedFireDate` for quick alarms, `wallpaperID` (V3)) | Alarm Editor, List toggle/delete, Quick Alarm, Sync, Ringing (one-time off / quick delete), Lab | List, Editor, Ringing, Sync |
 | `MissionConfig` (type, difficulty, repetitions, order, **textPayload** = barcode, **dataPayload** = photo fingerprint + thumbnail) | Editor Save via `AlarmRepository.replaceMissions` (from Mission Picker drafts + registrations) | Editor, Ringing → missions |
 | `WakeRecord` (alarm, ring start, dismissed at, snoozes, missions, mission seconds, mood) | `RingingViewModel` via `WakeRecordRepository` (mood: success screen + Morning tab) | Morning, Records, Stats through `WakeRecordRepository.entries` (`WakeEntry` values) |
 | `SleepSession` (Phase 8) | Sleep tracker | Sleep report |
@@ -121,5 +121,7 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 | Photos for photo mission | Files in Application Support | keeps the database small |
 | Alarm sounds | App bundle (`Alarm/Resources/Sounds`) | AlarmKit plays them from the bundle |
 | Sleep sounds | App bundle (`Alarm/Resources/SleepSounds`) | played by `AVAudioPlayer`, looping |
+| Wallpaper photos | Files in Application Support/Wallpapers (`WallpaperStore`) | big pictures stay out of the database |
+| Live wallpapers | Code (`Features/Wallpapers/Renderers`) | nothing to store or download |
 | Backup, snooze and wake-up-check alarm IDs | Calculated (`backupID` / `snoozeID` / `wakeUpCheckID`) | nothing to keep in sync |
 | Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |

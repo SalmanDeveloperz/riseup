@@ -194,3 +194,22 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | Privacy manifest | `PrivacyInfo.xcprivacy`: tracking, data and API reasons for App Review | `Alarm/PrivacyInfo.xcprivacy` |
 | Launch screen | `UILaunchScreen` + a colour asset = no white flash | `Config/Info.plist` |
 | Karplus–Strong, FM, bell partials | Classic ways to synthesise plucked strings, electric piano and bells | `Tools/generate_sounds.py` |
+
+## Learned building alarm wallpapers (#32)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| `Canvas` + `GraphicsContext` | Draw shapes, gradients and layers yourself, GPU-fast | `Features/Wallpapers/Renderers/` |
+| `TimelineView(.animation)` | Redraw every frame; pauses when off-screen | `LiveWallpaperView` |
+| Procedural animation | Everything is a pure function of time: nothing stored, nothing leaks | `WallpaperKit` LEARN |
+| Hash "random" | `sin(i × big) × big`, keep the fraction: random-looking but repeatable | `WallpaperMath.random` |
+| 3D projection | screen = centre + direction / distance | `HyperspaceRenderer` |
+| Blend modes | `.plusLighter` adds light; `.destinationOut` erases; `.sourceIn` paints inside | Aurora, Synthwave, Lava Lamp |
+| Metaballs | blur + alpha threshold = blobs that melt together | `LavaLampRenderer` |
+| `MeshGradient` | colours blended across a moving grid of points | `BreatheWallpaper` |
+| Integrals in code | speed changes smoothly when time is the area under the speed curve | `WallpaperEnergy.clock` |
+| `VersionedSchema` upgrade | copy the schema, add the field, add a lightweight stage, move typealiases | `SchemaV3`, migration test |
+| `NSCache` | an in-memory cache that empties itself when memory is low | `FileWallpaperStore` |
+| `preparingForDisplay()` | decode an image in the background, not on the first frame | `FileWallpaperStore.decode` |
+| `.photosPicker` modifier | system photo library without camera permission | `WallpaperPickerView` |
+| `@Entry` environment values | an app-wide value every view (and sheet) can read | `DeveloperTools.swift` |
+| `ImageRenderer` | turn a SwiftUI view into an image (we used it to inspect wallpapers) | HOW_IT_WORKS "look at what you draw" |

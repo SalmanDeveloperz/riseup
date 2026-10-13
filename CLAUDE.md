@@ -22,7 +22,7 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
 - ViewModels are `@Observable final class`, owned by the View with `@State`, created in `Coordinator/ScreenFactory.swift`.
 - Navigation only through `AppCoordinator` (routes in `Coordinator/Routes.swift`). Views get closures or a ViewModel; they never push screens themselves.
 - Services have a protocol (`AlarmScheduling`) + real impl + mock (`MockAlarmScheduler`) for previews/tests. Only `AlarmKitScheduler`, `StartMissionIntent`, `Shared/RiseUpAlarmMetadata`, the widget extension and the debug Lab may `import AlarmKit`.
-- SwiftData models live inside the latest schema (`SchemaV2`, VersionedSchema) with typealiases at the bottom of that file; older schemas are frozen. Changing a model after release = new schema version + migration stage. Never rename stored enum raw values.
+- SwiftData models live inside the latest schema (`SchemaV3`, VersionedSchema) with typealiases at the bottom of that file; older schemas are frozen. Changing a model after release = new schema version + migration stage. Never rename stored enum raw values.
 - Our alarm model is `WakeAlarm` (Apple already owns the name `Alarm`).
 - Call `AlarmManager.shared` directly at each use (don't store it): Swift 6 Sendable rule.
 - Use `Theme.*` tokens and DesignSystem components; no raw colours/numbers in screens.
@@ -51,6 +51,8 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
   `UIImagePickerController` (it froze the app). Slow hardware/file work never runs on the main thread.
 - After every `await` in code that schedules alarms, re-check that the alarm still exists and is still wanted.
 - RiseUp is free: no StoreKit, no paywall. Never `fatalError` in production code paths.
+- Wallpapers: renderers are pure functions of (time, energy); `energy` changes LOOKS only, speed comes from
+  `WallpaperEnergy.clock`. Debug-only UI also checks `@Environment(\.showsDeveloperTools)` (Developer mode).
 
 ## Comment conventions (required in every file)
 - File header: what the file is, its LAYER, what DATA it touches, and a **CONNECTIONS** block:

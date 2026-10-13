@@ -352,6 +352,29 @@ each sound's RMS ("average loudness") and scales it to the same value (0.15). **
 Records' "next month" arrow was `.disabled` on the current month, but our explicit pink colour hid SwiftUI's grey
 disabled look. Fix: dim it ourselves with `.opacity`. **Rule:** a custom colour means you style every state.
 
+### Trace N: An alarm rings with a live wallpaper
+```
+RingingViewModel.start() → info.wallpaper = Wallpaper(rawValue: alarm.wallpaperID) ?? settings.defaultWallpaper
+                         → .resolved() ("Surprise" → today's wallpaper) · ringStartedAt = now
+                         → photo? WallpaperStore.image(for:) (background decode, memory cache)
+RingingView.background → WallpaperView(energy: .ramp(start: ringStartedAt, duration: 40), showsScrim: true)
+  → LiveWallpaperView: TimelineView(.animation) every frame →
+       level = energy.level(at: now)          (0 → 1 over 40 s: brightness, size, count)
+       time  = energy.clock(elapsed, boost)   (bent time: speeds up smoothly, never jumps)
+       Canvas → SynthwaveRenderer.draw(context, size, time, level)
+  phase .mission → black 72 % overlay (focus) · phase .success → energy .fixed(1) (celebrate)
+```
+
+### Lesson: never multiply time by something that changes
+`time × speed` looks harmless, but when `speed` changes a tiny bit, a big `time` makes everything jump. The fix is
+the physics one: position = area under the speed curve (an integral). `WallpaperEnergy.clock` has the formula, and
+a test checks it never jumps or goes backwards.
+
+### Lesson: look at what you draw
+Rendering every wallpaper to PNG in a throwaway test (ImageRenderer) and viewing them side by side found four
+problems in one minute: a mesh gap, hidden stripes, faint aurora, dotty clouds. Then the Simulator found the clock
+being hard to read on a bright sun. **Rule:** for visual code, look at the output, not just the build.
+
 ### Bug 26: Day letters sat half a day left of their dots (Salman spotted it)
 A dot or bar drawn with `unit: .day` sits in the MIDDLE of its day (noon), but `.stride(by: .day)` labels sit at
 MIDNIGHT (the start). Fix: `ChartDays` (in `WakeTimeChart.swift`) puts labels at noon, and every chart uses it, so
@@ -426,4 +449,6 @@ Plus: Reduce Motion respected, VoiceOver reads the Math keypad, bigger tap targe
 | A daily reminder / banner | a service using `UNUserNotificationCenter` (like `BedtimeReminder`) |
 | Statistics from the history | a pure function in `WakeStats` + a test |
 | Slow hardware work (camera, files) | off the main thread: a `nonisolated` helper with its own queue, or `@concurrent` |
+| A new live wallpaper | a `LiveWallpaper` case + a `…Renderer.draw` function + a line in `LiveWallpaperView.draw` |
+| A flag every screen can read (like Developer mode) | an `@Entry` environment value set in RootView (`DeveloperTools.swift`) |
 | A new alarm sound | a function in `Tools/generate_sounds.py` → run it → a case in `AlarmSound` → a row in `docs/ASSETS.md` |
