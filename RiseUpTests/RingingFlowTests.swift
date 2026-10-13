@@ -8,6 +8,7 @@
 //           • a one-time alarm is switched off afterwards, a quick alarm is deleted
 //           • the Wake-Up Check is scheduled for normal alarms, but NEVER for quick alarms
 //           • the snooze limit is respected
+//           • the keep-alive holds the backup chain only while the screen is in front
 //  DATA:  in-memory database.
 //
 //  CONNECTIONS:
@@ -87,6 +88,29 @@ struct RingingFlowTests {
         #expect(summary.wakeUpCheckMinutes == 0, "Success must not promise a check that can't ring")
         #expect(scheduler.wakeUpChecks[alarm.id] == nil)
         #expect(repository.alarms.isEmpty)
+    }
+
+    @Test("Wake-up guarantee: the Ringing screen holds the chain, stops when the app leaves, and never after I'm up")
+    func keepAliveHoldsTheChain() async throws {
+        let alarm = WakeAlarm(hour: 7, minute: 0, repeatDays: [.monday])
+        try repository.insert(alarm)
+        let viewModel = makeViewModel(for: alarm)
+
+        viewModel.start()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(scheduler.holdCount == 1, "held right away when the screen opens")
+
+        viewModel.appActivityChanged(isActive: false)          // phone locked / app left
+        viewModel.appActivityChanged(isActive: true)           // back in front: holds again at once
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(scheduler.holdCount == 2)
+
+        await viewModel.dismiss()                              // "I'm up"
+        let afterFinish = scheduler.holdCount
+        viewModel.appActivityChanged(isActive: true)           // a late scene change must not re-hold
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(scheduler.holdCount == afterFinish)
+        #expect(scheduler.completedWakeUpIDs == [alarm.id])
     }
 
     @Test("An alarm ringing stops the sleep sounds from the night before")

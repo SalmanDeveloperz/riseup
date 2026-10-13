@@ -6,12 +6,13 @@
 //  WHAT:  Small settings that aren't alarms: onboarding finished?, speak the time during
 //         missions?, default sound and snooze for new alarms, the wake-up goal from onboarding,
 //         bedtime reminder (on/off + time) and the last sleep-sound mix (Phase 6), the default
-//         alarm wallpaper and the hidden Developer mode switch.
+//         alarm wallpaper, the hidden Developer mode switch and the Wake-up guarantee.
 //  DATA:  UserDefaults (a tiny key-value store iOS keeps for every app). NOT SwiftData.
 //
 //  CONNECTIONS:
 //    ← CREATED BY: AppDependencies (one shared instance; tests pass their own UserDefaults)
 //    ← READ BY:    RootView (show onboarding?), RingingViewModel (Time Pressure),
+//                  AlarmKitScheduler (Wake-up guarantee: which alarms get a re-ring chain),
 //                  AlarmEditorViewModel (defaults for new alarms), SettingsViewModel, OnboardingViewModel
 //    ← WRITTEN BY: SettingsViewModel, OnboardingViewModel
 //
@@ -80,6 +81,7 @@ final class AppSettings {
         static let defaultWallpaper = "defaultWallpaper"
         static let showsDeveloperTools = "showsDeveloperTools"
         static let savedWallpapers = "savedWallpapers"
+        static let guaranteesWakeUp = "guaranteesWakeUp"
     }
 
     @ObservationIgnored private let store: UserDefaults
@@ -143,6 +145,15 @@ final class AppSettings {
         didSet { store.set(savedWallpapers, forKey: Key.savedWallpapers) }
     }
 
+    /// "Wake-up guarantee": EVERY alarm (not only mission alarms) rings again 30 s after it's
+    /// silenced from the lock screen, until the user gets up inside RiseUp.
+    /// WHY on by default: iOS lets the side and volume buttons silence any app's alarm, and no app
+    /// can block that. Ringing again is the only way to keep a sleepy press from ending the alarm.
+    /// → AlarmKitScheduler.isGuarded · changed in Settings (which re-schedules every alarm).
+    var guaranteesWakeUp: Bool {
+        didSet { store.set(guaranteesWakeUp, forKey: Key.guaranteesWakeUp) }
+    }
+
     init(store: UserDefaults = .standard) {
         self.store = store
         // LEARN: `object(forKey:) as? Bool ?? true` = "the saved value, or `true` if never saved".
@@ -158,5 +169,6 @@ final class AppSettings {
         defaultWallpaper = store.string(forKey: Key.defaultWallpaper).flatMap(Wallpaper.init(rawValue:)) ?? .standard
         showsDeveloperTools = store.bool(forKey: Key.showsDeveloperTools)
         savedWallpapers = store.stringArray(forKey: Key.savedWallpapers) ?? []
+        guaranteesWakeUp = store.object(forKey: Key.guaranteesWakeUp) as? Bool ?? true
     }
 }

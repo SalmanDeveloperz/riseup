@@ -25,8 +25,8 @@
 //        • quick alarm  → it already rang → delete it (quick alarms are throwaway)
 //        • one-time     → it already rang → switch it off
 //        • repeating    → iOS lost it (reinstall, restore) → schedule it again
-//   2. Repeating mission alarm with NO backups → re-arm the chain for the next ring.
-//      (Happens when yesterday's mission was never completed.)
+//   2. Repeating guarded alarm with NO backups → re-arm the chain for the next ring.
+//      (Happens when yesterday's wake-up was never finished in the app.)
 //   3. System alarms that belong to no alarm (or the main alarm of a switched-off one)
 //      → cancel them. Backups of existing alarms are kept: a mission may be pending.
 //   4. A wake-up check ringing while the user opens RiseUp → stop it (they're clearly awake).
@@ -49,6 +49,19 @@ final class AlarmSyncService {
     }
 
     // MARK: - Sync
+
+    /// Re-schedules every switched-on alarm (main ring, buttons and backup chain) from scratch.
+    /// ← CALLED BY: SettingsViewModel when the Wake-up guarantee is switched on or off.
+    /// Alarms whose wake-up is in progress are left alone (their chain is busy).
+    func rescheduleAll() async {
+        try? repository.refresh()
+        for alarmID in repository.alarms.map(\.id) {
+            // Same "look it up fresh after every await" rule as in sync().
+            guard let alarm = repository.alarms.first(where: { $0.id == alarmID }),
+                  alarm.isEnabled, !scheduler.isScheduling(alarm), !scheduler.hasPendingWakeUp(alarm) else { continue }
+            try? await scheduler.schedule(alarm)
+        }
+    }
 
     /// Runs all the rules above. Safe to call often.
     func sync() async {
@@ -73,7 +86,7 @@ final class AlarmSyncService {
             // Rule 1: on in our database but missing in iOS.
             if alarm.isEnabled && system[alarm.id] == nil {
                 if alarm.isQuickAlarm {
-                    if !scheduler.hasPendingMission(alarm) { finishedQuickAlarms.append(alarm) }
+                    if !scheduler.hasPendingWakeUp(alarm) { finishedQuickAlarms.append(alarm) }
                 } else if alarm.isRepeating {
                     do {
                         try await scheduler.schedule(alarm)
@@ -87,8 +100,9 @@ final class AlarmSyncService {
                 }
             }
 
-            // Rule 2: repeating mission alarms always need their backup chain armed.
-            if alarm.isEnabled && alarm.isRepeating && alarm.hasMissions {
+            // Rule 2: repeating alarms need their backup chain armed (the scheduler decides
+            // which alarms have one: mission alarms, and all while the Wake-up guarantee is on).
+            if alarm.isEnabled && alarm.isRepeating {
                 try? await scheduler.ensureBackupChain(for: alarm)
             }
 
@@ -133,7 +147,7 @@ final class AlarmSyncService {
                 // Its backups may only stay while its mission is really pending (it rang, the
                 // user hasn't finished). Otherwise they're leftovers that would ring for an
                 // alarm that is off (found in the code review).
-                if !scheduler.hasPendingMission(alarm) {
+                if !scheduler.hasPendingWakeUp(alarm) {
                     ids.subtract(scheduler.backupSystemAlarmIDs(for: alarm))
                 }
             }

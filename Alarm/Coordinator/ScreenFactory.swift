@@ -43,7 +43,7 @@ struct ScreenFactory {
         case .alarms:
             // Screen #6, Alarm List. Its ViewModel gets:
             //   repository  → to read/save/delete WakeAlarms
-            //   scheduler   → to turn system alarms on/off, check the mission lock
+            //   scheduler   → to turn system alarms on/off, check the wake-up lock
             //   sync        → to bring database and iOS into agreement when the list appears
             //   coordinator → to open the editor, quick alarm, ringing screen
             AlarmListView(viewModel: AlarmListViewModel(
@@ -77,6 +77,7 @@ struct ScreenFactory {
             //   coordinator → to push the alarm check / FAQ / privacy and open the sound picker
             SettingsView(viewModel: SettingsViewModel(
                 settings: dependencies.settings,
+                alarmSync: dependencies.alarmSync,                       // re-schedules after the guarantee changes
                 coordinator: coordinator
             ))
         }

@@ -329,7 +329,7 @@ final class AlarmEditorViewModel {
             coordinator.popAlarms()
             return
         }
-        if scheduler.hasPendingMission(alarm) {
+        if scheduler.hasPendingWakeUp(alarm) {
             errorMessage = AlarmListViewModel.lockedMessage
             return
         }
@@ -367,8 +367,8 @@ final class AlarmEditorViewModel {
 
     // MARK: - Helpers
 
-    /// True while this alarm's mission is pending (see AlarmScheduling.hasPendingMission).
-    /// Editing it then could cancel the backups and let the user dodge the mission.
+    /// True while this alarm's wake-up is pending (see AlarmScheduling.hasPendingWakeUp).
+    /// Editing it then could cancel the backups and let the user dodge getting up.
     ///
     /// WHY stored instead of computed (found in the smoothness review): a computed version ran
     /// a database fetch AND asked iOS for its alarm list on EVERY redraw, i.e. on every tick of
@@ -381,7 +381,7 @@ final class AlarmEditorViewModel {
             isLocked = false
             return
         }
-        isLocked = scheduler.hasPendingMission(alarm)          // → asks iOS (AlarmKit)
+        isLocked = scheduler.hasPendingWakeUp(alarm)          // → asks iOS (AlarmKit)
     }
 
     private func showErrorThenClose(_ message: String) {

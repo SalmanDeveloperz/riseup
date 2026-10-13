@@ -14,8 +14,8 @@
 //    ← CREATED BY: ScreenFactory.makeScreen(for: .ringing(alarmID:))
 //    ← OPENED BY:  "Start Mission" on the lock screen → StartMissionIntent → AlarmLaunchRouter → RootView
 //                  RootView after a sync finds an alarm ringing (AlarmSyncService.ringingAlarmID)
-//                  Alarm List "Finish your mission" banner (AlarmListViewModel.resumeMission)
-//    → iOS:     AlarmScheduling.stopRinging / scheduleSnooze / missionCompleted
+//                  Alarm List "Finish waking up" banner (AlarmListViewModel.resumeWakeUp)
+//    → iOS:     AlarmScheduling.stopRinging / holdBackupChain / scheduleSnooze / wakeUpCompleted
 //    → AUDIO:   AudioPlaying.startAlarm / setAlarmMuted / stopAlarm
 //    → DATA:    AlarmRepository (fetch, save, delete), WakeRecordRepository (openRecord, save)
 //    → MISSIONS: MissionView → (Math|Typing|Shake)MissionViewModel → missionFinished()/userInteracted()
@@ -24,6 +24,11 @@
 //  WHY the app plays its OWN sound here: "Start Mission" silences iOS's alarm (otherwise
 //  it would keep ringing over the mission). From that moment, RiseUp itself must keep
 //  the user awake, or they'd put the phone down and sleep.
+//
+//  WHY the "keep-alive" (a dead man's switch): the backup chain must NOT ring while the user
+//  is on this screen (a ringing system alarm pushes RiseUp into the background). So every 30 s,
+//  while RiseUp is in front, we push the chain 75 s ahead. Leave the app, lock the phone or let
+//  it crash → nobody pushes any more → iOS rings again within about a minute.
 //
 
 import Foundation
@@ -102,6 +107,14 @@ final class RingingViewModel {
         return snoozeCount < info.maxSnoozeCount
     }
 
+    /// True when the media volume is so low that our own alarm sound is hard to hear.
+    /// ← READ BY: RingingView (a "Turn the volume up" hint, re-checked every second)
+    /// TRY: change 0.3 to 0.6 to see the hint more often.
+    var isVolumeLow: Bool {
+        guard case .ringing = phase else { return false }
+        return audio.outputVolume < 0.3
+    }
+
     var snoozesLeft: Int {
         guard let info else { return 0 }
         return max(0, info.maxSnoozeCount - snoozeCount)
@@ -136,6 +149,11 @@ final class RingingViewModel {
     private(set) var isSnoozing = false
     /// Missions that were swapped for Math (sensor missing, or "Can't match?").
     private var replacedMissionIndices: Set<Int> = []
+    /// Pushes the backup chain ahead every `keepAliveSeconds` while this screen is in front.
+    private var keepAlive: Task<Void, Never>?
+
+    /// TRY: 10 to see (in the AlarmKit Lab) the chain move more often.
+    static let keepAliveSeconds: Double = 30
 
     /// Seconds without touching the screen before the alarm comes back during the CURRENT
     /// mission: 15 s for most, longer for walking missions (→ MissionType.idleSecondsAllowed).
@@ -188,6 +206,7 @@ final class RingingViewModel {
         sleepSounds.stopAll()
         scheduler.stopRinging(alarm)
         audio.startAlarm(AlarmSound.from(alarm.soundName), rampUp: true)
+        startKeepAlive()                              // → the chain stays 75 s ahead while we're on screen
 
         // 2. History: continue an unfinished record (after a snooze) or start a new one.
         record = try? records.openRecord(alarmID: alarm.id, alarmTitle: alarm.displayTitle)
@@ -217,6 +236,7 @@ final class RingingViewModel {
         guard !isSnoozing, canSnooze, let info, let alarm = try? repository.fetch(id: alarmID) else { return }
         isSnoozing = true
         defer { isSnoozing = false }
+        await stopKeepAliveAndWait()                 // the snooze moves the chain itself
         do {
             try await scheduler.scheduleSnooze(for: alarm, minutes: info.snoozeMinutes)
             snoozeCount += 1
@@ -226,7 +246,52 @@ final class RingingViewModel {
             coordinator.dismissFullScreen()          // → rings again in snoozeMinutes
         } catch {
             errorMessage = "Couldn't snooze. \(error.localizedDescription)"
+            startKeepAlive()                         // still on screen: keep holding the chain
         }
+    }
+
+    // MARK: - Keep-alive (see the header WHY)
+
+    /// ← CALLED BY: RingingView `.onChange(of: scenePhase)`
+    /// In front → hold the chain (and silence a backup that rang while we were away).
+    /// In the background → stop holding, so iOS takes over within about a minute.
+    func appActivityChanged(isActive: Bool) {
+        guard hasStarted else { return }
+        if isActive {
+            if let alarm = try? repository.fetch(id: alarmID) { scheduler.stopRinging(alarm) }
+            startKeepAlive()
+        } else {
+            stopKeepAlive()
+        }
+    }
+
+    private func startKeepAlive() {
+        guard keepAlive == nil, !isFinishing else { return }
+        if case .success = phase { return }
+        let alarmID = alarmID
+        // LEARN: `[weak self]` so this loop never keeps a closed screen alive. Each round looks
+        // the alarm up fresh (it may have been deleted) and then sleeps 30 s.
+        keepAlive = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let scheduler = self?.scheduler,
+                      let alarm = try? self?.repository.fetch(id: alarmID) else { return }
+                await scheduler.holdBackupChain(for: alarm)            // → AlarmKitScheduler (75 s ahead)
+                try? await Task.sleep(for: .seconds(Self.keepAliveSeconds))
+            }
+        }
+    }
+
+    private func stopKeepAlive() {
+        keepAlive?.cancel()
+        keepAlive = nil
+    }
+
+    /// Stops the keep-alive AND waits until a hold that is half-way through has finished.
+    /// WHY: otherwise that hold could re-arm the chain right after "I'm up" cancelled it.
+    private func stopKeepAliveAndWait() async {
+        let running = keepAlive
+        stopKeepAlive()
+        await running?.value
     }
 
     // MARK: - Mission callbacks (from the mission ViewModels)
@@ -287,6 +352,7 @@ final class RingingViewModel {
     /// Debug-only escape hatch so testing can't get stuck. Not in App Store builds.
     func debugClose() {
         stopWatchdog()
+        stopKeepAlive()
         audio.stopAlarm()
         coordinator.dismissFullScreen()
     }
@@ -301,6 +367,7 @@ final class RingingViewModel {
         isFinishing = true
         stopWatchdog()
         audio.stopAlarm()
+        await stopKeepAliveAndWait()
 
         let now = Date.now
         let seconds = missionStartedAt.map { now.timeIntervalSince($0) } ?? 0
@@ -309,7 +376,7 @@ final class RingingViewModel {
 
         if let alarm = try? repository.fetch(id: alarmID) {
             // Stop the backup chain (and snooze), and arm tomorrow's chain for repeating alarms.
-            try? await scheduler.missionCompleted(for: alarm)
+            try? await scheduler.wakeUpCompleted(for: alarm)  // → AlarmKitScheduler
             // Wake-Up Check: one more "are you up?" alarm in a few minutes, if switched on.
             // (Never for quick alarms: they're deleted just below, and their check with them.)
             if alarm.wakeUpCheckMinutes > 0 && !alarm.isQuickAlarm {
@@ -361,9 +428,9 @@ final class RingingViewModel {
                     self.audio.setAlarmMuted(false)   // → it rings again until they continue
                 }
                 // WHY (found in the code review): a long mission (walking, hard maths…) ran into the
-                // +1/+2/+3 min backups, and iOS's alert popped over the mission. While the user is
-                // busy IN the app, silence them. `stop` (not cancel): later backups stay armed in
-                // case the user leaves the app without finishing.
+                // backups, and iOS's alert popped over the mission. The keep-alive now holds them
+                // back; this is the safety net if one rings anyway. `stop` (not cancel): later
+                // backups stay armed in case the user leaves the app without finishing.
                 if case .mission = self.phase, let alarm = try? self.repository.fetch(id: self.alarmID) {
                     self.scheduler.stopRinging(alarm)  // → AlarmKit: only stops ones that are ringing
                 }

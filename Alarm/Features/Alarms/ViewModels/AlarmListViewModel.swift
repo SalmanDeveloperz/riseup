@@ -4,7 +4,7 @@
 //
 //  LAYER: ViewModel
 //  WHAT:  The "brain" of the Alarm List screen (Screen #6): shows alarms, turns them
-//         on/off, deletes them, finds the next alarm, guards the mission lock, and asks
+//         on/off, deletes them, finds the next alarm, guards the wake-up lock, and asks
 //         for navigation (editor, quick alarm, ringing screen).
 //  DATA:  reads + writes WakeAlarm (through AlarmRepository).
 //         Gives the View only value snapshots (AlarmRow, NextAlarmInfo), never WakeAlarm objects.
@@ -15,7 +15,7 @@
 //    ← CALLED BY:   AlarmListView (appear, toggle, swipe-delete, taps, banner)
 //    → DATA:        AlarmRepository.alarms / save() / delete()        → SwiftData
 //    → SYNC:        AlarmSyncService.sync()                           → database ↔ iOS agreement
-//    → SYSTEM:      AlarmScheduling.schedule() / cancel() / hasPendingMission()
+//    → SYSTEM:      AlarmScheduling.schedule() / cancel() / hasPendingWakeUp()
 //    → NAVIGATION:  AppCoordinator.showAlarmEditor / presentQuickAlarm / presentRinging
 //
 //  LEARN: Why the ViewModel gets its tools from outside
@@ -80,14 +80,14 @@ final class AlarmListViewModel {
         repository.nextAlarm(after: date)          // shared with the Morning tab
     }
 
-    /// The alarm whose mission is waiting to be done right now (ringing or backups due), if any.
-    /// The View shows a glowing "Finish your mission" banner for it.
+    /// The alarm whose wake-up is waiting to be finished right now (ringing or backups due), if any.
+    /// The View shows a glowing "Finish waking up" banner for it.
     ///
     /// ← CALLED BY: AlarmListView (TimelineView, once per minute)
-    /// → AlarmScheduling.hasPendingMission (the "mission lock" rule)
-    func pendingMission(now: Date) -> NextAlarmInfo? {
+    /// → AlarmScheduling.hasPendingWakeUp (the lock rule)
+    func pendingWakeUp(now: Date) -> NextAlarmInfo? {
         repository.alarms
-            .first { scheduler.hasPendingMission($0, now: now) }
+            .first { scheduler.hasPendingWakeUp($0, now: now) }
             .map { NextAlarmInfo(title: $0.displayTitle, fireDate: now) }
     }
 
@@ -121,8 +121,8 @@ final class AlarmListViewModel {
     private func applyEnabled(_ isEnabled: Bool, alarmID: UUID) async {
         guard let alarm = liveAlarm(id: alarmID) else { return }
 
-        // Mission lock: no switching off while its mission is pending.
-        if !isEnabled && scheduler.hasPendingMission(alarm) {
+        // Wake-up lock: no switching off while its wake-up is pending.
+        if !isEnabled && scheduler.hasPendingWakeUp(alarm) {
             errorMessage = Self.lockedMessage
             return
         }
@@ -155,7 +155,7 @@ final class AlarmListViewModel {
     /// ← CALLED BY: swipe-to-delete on a card
     func delete(alarmID: UUID) {
         guard let alarm = liveAlarm(id: alarmID) else { return }
-        if scheduler.hasPendingMission(alarm) {
+        if scheduler.hasPendingWakeUp(alarm) {
             errorMessage = Self.lockedMessage
             return
         }
@@ -183,9 +183,9 @@ final class AlarmListViewModel {
         coordinator.showAlarmEditor(alarmID: alarmID)   // → editor in "edit" mode
     }
 
-    /// ← CALLED BY: the "Finish your mission" banner
-    func resumeMission() {
-        guard let alarm = repository.alarms.first(where: { scheduler.hasPendingMission($0) }) else { return }
+    /// ← CALLED BY: the "Finish waking up" banner
+    func resumeWakeUp() {
+        guard let alarm = repository.alarms.first(where: { scheduler.hasPendingWakeUp($0) }) else { return }
         coordinator.presentRinging(alarmID: alarm.id)   // → full-screen Ringing flow
     }
 
@@ -196,7 +196,7 @@ final class AlarmListViewModel {
 
     // MARK: - Helpers
 
-    static let lockedMessage = "This alarm is locked until you finish its mission. Tap “Finish your mission” at the top."
+    static let lockedMessage = "This alarm is locked until you're up. Tap “Finish waking up” at the top."
 
     private func liveAlarm(id: UUID) -> WakeAlarm? {
         repository.alarms.first { $0.id == id }

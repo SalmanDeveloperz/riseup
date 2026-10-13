@@ -98,9 +98,9 @@ struct AlarmListView: View {
             TimelineView(.everyMinute) { _ in
                 let now = Date.now
                 VStack(spacing: Theme.Spacing.sm) {
-                    // Mission lock banner: only while a mission is waiting to be finished.
-                    if let pending = viewModel.pendingMission(now: now) {
-                        pendingMissionBanner(pending)
+                    // Lock banner: only while a wake-up is waiting to be finished.
+                    if let pending = viewModel.pendingWakeUp(now: now) {
+                        pendingWakeUpBanner(pending)
                     }
                     NextAlarmHeaderView(
                         next: viewModel.nextAlarm(after: now),   // → ViewModel finds the soonest alarm
@@ -176,22 +176,22 @@ struct AlarmListView: View {
         .padding(.horizontal, Theme.Spacing.xl)
     }
 
-    // MARK: - Mission lock banner
+    // MARK: - Wake-up lock banner
 
-    /// "Finish your mission": shown while an alarm's mission is pending (ringing or backups due).
-    /// Tapping it re-opens the Ringing screen. → viewModel.resumeMission()
-    private func pendingMissionBanner(_ pending: NextAlarmInfo) -> some View {
+    /// "Finish waking up": shown while an alarm's wake-up is pending (ringing or backups due).
+    /// Tapping it re-opens the Ringing screen. → viewModel.resumeWakeUp()
+    private func pendingWakeUpBanner(_ pending: NextAlarmInfo) -> some View {
         Button {
-            viewModel.resumeMission()
+            viewModel.resumeWakeUp()
         } label: {
             HStack(spacing: Theme.Spacing.md) {
                 Image(systemName: "bolt.heart.fill")
                     .font(.title2)
                     .symbolEffect(.pulse, options: .repeating)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Finish your mission")
+                    Text("Finish waking up")
                         .font(.riseHeadline)
-                    Text("\(pending.title) is locked until you do. Backup alarms will keep ringing.")
+                    Text("\(pending.title) keeps ringing until you're up. Tap to open it.")
                         .font(.riseCaption)
                         .opacity(0.85)
                         .multilineTextAlignment(.leading)

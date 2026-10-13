@@ -85,9 +85,10 @@ final class AppDependencies {
     /// The real app: database on disk + real AlarmKit, audio, sensors and camera matching.
     static func live() -> AppDependencies {
         let (container, notice) = openDatabase()
+        let settings = AppSettings()
         let dependencies = AppDependencies(
             modelContainer: container,
-            alarmScheduler: AlarmKitScheduler(),
+            alarmScheduler: AlarmKitScheduler(settings: settings),   // reads the Wake-up guarantee
             audio: AudioService(),
             timeAnnouncer: SpeechTimeAnnouncer(),
             missionServices: MissionServices(
@@ -98,7 +99,7 @@ final class AppDependencies {
                 // (see PixelPhotoMatcher). Real iPhones always use Vision.
                 photoMatcher: MissionEnvironment.isSimulator ? PixelPhotoMatcher() : VisionPhotoMatcher()
             ),
-            settings: AppSettings(),
+            settings: settings,
             sleepSounds: SleepSoundPlayer(),
             bedtimeReminder: NotificationBedtimeReminder(),
             wallpaperStore: FileWallpaperStore()

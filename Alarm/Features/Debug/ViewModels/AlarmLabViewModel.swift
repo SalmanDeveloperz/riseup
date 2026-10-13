@@ -127,8 +127,8 @@ final class AlarmLabViewModel {
             try repository.insert(alarm)
             try await scheduler.schedule(alarm)
 
-            let backups = AlarmKitScheduler.backupOffsetsInMinutes.map { "+\($0)" }.joined(separator: ", ")
-            write("Main alarm at \(String(format: "%02d:%02d", hour, minute)), backups at \(backups) min.")
+            let backups = AlarmKitScheduler.backupOffsets.map { "+\(Int($0)) s" }.joined(separator: ", ")
+            write("Main alarm at \(String(format: "%02d:%02d", hour, minute)), backups at \(backups).")
             write("Try 1: tap “Start Mission” → app should open on the Ringing screen.")
             write("Try 2: tap “Stop” instead → backups should keep ringing.")
         }
@@ -257,10 +257,10 @@ final class AlarmLabViewModel {
             for wakeAlarm in wakeAlarms {
                 if wakeAlarm.id == alarm.id {
                     title = "\(wakeAlarm.displayTitle) (main)"
-                } else if let index = AlarmKitScheduler.backupOffsetsInMinutes.indices.first(where: {
+                } else if let index = AlarmKitScheduler.backupOffsets.indices.first(where: {
                     AlarmKitScheduler.backupID(for: wakeAlarm.id, index: $0) == alarm.id
                 }) {
-                    title = "\(wakeAlarm.displayTitle) (backup +\(AlarmKitScheduler.backupOffsetsInMinutes[index]) min)"
+                    title = "\(wakeAlarm.displayTitle) (backup \(index + 1))"
                 }
             }
 

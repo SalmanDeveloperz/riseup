@@ -17,7 +17,7 @@ import Foundation
 final class MockAlarmScheduler: AlarmScheduling {
     var permission: AlarmPermission = .authorized
     private(set) var scheduledIDs: Set<UUID> = []
-    private(set) var completedMissionIDs: [UUID] = []
+    private(set) var completedWakeUpIDs: [UUID] = []
 
     func requestPermission() async -> AlarmPermission { permission }
 
@@ -41,8 +41,8 @@ final class MockAlarmScheduler: AlarmScheduling {
         scheduledIDs.remove(alarm.id)
     }
 
-    func missionCompleted(for alarm: WakeAlarm) async throws {
-        completedMissionIDs.append(alarm.id)
+    func wakeUpCompleted(for alarm: WakeAlarm) async throws {
+        completedWakeUpIDs.append(alarm.id)
     }
 
     func scheduledSystemAlarmIDs() -> Set<UUID> { scheduledIDs }
@@ -72,11 +72,15 @@ final class MockAlarmScheduler: AlarmScheduling {
 
     func scheduleSnooze(for alarm: WakeAlarm, minutes: Int) async throws {}
 
+    /// How many times the Ringing screen held the chain (tests can check it).
+    private(set) var holdCount = 0
+    func holdBackupChain(for alarm: WakeAlarm) async { holdCount += 1 }
+
     func ensureBackupChain(for alarm: WakeAlarm) async throws {}
 
     func cancelSystemAlarms(notIn keeping: Set<UUID>) {
         scheduledIDs = scheduledIDs.intersection(keeping)
     }
 
-    func hasPendingMission(_ alarm: WakeAlarm, now: Date) -> Bool { false }
+    func hasPendingWakeUp(_ alarm: WakeAlarm, now: Date) -> Bool { false }
 }

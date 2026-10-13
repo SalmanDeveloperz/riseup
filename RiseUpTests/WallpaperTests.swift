@@ -205,7 +205,8 @@ struct WallpaperTests {
     @Test("Developer mode needs 7 quick taps on the version number")
     func developerMode() {
         let settings = AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!)
-        let viewModel = SettingsViewModel(settings: settings, coordinator: AppCoordinator())
+        let deps = AppDependencies.preview()
+        let viewModel = SettingsViewModel(settings: settings, alarmSync: deps.alarmSync, coordinator: AppCoordinator())
         let start = Date(timeIntervalSince1970: 0)
         #expect(!settings.showsDeveloperTools, "hidden by default")
 

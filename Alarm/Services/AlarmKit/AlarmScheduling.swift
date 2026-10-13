@@ -74,9 +74,9 @@ protocol AlarmScheduling: AnyObject {
     /// Removes the alarm and its backup chain from the system.
     func cancel(_ alarm: WakeAlarm)
 
-    /// Called when the user finishes the alarm's missions: stops the backup chain and,
+    /// Called when the user is up (missions done, or "I'm up"): stops the backup chain and,
     /// for repeating alarms, arms a fresh chain for the next occurrence.
-    func missionCompleted(for alarm: WakeAlarm) async throws
+    func wakeUpCompleted(for alarm: WakeAlarm) async throws
 
     /// IDs of every alarm currently scheduled with the system (main + backups).
     /// ← USED BY: AlarmListViewModel's reconcile step, and the AlarmKit Lab.
@@ -93,7 +93,7 @@ protocol AlarmScheduling: AnyObject {
     // MARK: Added in Phase 1/2 (sync, ringing, snooze)
 
     /// Every RiseUp system alarm iOS knows about, with its state and exact date (if fixed).
-    /// ← USED BY: AlarmSyncService (reconcile, "is something ringing?", orphans), hasPendingMission
+    /// ← USED BY: AlarmSyncService (reconcile, "is something ringing?", orphans), hasPendingWakeUp
     func systemAlarms() -> [UUID: SystemAlarmInfo]
 
     /// Every system alarm ID that can belong to this WakeAlarm: main, each backup, snooze,
@@ -103,10 +103,10 @@ protocol AlarmScheduling: AnyObject {
 
     /// The IDs whose ringing means "do the wake-up now": main, backups, snooze.
     /// (NOT the wake-up check: that one only asks "are you still up?".)
-    /// ← USED BY: AlarmSyncService.ringingAlarmID, stopRinging, hasPendingMission
+    /// ← USED BY: AlarmSyncService.ringingAlarmID, stopRinging, hasPendingWakeUp
     func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
 
-    /// Only the backup-chain IDs (+1, +2, +3, +5, +8 min) of this alarm.
+    /// Only the backup-chain IDs (+30 s … +12 min) of this alarm.
     /// ← USED BY: AlarmSyncService (drops a switched-off alarm's backups unless its mission is pending)
     func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
 
@@ -116,10 +116,17 @@ protocol AlarmScheduling: AnyObject {
     func stopRinging(_ alarm: WakeAlarm)
 
     /// Schedules a one-time "snooze" ring `minutes` from now, for alarms without missions.
+    /// With the Wake-up guarantee, the backup chain moves behind the snooze ring.
     /// ← USED BY: RingingViewModel.snooze()
     func scheduleSnooze(for alarm: WakeAlarm, minutes: Int) async throws
 
-    /// Makes sure a mission alarm has its backup chain for the next ring; schedules it if missing.
+    /// Pushes the backup chain ahead: its first backup now rings `holdSeconds` (75 s) from now.
+    /// ← USED BY: RingingViewModel, every 30 s while the Ringing screen is open and the app is active.
+    /// WHY: a ringing system alarm pushes RiseUp into the background. While the user is busy on
+    /// our screen, the chain must stay just out of reach; if they leave, it rings within ~a minute.
+    func holdBackupChain(for alarm: WakeAlarm) async
+
+    /// Makes sure a guarded alarm has its backup chain for the next ring; schedules it if missing.
     /// ← USED BY: AlarmSyncService (if the user never finished yesterday's mission, the
     ///   chain for the next day was never armed)
     func ensureBackupChain(for alarm: WakeAlarm) async throws
@@ -138,13 +145,13 @@ protocol AlarmScheduling: AnyObject {
     /// ← USED BY: AlarmSyncService
     func cancelSystemAlarms(notIn keeping: Set<UUID>)
 
-    /// True when this alarm's mission is "in progress": one of its system alarms is ringing
-    /// right now, or the main alarm already rang and one of its backups is still waiting.
+    /// True when this alarm's wake-up is "in progress": one of its system alarms is ringing
+    /// right now, or it already rang and one of its backups is still waiting.
     /// While true the alarm is LOCKED (can't be switched off, edited or deleted), so
-    /// nobody can dodge the mission.
+    /// nobody can dodge the mission (or, with the Wake-up guarantee, getting up).
     ///
-    /// ← USED BY: AlarmListViewModel / AlarmEditorViewModel (mission lock), Alarm List banner
-    func hasPendingMission(_ alarm: WakeAlarm, now: Date) -> Bool
+    /// ← USED BY: AlarmListViewModel / AlarmEditorViewModel (the lock), Alarm List banner
+    func hasPendingWakeUp(_ alarm: WakeAlarm, now: Date) -> Bool
 }
 
 // MARK: - Shared helpers
@@ -163,9 +170,9 @@ extension AlarmScheduling {
         guard answer == .authorized else { throw AlarmPermissionError.denied }
     }
 
-    /// Convenience: `hasPendingMission(alarm, now: .now)`.
-    func hasPendingMission(_ alarm: WakeAlarm) -> Bool {
-        hasPendingMission(alarm, now: .now)
+    /// Convenience: `hasPendingWakeUp(alarm, now: .now)`.
+    func hasPendingWakeUp(_ alarm: WakeAlarm) -> Bool {
+        hasPendingWakeUp(alarm, now: .now)
     }
 
 }

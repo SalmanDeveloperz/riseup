@@ -12,7 +12,7 @@
 //  CONNECTIONS (the paths to this screen):
 //    lock screen "Start Mission" → StartMissionIntent → AlarmLaunchRouter → RootView.onChange
 //    app opened while an alarm rings → RootView sync → AlarmSyncService.ringingAlarmID
-//    Alarm List "Finish your mission" banner → AlarmListViewModel.resumeMission
+//    Alarm List "Finish waking up" banner → AlarmListViewModel.resumeWakeUp
 //      → all three call AppCoordinator.presentRinging(alarmID:)
 //      → coordinator.fullScreen = .ringing(...) → RootView .fullScreenCover → ScreenFactory → this view
 //
@@ -27,6 +27,8 @@ struct RingingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Developer mode (Debug builds only) → shows "Close (debug)". → DeveloperTools.swift
     @Environment(\.showsDeveloperTools) private var showsDeveloperTools
+    /// LEARN: is RiseUp in front (`.active`) or in the background? → the keep-alive (see RingingViewModel)
+    @Environment(\.scenePhase) private var scenePhase
 
     init(viewModel: RingingViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -39,6 +41,9 @@ struct RingingView: View {
                 .padding(Theme.Spacing.lg)
         }
         .onAppear { viewModel.start() }                 // → silence iOS, play our sound, open record
+        .onChange(of: scenePhase) {
+            viewModel.appActivityChanged(isActive: scenePhase == .active)   // → hold the chain or let iOS ring
+        }
         .alert("Alarm", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.dismissError() } }
@@ -145,6 +150,8 @@ struct RingingView: View {
 
             Spacer()
 
+            volumeHint
+
             if info.missions.isEmpty {
                 Button {
                     Task { await viewModel.dismiss() }     // → success
@@ -190,6 +197,23 @@ struct RingingView: View {
             }
         }
         .sensoryFeedback(.warning, trigger: viewModel.snoozeCount)
+    }
+
+    /// "Turn the volume up": shown while the media volume is low (our sound plays at that volume).
+    /// LEARN: `TimelineView(.periodic(…))` re-reads `isVolumeLow` every second; iOS doesn't tell
+    /// SwiftUI when the volume changes, so we look again regularly.
+    private var volumeHint: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            if viewModel.isVolumeLow {
+                Label("Your volume is low. Turn it up to hear your alarm.", systemImage: "speaker.wave.1.fill")
+                    .font(.riseCaption.weight(.semibold))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.vertical, Theme.Spacing.sm)
+                    .background(.ultraThinMaterial, in: .capsule)
+                    .transition(.opacity)
+            }
+        }
     }
 
     // MARK: - Mission

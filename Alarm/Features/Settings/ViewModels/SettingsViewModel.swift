@@ -3,13 +3,14 @@
 //  RiseUp
 //
 //  LAYER: ViewModel (Screen #26 Settings)
-//  WHAT:  The Settings tab: Time Pressure on/off, defaults for new alarms (sound, snooze),
+//  WHAT:  The Settings tab: Wake-up guarantee and Time Pressure on/off, defaults for new alarms (sound, snooze),
 //         links to the alarm check, FAQ, privacy, replaying the intro, and (Debug) dev tools.
 //  DATA:  reads/writes AppSettings (UserDefaults). No SwiftData.
 //
 //  CONNECTIONS:
 //    ← CREATED BY: ScreenFactory.makeRoot(for: .settings)
 //    → READS/WRITES: AppSettings
+//    → SYNC:         AlarmSyncService.rescheduleAll (after the Wake-up guarantee changes)
 //    → NAVIGATES:    AppCoordinator.show(.alarmCheck / .faq / .privacy / .alarmKitLab / .designGallery)
 //    → SHEETS:       AppCoordinator.presentSoundPicker (default sound comes back via callback)
 //
@@ -20,10 +21,12 @@ import Observation
 @Observable
 final class SettingsViewModel {
     private let settings: AppSettings
+    private let alarmSync: AlarmSyncService
     private let coordinator: AppCoordinator
 
-    init(settings: AppSettings, coordinator: AppCoordinator) {
+    init(settings: AppSettings, alarmSync: AlarmSyncService, coordinator: AppCoordinator) {
         self.settings = settings
+        self.alarmSync = alarmSync
         self.coordinator = coordinator
     }
 
@@ -36,6 +39,16 @@ final class SettingsViewModel {
     var speaksTime: Bool {
         get { settings.speaksTimeWhileRinging }
         set { settings.speaksTimeWhileRinging = newValue }
+    }
+
+    /// "Wake-up guarantee": every alarm rings again 30 s after it's silenced, until you're up in RiseUp.
+    /// Changing it re-schedules every alarm (their buttons and backup chains change).
+    var guaranteesWakeUp: Bool {
+        get { settings.guaranteesWakeUp }
+        set {
+            settings.guaranteesWakeUp = newValue
+            Task { await alarmSync.rescheduleAll() }        // → AlarmKitScheduler.schedule for each alarm
+        }
     }
 
     var defaultSnoozeMinutes: Int {

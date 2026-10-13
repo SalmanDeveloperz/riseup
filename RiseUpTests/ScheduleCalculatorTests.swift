@@ -82,8 +82,53 @@ struct ScheduleCalculatorTests {
     @Test("Backup times are the offsets after the main ring")
     func backupDates() {
         let main = date(2026, 10, 12, 6, 30)
-        let dates = AlarmScheduleCalculator.backupDates(after: main, offsetsInMinutes: [1, 2, 5])
-        #expect(dates == [date(2026, 10, 12, 6, 31), date(2026, 10, 12, 6, 32), date(2026, 10, 12, 6, 35)])
+        let dates = AlarmScheduleCalculator.backupDates(after: main, offsets: [30, 60, 300])
+        #expect(dates == [main.addingTimeInterval(30), date(2026, 10, 12, 6, 31), date(2026, 10, 12, 6, 35)])
+    }
+
+    // MARK: - Wake-up guarantee: "is a wake-up in progress?"
+
+    private func isPending(_ backups: [Date], nextRing: Date?, now: Date) -> Bool {
+        AlarmScheduleCalculator.isWakeUpPending(backupDates: backups, nextRing: nextRing, now: now,
+                                                firstOffset: 30, window: 45 * 60)
+    }
+
+    @Test("Before the alarm rings, its armed chain is NOT a pending wake-up")
+    func notPendingBeforeRing() {
+        let ring = date(2026, 10, 12, 7, 0)
+        let chain = AlarmScheduleCalculator.backupDates(after: ring, offsets: [30, 60, 120])
+        #expect(!isPending(chain, nextRing: ring, now: date(2026, 10, 12, 6, 59)))
+    }
+
+    @Test("After the ring (next ring is tomorrow), the waiting chain IS pending")
+    func pendingAfterRing() {
+        let ring = date(2026, 10, 12, 7, 0)
+        let chain = AlarmScheduleCalculator.backupDates(after: ring, offsets: [30, 60, 120])
+        let now = ring.addingTimeInterval(10)
+        #expect(isPending(chain, nextRing: date(2026, 10, 13, 7, 0), now: now))
+    }
+
+    @Test("A chain held back by the Ringing screen, or after a snooze, is still pending")
+    func pendingWhenHeldOrSnoozed() {
+        let now = date(2026, 10, 12, 7, 3)
+        let held = AlarmScheduleCalculator.backupDates(after: now.addingTimeInterval(45), offsets: [30, 60])
+        #expect(isPending(held, nextRing: date(2026, 10, 13, 7, 0), now: now))
+        let snoozed = AlarmScheduleCalculator.backupDates(after: now.addingTimeInterval(20 * 60), offsets: [30, 60])
+        #expect(isPending(snoozed, nextRing: date(2026, 10, 13, 7, 0), now: now))
+    }
+
+    @Test("A quick alarm that rang (no next ring) is pending while backups remain")
+    func pendingQuickAlarm() {
+        let now = date(2026, 10, 12, 7, 0, 10)
+        #expect(isPending([now.addingTimeInterval(20)], nextRing: nil, now: now))
+        #expect(!isPending([], nextRing: nil, now: now))
+    }
+
+    @Test("Stale backups hours away (time-zone change) don't lock the alarm")
+    func staleBackupsAreNotPending() {
+        let now = date(2026, 10, 12, 4, 0)
+        let stale = [date(2026, 10, 12, 7, 0, 30)]      // the old chain, 3 h away
+        #expect(!isPending(stale, nextRing: date(2026, 10, 12, 6, 0), now: now))
     }
 
     // LEARN: `arguments:` runs the same test once per value. Here: 4 small tests in one.
@@ -109,7 +154,7 @@ struct ScheduleCalculatorTests {
     @Test("Backup, snooze and wake-up-check IDs are all different and stable")
     func derivedIDs() {
         let alarmID = UUID()
-        let backups = AlarmKitScheduler.backupOffsetsInMinutes.indices.map { AlarmKitScheduler.backupID(for: alarmID, index: $0) }
+        let backups = AlarmKitScheduler.backupOffsets.indices.map { AlarmKitScheduler.backupID(for: alarmID, index: $0) }
         let snooze = AlarmKitScheduler.snoozeID(for: alarmID)
         let check = AlarmKitScheduler.wakeUpCheckID(for: alarmID)
 

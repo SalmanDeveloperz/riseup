@@ -33,6 +33,21 @@ struct SettingsView: View {
                 }
                 GlowCard {
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                        Toggle(isOn: $viewModel.guaranteesWakeUp) {
+                            Label("Wake-up guarantee", systemImage: "lock.shield.fill")
+                                .font(.riseHeadline)
+                                .foregroundStyle(Theme.Colors.textPrimary)
+                        }
+                        .toggleStyle(.neon)
+                        // WHY explain it: iOS lets Stop and the side/volume buttons silence an alarm, and
+                        // no app can block that. Users should know why the alarm comes back.
+                        Text("Stop and the side or volume buttons only pause an alarm for 30 seconds. It keeps coming back until you open RiseUp and get up.")
+                            .font(.riseCaption)
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                }
+                GlowCard {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Toggle(isOn: $viewModel.speaksTime) {
                             Label("Time Pressure", systemImage: "waveform")
                                 .font(.riseHeadline)
@@ -132,6 +147,7 @@ struct SettingsView: View {
 #Preview {
     let dependencies = AppDependencies.preview()
     NavigationStack {
-        SettingsView(viewModel: SettingsViewModel(settings: dependencies.settings, coordinator: AppCoordinator()))
+        SettingsView(viewModel: SettingsViewModel(settings: dependencies.settings, alarmSync: dependencies.alarmSync,
+                                                  coordinator: AppCoordinator()))
     }
 }

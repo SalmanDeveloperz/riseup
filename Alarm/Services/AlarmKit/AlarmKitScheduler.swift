@@ -12,19 +12,27 @@
 //  1. MAIN ALARM: one AlarmKit alarm with the SAME id as the WakeAlarm. It repeats
 //     on the chosen weekdays and rings even in Silent mode or when the app is closed.
 //
-//  2. BACKUP CHAIN (only for alarms with missions):
+//  2. BACKUP CHAIN, the "re-ring chain" (mission alarms, and EVERY alarm while the
+//     Wake-up guarantee is on: `isGuarded`):
 //     WHY: iOS always shows a "Stop" button on a ringing alarm, and we can't hide it.
-//     A sleepy user could press Stop and skip the mission. So we also schedule a few
-//     one-time "backup" alarms a few minutes after the main one (e.g. +1, +2, +3, +5, +8 min).
-//     • User completes the mission → `missionCompleted` cancels the backups. Silence.
-//     • User just presses Stop → backups keep ringing until they do the mission.
-//     Backups use FIXED dates (just the next occurrence), so after each wake-up we
-//     re-arm them for the following day.
+//     Worse, the side and volume buttons silence ANY app's alarm (Apple's rule; Salman
+//     found it on his iPhone). So we also schedule one-time "backup" alarms right after
+//     the main one: +30 s, +1, +1.5, +2, +3, +5, +8, +12 min (`backupOffsets`).
+//     • User gets up inside RiseUp ("I'm up" / missions done) → `wakeUpCompleted` cancels them.
+//     • User presses Stop or a button → silence for 30 s, then the next backup rings…
+//     • While the Ringing screen is open, it keeps pushing the chain ahead (`holdBackupChain`),
+//       so iOS's alert never pops over the wallpaper. Leave the app → it rings within a minute.
+//     Backups use FIXED dates (just the next ring), so after each wake-up we re-arm them
+//     for the following day.
 //
-//  3. Backup IDs are calculated from the alarm ID (see `backupID`), so we never need
+//  3. Every ring shows a second button that opens RiseUp: "Start Mission", or "Wake up"
+//     for alarms without missions → StartMissionIntent → the Ringing screen, where the
+//     alarm's wallpaper and sound take over, full screen.
+//
+//  4. Backup IDs are calculated from the alarm ID (see `backupID`), so we never need
 //     to store them in the database. We can always work out which ones to cancel.
 //
-//  4. WAKE-UP CHECK (optional, per alarm): one more `.fixed` alarm a few minutes after the
+//  5. WAKE-UP CHECK (optional, per alarm): one more `.fixed` alarm a few minutes after the
 //     user got up ("Are you up?"), ID = `wakeUpCheckID`. Just stopping it is enough:
 //     reacting at all proves you're awake.
 //
@@ -37,9 +45,25 @@ import SwiftUI
 
 final class AlarmKitScheduler: AlarmScheduling {
 
-    /// Minutes after the main alarm when backup alarms ring.
-    /// TRY: change to `[1, 2, 3]` for a shorter chain while testing.
-    static let backupOffsetsInMinutes = [1, 2, 3, 5, 8]
+    /// Seconds after a ring when the backup alarms ring (the re-ring chain).
+    /// WHY 30 s first: a press on a side button silences only the alarm ringing at that moment;
+    /// the next one is never more than 30–60 s away. 8 backups cover 12 minutes.
+    /// TRY: `[30, 60]` for a short chain while testing.
+    static let backupOffsets: [TimeInterval] = [30, 60, 90, 120, 180, 300, 480, 720]
+
+    /// How far ahead the Ringing screen pushes the chain each time it holds it (every 30 s).
+    static let holdSeconds: TimeInterval = 75
+
+    /// Only backups this close to "now" can mean a wake-up is in progress.
+    /// 45 min = the longest snooze (30 min) + the whole chain + some room.
+    private static let pendingWindow: TimeInterval = 45 * 60
+
+    /// Reads the Wake-up guarantee switch. → AppSettings.guaranteesWakeUp
+    private let settings: AppSettings
+
+    init(settings: AppSettings) {
+        self.settings = settings
+    }
 
     // WHY we always write `AlarmManager.shared.…` instead of keeping it in a property:
     // AlarmKit's async methods run on a background thread, and `AlarmManager` isn't
@@ -93,8 +117,8 @@ final class AlarmKitScheduler: AlarmScheduling {
             // the alarm off or deleted it. Then whatever we just scheduled must go.
             guard Self.isStillWanted(alarm) else { cancel(alarmID: id); return }
 
-            if alarm.hasMissions {
-                try await scheduleBackupChain(for: alarm, afterDate: .now)
+            if isGuarded(alarm), let ringDate = alarm.nextFireDate(after: .now) {
+                try await serially(id) { try await self.scheduleBackupChain(for: alarm, after: ringDate) }
                 guard Self.isStillWanted(alarm) else { cancel(alarmID: id); return }
             }
         } catch {
@@ -128,15 +152,24 @@ final class AlarmKitScheduler: AlarmScheduling {
         cancelBackupChain(alarmID: alarmID)
     }
 
-    func missionCompleted(for alarm: WakeAlarm) async throws {
-        cancelBackupChain(alarmID: alarm.id)
-        try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
+    func wakeUpCompleted(for alarm: WakeAlarm) async throws {
+        try await serially(alarm.id) {
+            self.cancelBackupChain(alarmID: alarm.id)
+            try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
 
-        // Repeating alarms need tomorrow's (or next week's) chain armed right away.
-        // One-time alarms are finished; their ViewModel turns them off.
-        if alarm.isRepeating && alarm.isEnabled && alarm.hasMissions {
-            try await scheduleBackupChain(for: alarm, afterDate: .now)
+            // Repeating alarms need tomorrow's (or next week's) chain armed right away.
+            // One-time alarms are finished; their ViewModel turns them off.
+            if alarm.isRepeating && alarm.isEnabled && self.isGuarded(alarm),
+               let ringDate = alarm.nextFireDate(after: .now) {
+                try await self.scheduleBackupChain(for: alarm, after: ringDate)
+            }
         }
+    }
+
+    /// Does this alarm get a re-ring chain? Mission alarms always; all others while the
+    /// Wake-up guarantee is on (Settings, on by default).
+    private func isGuarded(_ alarm: WakeAlarm) -> Bool {
+        alarm.hasMissions || settings.guaranteesWakeUp
     }
 
     func scheduledSystemAlarmIDs() -> Set<UUID> {
@@ -171,7 +204,7 @@ final class AlarmKitScheduler: AlarmScheduling {
     }
 
     func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
-        Set(Self.backupOffsetsInMinutes.indices.map { Self.backupID(for: alarm.id, index: $0) })
+        Set(Self.backupOffsets.indices.map { Self.backupID(for: alarm.id, index: $0) })
     }
 
     func stopRinging(_ alarm: WakeAlarm) {
@@ -186,21 +219,48 @@ final class AlarmKitScheduler: AlarmScheduling {
     func scheduleSnooze(for alarm: WakeAlarm, minutes: Int) async throws {
         let id = Self.snoozeID(for: alarm.id)
         try? AlarmManager.shared.cancel(id: id)
+        let ringDate = Date.now.addingTimeInterval(TimeInterval(minutes * 60))
+        let guarded = isGuarded(alarm)
         let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
-            schedule: .fixed(Date.now.addingTimeInterval(TimeInterval(minutes * 60))),
+            schedule: .fixed(ringDate),
             attributes: makeAttributes(for: alarm, isBackup: false, usesSnooze: false),
+            secondaryIntent: guarded ? StartMissionIntent(wakeAlarmID: alarm.id, ringingSystemAlarmID: id) : nil,
             sound: Self.sound(named: alarm.soundName)
         )
         _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
+
+        // The chain follows the snooze: a button press on the snooze ring only buys 30 s too.
+        if guarded {
+            try await serially(alarm.id) {
+                self.cancelBackupChain(alarmID: alarm.id)
+                try await self.scheduleBackupChain(for: alarm, after: ringDate)
+            }
+        }
+    }
+
+    func holdBackupChain(for alarm: WakeAlarm) async {
+        // LEARN: a deleted SwiftData object has no `modelContext`; never read it further.
+        guard alarm.modelContext != nil, !alarm.isDeleted, isGuarded(alarm) else { return }
+        // The chain's FIRST backup lands `holdSeconds` from now; the others follow it.
+        let ringDate = Date.now.addingTimeInterval(Self.holdSeconds - Self.backupOffsets[0])
+        try? await serially(alarm.id) {
+            self.cancelBackupChain(alarmID: alarm.id)
+            try await self.scheduleBackupChain(for: alarm, after: ringDate)
+        }
     }
 
     func ensureBackupChain(for alarm: WakeAlarm) async throws {
-        guard alarm.isEnabled, alarm.hasMissions else { return }
-        // A mission is in progress: its chain is doing its job, don't touch it.
-        if hasPendingMission(alarm) { return }
+        guard alarm.isEnabled, isGuarded(alarm) else { return }
+        try await serially(alarm.id) { try await self.ensureBackupChainNow(for: alarm) }
+    }
+
+    /// The body of `ensureBackupChain`, run in line with the other chain jobs (see `serially`).
+    private func ensureBackupChainNow(for alarm: WakeAlarm) async throws {
+        // A wake-up is in progress: its chain is doing its job, don't touch it.
+        if hasPendingWakeUp(alarm) { return }
         let system = systemAlarms()
         let firstBackup = system[Self.backupID(for: alarm.id, index: 0)]?.fixedDate
-        let hasAnyBackup = Self.backupOffsetsInMinutes.indices.contains {
+        let hasAnyBackup = Self.backupOffsets.indices.contains {
             system[Self.backupID(for: alarm.id, index: $0)] != nil
         }
 
@@ -209,34 +269,32 @@ final class AlarmKitScheduler: AlarmScheduling {
         // the main alarm moves but the backups didn't, and rang "Mission not finished!" before
         // the real alarm. If backup 1 isn't exactly where it should be, re-arm the chain.
         var isOnTime = false
-        if let firstBackup, let mainDate = alarm.nextFireDate(after: .now),
-           let expected = AlarmScheduleCalculator.backupDates(after: mainDate, offsetsInMinutes: Self.backupOffsetsInMinutes).first {
-            isOnTime = abs(firstBackup.timeIntervalSince(expected)) < 60
+        let mainDate = alarm.nextFireDate(after: .now)
+        if let firstBackup, let mainDate {
+            isOnTime = abs(firstBackup.timeIntervalSince(mainDate.addingTimeInterval(Self.backupOffsets[0]))) < 5
         }
-        if !hasAnyBackup || !isOnTime {
+        if !hasAnyBackup || !isOnTime, let mainDate {
             cancelBackupChain(alarmID: alarm.id)
-            try await scheduleBackupChain(for: alarm, afterDate: .now)
+            try await scheduleBackupChain(for: alarm, after: mainDate)
         }
     }
 
-    func hasPendingMission(_ alarm: WakeAlarm, now: Date) -> Bool {
-        guard alarm.hasMissions else { return false }
+    func hasPendingWakeUp(_ alarm: WakeAlarm, now: Date) -> Bool {
         let system = systemAlarms()
-        // 1. Is any of its system alarms ringing right now?
-        if ringingSystemAlarmIDs(for: alarm).contains(where: { system[$0]?.state == .alerting }) {
+        // 1. Is one of its system alarms ringing right now? (Only guarded alarms lock: a plain
+        //    alarm without the guarantee may simply be stopped.)
+        if isGuarded(alarm), ringingSystemAlarmIDs(for: alarm).contains(where: { system[$0]?.state == .alerting }) {
             return true
         }
-        // 2. Did the main alarm already ring while a backup is still waiting?
-        // Each backup knows its offset (+1, +2, +3, +5, +8 min), so its date minus the
-        // offset is the moment the main alarm rang (or will ring).
+        // 2. Did it already ring while its chain is still waiting?
         // WHY not "a backup is due soon": that's also true in the minute BEFORE the ring,
-        // which locked the alarm too early (we saw this while testing).
-        for (index, offset) in Self.backupOffsetsInMinutes.enumerated() {
-            guard let date = system[Self.backupID(for: alarm.id, index: index)]?.fixedDate else { continue }
-            let mainRing = date.addingTimeInterval(-TimeInterval(offset * 60))
-            if mainRing <= now { return true }
-        }
-        return false
+        // which locked the alarm too early (we saw this while testing). The rule compares the
+        // backups with the NEXT ring's chain instead (see AlarmScheduleCalculator.isWakeUpPending).
+        let backupDates = backupSystemAlarmIDs(for: alarm).compactMap { system[$0]?.fixedDate }
+        return AlarmScheduleCalculator.isWakeUpPending(
+            backupDates: backupDates, nextRing: alarm.nextFireDate(after: now), now: now,
+            firstOffset: Self.backupOffsets[0], window: Self.pendingWindow
+        )
     }
 
     func scheduleWakeUpCheck(for alarm: WakeAlarm, minutes: Int) async throws {
@@ -304,8 +362,11 @@ final class AlarmKitScheduler: AlarmScheduling {
             ))
         }
 
-        // Snooze only exists for alarms WITHOUT missions. Mission alarms get "Start Mission" instead.
-        let usesSnooze = !alarm.hasMissions && alarm.isSnoozeEnabled
+        // iOS's own Snooze button only for alarms WITHOUT a chain: with one, the backups would ring
+        // in the middle of the snooze. Guarded alarms snooze inside RiseUp (Ringing screen), and
+        // get "Start Mission" / "Wake up" here instead.
+        let guarded = isGuarded(alarm)
+        let usesSnooze = !guarded && alarm.isSnoozeEnabled
         let countdown = usesSnooze
             ? Alarm.CountdownDuration(preAlert: nil, postAlert: TimeInterval(alarm.snoozeMinutes * 60))
             : nil
@@ -314,7 +375,7 @@ final class AlarmKitScheduler: AlarmScheduling {
             countdownDuration: countdown,
             schedule: schedule,
             attributes: makeAttributes(for: alarm, isBackup: false, usesSnooze: usesSnooze),
-            secondaryIntent: alarm.hasMissions
+            secondaryIntent: guarded
                 ? StartMissionIntent(wakeAlarmID: alarm.id, ringingSystemAlarmID: alarm.id)
                 : nil,
             sound: Self.sound(named: alarm.soundName)
@@ -324,32 +385,64 @@ final class AlarmKitScheduler: AlarmScheduling {
 
     // MARK: - Backup chain
 
-    private func scheduleBackupChain(for alarm: WakeAlarm, afterDate: Date) async throws {
-        // → WakeAlarm.nextFireDate (WakeAlarm+Schedule.swift): works for normal AND quick alarms.
-        guard let mainDate = alarm.nextFireDate(after: afterDate) else { return }
-
-        let dates = AlarmScheduleCalculator.backupDates(
-            after: mainDate,
-            offsetsInMinutes: Self.backupOffsetsInMinutes
-        )
+    /// Schedules the backups for one ring: `ringDate` + each offset.
+    /// Call it inside `serially` (it assumes no other chain job runs for this alarm meanwhile).
+    private func scheduleBackupChain(for alarm: WakeAlarm, after ringDate: Date) async throws {
+        let dates = AlarmScheduleCalculator.backupDates(after: ringDate, offsets: Self.backupOffsets)
+        let alarmID = alarm.id
+        let version = chainVersions[alarmID, default: 0]
 
         // LEARN: `enumerated()` gives us (index, element) pairs: 0, 1, 2…
-        for (index, date) in dates.enumerated() {
-            let backupID = Self.backupID(for: alarm.id, index: index)
+        for (index, date) in dates.enumerated() where date > .now {
+            let backupID = Self.backupID(for: alarmID, index: index)
             let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
                 schedule: .fixed(date),
                 attributes: makeAttributes(for: alarm, isBackup: true, usesSnooze: false),
-                secondaryIntent: StartMissionIntent(wakeAlarmID: alarm.id, ringingSystemAlarmID: backupID),
+                secondaryIntent: StartMissionIntent(wakeAlarmID: alarmID, ringingSystemAlarmID: backupID),
                 sound: Self.sound(named: alarm.soundName)
             )
             _ = try await AlarmManager.shared.schedule(id: backupID, configuration: configuration)
+            // WHY check after every `await`: while iOS was busy, the chain may have been cancelled
+            // ("I'm up", alarm switched off or deleted). Then this backup must not survive.
+            guard chainVersions[alarmID, default: 0] == version else {
+                try? AlarmManager.shared.cancel(id: backupID)
+                return
+            }
         }
     }
 
+    /// Goes up by one on every chain cancel, so a chain job that is still busy can notice.
+    private var chainVersions: [UUID: Int] = [:]
+
     private func cancelBackupChain(alarmID: UUID) {
-        for index in Self.backupOffsetsInMinutes.indices {
+        chainVersions[alarmID, default: 0] += 1
+        for index in Self.backupOffsets.indices {
             try? AlarmManager.shared.cancel(id: Self.backupID(for: alarmID, index: index))
         }
+    }
+
+    /// The last chain job of each alarm (the "line" that `serially` adds to).
+    private var chainJobs: [UUID: Task<Void, Never>] = [:]
+
+    /// Runs `job` after every earlier chain job of the same alarm has finished.
+    ///
+    /// WHY: the Ringing screen re-arms the chain every 30 s, while the sync, a snooze or "I'm up"
+    /// may change it at the same moment. Jobs that mix their cancel and schedule steps could leave
+    /// a chain for the wrong ring, or none. In a line, each job sees the finished work of the last.
+    /// LEARN: each job waits for the previous Task (`await previous?.value`), like people in a queue.
+    private func serially(_ alarmID: UUID, _ job: @escaping () async throws -> Void) async throws {
+        let previous = chainJobs[alarmID]
+        let task = Task<Result<Void, any Error>, Never> {
+            await previous?.value
+            do {
+                try await job()
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }
+        chainJobs[alarmID] = Task { _ = await task.value }
+        try await task.value.get()
     }
 
     /// Calculates the ID of backup alarm number `index` for a given alarm.
@@ -395,16 +488,22 @@ final class AlarmKitScheduler: AlarmScheduling {
     // MARK: - Presentation (what the system shows)
 
     private func makeAttributes(for alarm: WakeAlarm, isBackup: Bool, usesSnooze: Bool) -> AlarmAttributes<RiseUpAlarmMetadata> {
-        let title: LocalizedStringResource = isBackup
-            ? "Mission not finished!"
-            : LocalizedStringResource(stringLiteral: alarm.displayTitle)
+        let title: LocalizedStringResource = switch (isBackup, alarm.hasMissions) {
+        case (true, true): "Mission not finished!"
+        case (true, false): "Still in bed? Tap Wake up"
+        case (false, _): LocalizedStringResource(stringLiteral: alarm.displayTitle)
+        }
 
-        // The second button: "Start Mission" (opens the app), "Snooze" (system countdown), or none.
+        // The second button: "Start Mission" / "Wake up" (open the app), "Snooze" (system countdown), or none.
         let secondaryButton: AlarmButton?
         let secondaryBehavior: AlarmPresentation.Alert.SecondaryButtonBehavior?
         if alarm.hasMissions {
             secondaryButton = AlarmButton(text: "Start Mission", textColor: .white, systemImageName: "bolt.fill")
             secondaryBehavior = .custom      // runs our StartMissionIntent
+        } else if isGuarded(alarm) {
+            // → StartMissionIntent too: opens the Ringing screen (wallpaper + sound, "I'm up")
+            secondaryButton = AlarmButton(text: "Wake up", textColor: .white, systemImageName: "sun.max.fill")
+            secondaryBehavior = .custom
         } else if usesSnooze {
             secondaryButton = AlarmButton(text: "Snooze", textColor: .white, systemImageName: "zzz")
             secondaryBehavior = .countdown   // AlarmKit counts down `postAlert` seconds, then rings again

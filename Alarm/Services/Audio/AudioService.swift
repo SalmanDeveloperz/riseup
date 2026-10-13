@@ -37,6 +37,10 @@ protocol AudioPlaying: AnyObject {
     func stopAlarm()
     /// Temporarily silences the alarm loop without stopping it.
     func setAlarmMuted(_ isMuted: Bool)
+    /// The iPhone's media volume, 0…1 (the volume the app's own sounds play at).
+    /// WHY: inside RiseUp the alarm plays at the MEDIA volume, not the ringer volume, and Apple
+    /// doesn't let apps change it. The Ringing screen asks the user to turn it up when it's low.
+    var outputVolume: Float { get }
 }
 
 final class AudioService: AudioPlaying {
@@ -132,6 +136,9 @@ final class AudioService: AudioPlaying {
         alarmPlayer?.setVolume(isMuted ? 0 : currentVolume, fadeDuration: 0.3)
     }
 
+    /// LEARN: `AVAudioSession.outputVolume` is the media volume the user set with the buttons.
+    var outputVolume: Float { AVAudioSession.sharedInstance().outputVolume }
+
     // MARK: - Helpers
 
     private func makePlayer(for sound: AlarmSound) -> AVAudioPlayer? {
@@ -172,4 +179,5 @@ final class MockAudioService: AudioPlaying {
     func startAlarm(_ sound: AlarmSound, rampUp: Bool) { alarmSound = sound }
     func stopAlarm() { alarmSound = nil }
     func setAlarmMuted(_ isMuted: Bool) { self.isMuted = isMuted }
+    var outputVolume: Float = 1
 }

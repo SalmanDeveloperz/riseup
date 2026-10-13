@@ -176,7 +176,7 @@ final class AppCoordinator {
     /// Shows the ringing/mission flow for an alarm, on top of everything (even onboarding).
     ///
     /// ← CALLED BY: RootView when AlarmLaunchRouter receives "Start Mission" from the lock screen,
-    ///              or when a sync finds an alarm ringing; AlarmListViewModel.resumeMission
+    ///              or when a sync finds an alarm ringing; AlarmListViewModel.resumeWakeUp
     ///
     /// WHY close a sheet first (found in code review): SwiftUI won't show a full-screen cover
     /// while a sheet (mission picker, sound picker…) is up. "Start Mission" has already silenced
