@@ -23,8 +23,6 @@ struct OnboardingView: View {
     @Environment(\.openURL) private var openURL
     /// To re-check the permission when the user comes back from the Settings app.
     @Environment(\.scenePhase) private var scenePhase
-    /// Drives the welcome sun's slow pulse.
-    @State private var isGlowing = false
 
     init(viewModel: OnboardingViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -104,14 +102,7 @@ struct OnboardingView: View {
     private var welcomePage: some View {
         VStack(spacing: Theme.Spacing.xl) {
             Spacer()
-            Image(systemName: "sun.horizon.fill")
-                .font(.system(size: 110, weight: .bold))
-                .foregroundStyle(Theme.Gradients.sunrise)
-                .shadow(color: Theme.Colors.neonOrange.opacity(isGlowing ? 0.8 : 0.3), radius: isGlowing ? 40 : 15)
-                .scaleEffect(isGlowing ? 1.05 : 0.95)
-                .onAppear {
-                    withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { isGlowing = true }
-                }
+            AppLogo(isBreathing: true)                      // the same picture as the Home Screen icon
             VStack(spacing: Theme.Spacing.xs) {
                 Text("RiseUp")
                     .font(.riseLargeTitle)

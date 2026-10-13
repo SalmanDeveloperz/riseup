@@ -170,3 +170,6 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | `Duration.formatted(.time(pattern:))` | "12:34" from a number of seconds | `SleepPlayerViewModel.remainingText` |
 | Custom `Binding(get:set:)` | Connect a control to ViewModel methods instead of a property | `SleepPlayerView` sliders, `SleepView` toggle |
 | Loudness (RMS) normalisation | Scale every sound to the same average level | `Tools/generate_sleep_sounds.py` |
+| `AxisMarks(values:)` + `AxisContentBuilder` | Put axis labels at exact positions; share one axis between charts | `ChartDays` in `WakeTimeChart.swift` |
+| CoreGraphics drawing | Paths, gradients and clipping: how the app icon is drawn | `Tools/generate_app_icon.swift` |
+| App icon appearances | One 1024 px icon each for normal, dark and tinted Home Screens | `Assets.xcassets/AppIcon.appiconset` |

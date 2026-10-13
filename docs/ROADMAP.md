@@ -93,7 +93,8 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | 27 | Premium management | ⬜ |
 | 23b | Weather on the Morning panel (WeatherKit capability + final bundle ID) | ⬜ |
 | — | Database-failure recovery screen (replace `fatalError` in AppDependencies) | ⬜ |
-| — | Remove Debug tools, privacy manifest, icon, screenshots, TestFlight, submit | ⬜ |
+| — | App icon + in-app logo (`Tools/generate_app_icon.swift`) | 🟡 done early (2026-10-13) |
+| — | Remove Debug tools, privacy manifest, screenshots, TestFlight, submit | ⬜ |
 
 ## Phase 8 — Post-launch
 | # | Screen / item | Status |

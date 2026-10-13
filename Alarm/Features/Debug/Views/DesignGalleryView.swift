@@ -18,6 +18,13 @@ struct DesignGalleryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                section("Logo") {
+                    HStack(spacing: Theme.Spacing.lg) {
+                        AppLogo(isBreathing: true)
+                        AppLogo(size: AppLogo.Size.small)
+                    }
+                }
+
                 section("Colors") {
                     // LEARN: `LazyVGrid` lays items out in columns; `.adaptive(minimum:)`
                     // fits as many 64-pt columns as the screen width allows.

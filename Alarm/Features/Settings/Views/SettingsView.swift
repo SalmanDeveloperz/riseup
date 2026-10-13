@@ -92,11 +92,14 @@ struct SettingsView: View {
                 }
                 #endif
 
-                Text("RiseUp \(viewModel.appVersion)")
-                    .font(.riseCaption)
-                    .foregroundStyle(Theme.Colors.textTertiary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, Theme.Spacing.lg)
+                VStack(spacing: Theme.Spacing.xs) {
+                    AppLogo(size: AppLogo.Size.small)
+                    Text("RiseUp \(viewModel.appVersion)")
+                        .font(.riseCaption)
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, Theme.Spacing.lg)
             }
             .padding(Theme.Spacing.lg)
         }
