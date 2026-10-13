@@ -62,7 +62,11 @@ struct AlarmListView: View {
                 }
                 .tint(Theme.Colors.neonOrange)
             }
+            // WHY the #if is HERE and not only inside `debugToolbar` (found when building the App
+            // Store version): an empty toolbar builder doesn't compile, so the Release build failed.
+            #if DEBUG
             debugToolbar
+            #endif
         }
         // Runs every time this screen becomes visible (first launch, back from the editor,
         // back from another tab) → re-reads alarms and checks them against iOS.
@@ -201,10 +205,10 @@ struct AlarmListView: View {
 
     // MARK: - Toolbar & alert
 
+    #if DEBUG
     /// Debug-only menu (🐞) to add example alarms quickly.
     @ToolbarContentBuilder
     private var debugToolbar: some ToolbarContent {
-        #if DEBUG
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button("Add sample alarms", systemImage: "wand.and.stars") {
@@ -214,8 +218,8 @@ struct AlarmListView: View {
                 Image(systemName: "ladybug.fill")
             }
         }
-        #endif
     }
+    #endif
 
     /// Turns "is there an error message?" into the true/false the alert needs.
     private var isShowingError: Binding<Bool> {

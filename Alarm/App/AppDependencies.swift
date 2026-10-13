@@ -49,6 +49,9 @@ final class AppDependencies {
     let settings: AppSettings
     let sleepSounds: any SleepSoundPlaying
     let bedtimeReminder: any BedtimeReminding
+    /// A message for the user if the database had to be repaired at launch (shown once by RootView).
+    /// nil = everything was fine (almost always).
+    private(set) var databaseNotice: String?
 
     init(
         modelContainer: ModelContainer,
@@ -76,30 +79,53 @@ final class AppDependencies {
 
     /// The real app: database on disk + real AlarmKit, audio, sensors and camera matching.
     static func live() -> AppDependencies {
-        do {
-            return AppDependencies(
-                modelContainer: try ModelContainerFactory.make(),
-                alarmScheduler: AlarmKitScheduler(),
-                audio: AudioService(),
-                timeAnnouncer: SpeechTimeAnnouncer(),
-                missionServices: MissionServices(
-                    shake: CoreMotionShakeDetector(),
-                    steps: CoreMotionStepCounter(),
-                    squat: CoreMotionSquatDetector(),
-                    // WHY the switch: Vision's photo fingerprints don't work in the Simulator
-                    // (see PixelPhotoMatcher). Real iPhones always use Vision.
-                    photoMatcher: MissionEnvironment.isSimulator ? PixelPhotoMatcher() : VisionPhotoMatcher()
-                ),
-                settings: AppSettings(),
-                sleepSounds: SleepSoundPlayer(),
-                bedtimeReminder: NotificationBedtimeReminder()
-            )
-        } catch {
-            // WHY crash here? Without its database the app can't do anything useful, and
-            // this should only fail from a programming mistake (e.g. a bad migration).
-            // Phase 7 adds a friendlier recovery screen before release.
-            fatalError("RiseUp could not open its database: \(error)")
+        let (container, notice) = openDatabase()
+        let dependencies = AppDependencies(
+            modelContainer: container,
+            alarmScheduler: AlarmKitScheduler(),
+            audio: AudioService(),
+            timeAnnouncer: SpeechTimeAnnouncer(),
+            missionServices: MissionServices(
+                shake: CoreMotionShakeDetector(),
+                steps: CoreMotionStepCounter(),
+                squat: CoreMotionSquatDetector(),
+                // WHY the switch: Vision's photo fingerprints don't work in the Simulator
+                // (see PixelPhotoMatcher). Real iPhones always use Vision.
+                photoMatcher: MissionEnvironment.isSimulator ? PixelPhotoMatcher() : VisionPhotoMatcher()
+            ),
+            settings: AppSettings(),
+            sleepSounds: SleepSoundPlayer(),
+            bedtimeReminder: NotificationBedtimeReminder()
+        )
+        dependencies.databaseNotice = notice
+        return dependencies
+    }
+
+    /// Opens the database, and NEVER crashes the app if that fails.
+    ///
+    /// WHY (Phase 7, found in the code review): this used to be `fatalError`. A damaged database
+    /// file (a full disk, an interrupted update…) would then crash RiseUp on EVERY launch, even
+    /// when opened from a ringing alarm. Now, step by step:
+    ///   1. open normally (what happens 99.99 % of the time)
+    ///   2. try once more (a passing problem, e.g. the disk was busy)
+    ///   3. move the damaged file aside (renamed, NOT deleted) and start a fresh database
+    ///   4. last resort: a temporary in-memory database, so the app at least opens
+    /// For 3 and 4 the user is told what happened (`databaseNotice`).
+    private static func openDatabase() -> (ModelContainer, String?) {
+        if let container = try? ModelContainerFactory.make() { return (container, nil) }
+        if let container = try? ModelContainerFactory.make() { return (container, nil) }
+        if (try? ModelContainerFactory.setAsideDamagedStore()) != nil,
+           let container = try? ModelContainerFactory.make() {
+            return (container, "RiseUp couldn't read its saved data, so it started fresh. Please check your alarms and set them again.")
         }
+        // LEARN: `try!` is OK here: an in-memory database needs no file and can't realistically fail.
+        let container = try! ModelContainerFactory.make(inMemory: true)
+        return (container, "RiseUp can't save data right now (is your iPhone's storage full?). Alarms you set may be lost when the app closes. Free up some space and restart RiseUp.")
+    }
+
+    /// ← CALLED BY: RootView after showing `databaseNotice`
+    func dismissDatabaseNotice() {
+        databaseNotice = nil
     }
 
     /// Previews & tests: in-memory database + fakes. Never touches real data, alarms or speakers.

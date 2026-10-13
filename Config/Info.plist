@@ -18,6 +18,17 @@
 	<string>RiseUp schedules your alarms so they ring on time, even in Silent mode or when the app is closed.</string>
 	<!-- Phase 6: keep playing sleep sounds when the phone is locked (iOS would otherwise
 	     pause the app a few seconds after the screen turns off). -->
+	<!-- Phase 7: RiseUp uses no encryption of its own (only Apple's standard HTTPS, which is exempt),
+	     so App Store Connect doesn't need to ask the export-compliance questions on every upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!-- Phase 7: the launch screen is our dark navy (Assets: LaunchBackground), not white.
+	     WHY: RiseUp is dark-only; phones in Light mode flashed white for a moment at launch. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

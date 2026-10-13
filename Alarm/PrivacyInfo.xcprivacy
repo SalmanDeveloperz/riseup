@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PrivacyInfo.xcprivacy: RiseUp's privacy manifest (Phase 7).
+
+  WHAT: Apple requires every app to declare (1) whether it tracks people, (2) what data it
+        collects, and (3) why it uses certain "required reason" system APIs.
+  RISEUP'S ANSWERS:
+    • No tracking, no tracking domains.
+    • No data collected: alarms, wake-up history, photos (only a fingerprint + thumbnail) and
+      settings never leave the iPhone. There is no server and no analytics.
+    • UserDefaults (AppSettings) is used only to store the app's own settings → reason CA92.1.
+  WHEN TO UPDATE: if you ever add analytics, crash reporting, accounts, iCloud sync or ads.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

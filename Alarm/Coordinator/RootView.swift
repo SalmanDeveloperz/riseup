@@ -126,6 +126,24 @@ struct RootView: View {
                 }
             }
         }
+        // WHY (found in the code review): after flying to another time zone, or when the clock
+        // jumps, mission backups (fixed moments) must move with the alarm. A sync re-arms them.
+        // LEARN: `.onReceive` runs the closure every time the publisher sends a notification.
+        // Phase 7: if the database had to be repaired at launch, say so once (never a silent loss).
+        .alert("Your data", isPresented: Binding(
+            get: { dependencies.databaseNotice != nil },
+            set: { if !$0 { dependencies.dismissDatabaseNotice() } }
+        )) {
+            Button("OK") { dependencies.dismissDatabaseNotice() }
+        } message: {
+            Text(dependencies.databaseNotice ?? "")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
+            Task { await dependencies.alarmSync.sync() }      // → ensureBackupChain checks dates
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
+            Task { await dependencies.alarmSync.sync() }
+        }
     }
 }
 
