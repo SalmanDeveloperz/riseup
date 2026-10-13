@@ -28,6 +28,10 @@ struct GlowCard<Content: View>: View {
             .background {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
                     .fill(Theme.Colors.surface)
+                    // WHY the shadow is on the background shape only (found in the smoothness review):
+                    // a shadow on the whole card made iOS trace every letter inside it too, an extra
+                    // drawing pass per card that made long lists scroll less smoothly.
+                    .shadow(color: isGlowing ? Theme.Colors.neonPink.opacity(0.35) : .clear, radius: 18, y: 6)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
@@ -38,7 +42,6 @@ struct GlowCard<Content: View>: View {
                         lineWidth: isGlowing ? 1.5 : 1
                     )
             }
-            .shadow(color: isGlowing ? Theme.Colors.neonPink.opacity(0.35) : .clear, radius: 18, y: 6)
             // LEARN: `.animation(_:value:)` animates the glow whenever `isGlowing` changes.
             .animation(.easeInOut(duration: 0.25), value: isGlowing)
     }

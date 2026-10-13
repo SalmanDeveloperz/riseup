@@ -52,7 +52,12 @@ struct TypingMissionView: View {
             Spacer(minLength: 0)
         }
         // Open the keyboard right away; the user shouldn't have to tap first.
-        .onAppear { isFocused = true }
+        // WHY the short wait (found in the review): asking for the keyboard DURING the slide-in
+        // animation sometimes didn't stick. 0.35 s later the screen is settled.
+        .task {
+            try? await Task.sleep(for: .milliseconds(350))
+            isFocused = true
+        }
         .sensoryFeedback(.success, trigger: viewModel.solvedCount)
     }
 

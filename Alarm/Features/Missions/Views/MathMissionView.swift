@@ -69,19 +69,19 @@ struct MathMissionView: View {
             ForEach([[1, 2, 3], [4, 5, 6], [7, 8, 9]], id: \.self) { row in
                 GridRow {
                     ForEach(row, id: \.self) { digit in
-                        key(Text("\(digit)")) { viewModel.tapDigit(digit) }
+                        key(Text("\(digit)"), accessibility: "\(digit)") { viewModel.tapDigit(digit) }
                     }
                 }
             }
             GridRow {
                 key(Image(systemName: "delete.left.fill"), accessibility: "Delete") { viewModel.deleteDigit() }
-                key(Text("0")) { viewModel.tapDigit(0) }
+                key(Text("0"), accessibility: "0") { viewModel.tapDigit(0) }
                 key(Image(systemName: "checkmark"), isPrimary: true, accessibility: "Check answer") { viewModel.submit() }
             }
         }
     }
 
-    private func key(_ label: some View, isPrimary: Bool = false, accessibility: String? = nil, action: @escaping () -> Void) -> some View {
+    private func key(_ label: some View, isPrimary: Bool = false, accessibility: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             label
                 .font(.riseClock(size: 28))
@@ -93,7 +93,8 @@ struct MathMissionView: View {
                 }
         }
         .buttonStyle(PressScaleButtonStyle())
-        .accessibilityLabel(accessibility ?? "")
+        // WHY required (found in the review): an empty label made VoiceOver read nothing for digits.
+        .accessibilityLabel(accessibility)
     }
 
     /// Quick left-right shake of the answer box.

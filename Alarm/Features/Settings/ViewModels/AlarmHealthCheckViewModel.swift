@@ -129,7 +129,7 @@ final class AlarmHealthCheckViewModel {
         }
         if !enabled.isEmpty {
             result.append(missing.isEmpty
-                ? Check(id: "scheduled", title: "All \(enabled.count) alarms are scheduled",
+                ? Check(id: "scheduled", title: enabled.count == 1 ? "Your alarm is scheduled" : "All \(enabled.count) alarms are scheduled",
                         detail: "iOS has every switched-on alarm.", status: .ok)
                 : Check(id: "scheduled", title: "\(missing.count) alarm(s) missing in iOS",
                         detail: "This can happen after restoring a backup or reinstalling.", status: .problem,

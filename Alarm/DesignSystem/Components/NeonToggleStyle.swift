@@ -42,14 +42,19 @@ struct NeonToggleStyle: ToggleStyle {
             // value arrives a moment later from the ViewModel (async), outside that
             // animation, and the knob would jump instead of sliding.
             .animation(.spring(duration: 0.25), value: configuration.isOn)
-            .onTapGesture {
-                // LEARN: `configuration.isOn` is a Binding. Toggling it updates
-                // whatever state the screen gave to `Toggle(isOn:)`.
-                configuration.isOn.toggle()
-            }
             // LEARN: `.sensoryFeedback` plays a light haptic "tick" whenever the value
             // changes. It's SwiftUI's modern replacement for UIImpactFeedbackGenerator.
             .sensoryFeedback(.selection, trigger: configuration.isOn)
+        }
+        // WHY the tap is on the WHOLE row (found in the smoothness review): before, only the
+        // small capsule reacted, so tapping the words "Snooze" did nothing. Like Apple's
+        // switches, the label is tappable too, and the row is at least 44 pt tall.
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // LEARN: `configuration.isOn` is a Binding. Toggling it updates
+            // whatever state the screen gave to `Toggle(isOn:)`.
+            configuration.isOn.toggle()
         }
         // WHY: the custom drawing hides Apple's built-in switch, so we tell VoiceOver
         // this behaves like a toggle and what its state is. Accessibility matters for App Store quality.

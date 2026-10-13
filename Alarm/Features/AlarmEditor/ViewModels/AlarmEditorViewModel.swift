@@ -209,6 +209,7 @@ final class AlarmEditorViewModel {
     /// ← CALLED BY: the "Save" toolbar button in AlarmEditorView
     func save() async {
         guard !isSaving else { return }
+        refreshLock()                                          // the alarm may have started ringing meanwhile
         if isLocked {
             errorMessage = AlarmListViewModel.lockedMessage
             return
@@ -326,9 +327,19 @@ final class AlarmEditorViewModel {
 
     /// True while this alarm's mission is pending (see AlarmScheduling.hasPendingMission).
     /// Editing it then could cancel the backups and let the user dodge the mission.
-    var isLocked: Bool {
-        guard let alarmID, let alarm = try? repository.fetch(id: alarmID) else { return false }
-        return scheduler.hasPendingMission(alarm)
+    ///
+    /// WHY stored instead of computed (found in the smoothness review): a computed version ran
+    /// a database fetch AND asked iOS for its alarm list on EVERY redraw, i.e. on every tick of
+    /// the time wheel and every letter typed. Now it's checked when the screen appears and on Save.
+    private(set) var isLocked = false
+
+    /// ← CALLED BY: AlarmEditorView `.onAppear`, and `save()` just before saving
+    func refreshLock() {
+        guard let alarmID, let alarm = try? repository.fetch(id: alarmID) else {
+            isLocked = false
+            return
+        }
+        isLocked = scheduler.hasPendingMission(alarm)          // → asks iOS (AlarmKit)
     }
 
     private func showErrorThenClose(_ message: String) {

@@ -31,6 +31,8 @@ struct AppLogo: View {
     }
 
     @State private var isGlowing = false
+    /// The iPhone's "Reduce Motion" setting: the logo stays still when it's on.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Image("AppLogo")
@@ -49,7 +51,7 @@ struct AppLogo: View {
                     radius: isGlowing ? size * 0.3 : size * 0.14, y: size * 0.04)
             .scaleEffect(isGlowing ? 1.03 : 1)
             .onAppear {
-                guard isBreathing else { return }
+                guard isBreathing, !reduceMotion else { return }
                 withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { isGlowing = true }
             }
             .accessibilityLabel("RiseUp logo")

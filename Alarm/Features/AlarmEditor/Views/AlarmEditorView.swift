@@ -73,6 +73,7 @@ struct AlarmEditorView: View {
         // WHY hide the tab bar: the editor is a focused task; tabs would invite leaving mid-edit.
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbarContent }
+        .onAppear { viewModel.refreshLock() }
         .alert("Alarm", isPresented: isShowingError) {
             Button("OK") { viewModel.dismissError() }
         } message: {
@@ -199,6 +200,8 @@ struct AlarmEditorView: View {
                 Image(systemName: "minus.circle.fill")
                     .font(.title3)
                     .foregroundStyle(Theme.Colors.danger)
+                    .frame(width: 44, height: 44)        // a comfortable finger-sized target
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Remove \(mission.type.title) mission")
@@ -329,14 +332,18 @@ struct AlarmEditorView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") { viewModel.cancel() }      // → pop, draft discarded
+                .disabled(viewModel.isSaving)            // don't leave halfway through saving
         }
         ToolbarItem(placement: .confirmationAction) {
-            Button("Save") {
-                isLabelFocused = false
-                Task { await viewModel.save() }          // → permission → database → iOS → pop
+            if viewModel.isSaving {
+                ProgressView()                           // visible feedback while iOS schedules the alarm
+            } else {
+                Button("Save") {
+                    isLabelFocused = false
+                    Task { await viewModel.save() }      // → permission → database → iOS → pop
+                }
+                .fontWeight(.bold)
             }
-            .fontWeight(.bold)
-            .disabled(viewModel.isSaving)
         }
         ToolbarItemGroup(placement: .keyboard) {
             Spacer()

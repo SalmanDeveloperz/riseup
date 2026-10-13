@@ -18,6 +18,8 @@ struct SleepView: View {
     @State private var viewModel: SleepViewModel
     /// Drives the slow "breathing" glow of the moon.
     @State private var isGlowing = false
+    /// The iPhone's "Reduce Motion" setting: no endless glow animation when it's on.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(viewModel: SleepViewModel) {
         _viewModel = State(initialValue: viewModel)
@@ -101,6 +103,7 @@ struct SleepView: View {
                 .foregroundStyle(Theme.Gradients.night)
                 .shadow(color: Theme.Colors.neonBlue.opacity(isGlowing ? 0.7 : 0.2), radius: isGlowing ? 26 : 8)
                 .onAppear {
+                    guard !reduceMotion else { return }
                     withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) { isGlowing = true }
                 }
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {

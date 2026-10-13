@@ -23,6 +23,10 @@ struct RepeatDaysPicker: View {
     @Binding var selection: Set<Weekday>
     var onPreset: (Set<Weekday>) -> Void
 
+    /// LEARN: `@ScaledMetric` grows a number with the user's text size (Settings → Display →
+    /// Text Size), so the day letters never overflow their circles at big sizes.
+    @ScaledMetric(relativeTo: .headline) private var chipSize: CGFloat = 40
+
     /// Preset buttons: title + the days it selects.
     private let presets: [(title: String, days: Set<Weekday>)] = [
         ("Once", []),
@@ -64,7 +68,8 @@ struct RepeatDaysPicker: View {
             Text(day.veryShortName)
                 .font(.riseHeadline)
                 .foregroundStyle(isOn ? .white : Theme.Colors.textSecondary)
-                .frame(width: 40, height: 40)
+                .frame(width: chipSize, height: chipSize)
+                .minimumScaleFactor(0.7)
                 .background {
                     Circle().fill(isOn ? AnyShapeStyle(Theme.Gradients.sunrise)
                                        : AnyShapeStyle(Theme.Colors.surfaceRaised))
@@ -90,6 +95,8 @@ struct RepeatDaysPicker: View {
             .padding(.vertical, Theme.Spacing.xs)
             .background(isActive ? Theme.Colors.neonPink.opacity(0.22) : Theme.Colors.surfaceRaised, in: .capsule)
             .overlay { Capsule().strokeBorder(isActive ? Theme.Colors.neonPink : .clear) }
+            .frame(minHeight: 44)                 // finger-sized tap area; the capsule still looks small
+            .contentShape(Rectangle())
             .buttonStyle(.plain)
     }
 }

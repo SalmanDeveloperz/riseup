@@ -61,7 +61,8 @@ struct SleepPlayerView: View {
     private var playButton: some View {
         // LEARN: TimelineView redraws its content on a schedule (here every second), perfect
         // for a countdown. It doesn't run when the screen is off, so it costs nothing in bed.
-        TimelineView(.periodic(from: .now, by: 1)) { context in
+        // `paused:` = no timer, no ticking (found in the review: it redrew every second for nothing).
+        TimelineView(.animation(minimumInterval: 1, paused: viewModel.timerEndsAt == nil)) { context in
             ZStack {
                 Circle()
                     .stroke(Theme.Colors.surfaceRaised, lineWidth: 8)
