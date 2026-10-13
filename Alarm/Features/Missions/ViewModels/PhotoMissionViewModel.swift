@@ -78,7 +78,11 @@ final class PhotoMissionViewModel {
         // No registered photo (damaged data), or a real device without a camera → Math.
         if payload == nil || (!CameraAccess.usesRealCamera && !MissionEnvironment.isSimulator) {
             onUnavailable()
+            return
         }
+        // WHY now: while the user reads the screen, the camera gets ready in the background,
+        // so "Take photo" opens it almost instantly. → CameraSession.prepare()
+        CameraAccess.prepareCamera()
     }
 
     /// ← CALLED BY: "Take photo"
@@ -100,7 +104,7 @@ final class PhotoMissionViewModel {
         onInteraction()
         status = .checking
         do {
-            guard let jpeg = CameraAccess.jpegData(from: image) else { throw CocoaError(.fileReadCorruptFile) }
+            guard let jpeg = await CameraAccess.makeJPEG(from: image) else { throw CocoaError(.fileReadCorruptFile) }   // background
             let fingerprint = try await matcher.fingerprint(of: jpeg)       // → Vision, off the main thread
             let distance = try matcher.distance(between: payload.fingerprint, and: fingerprint)
             lastDistance = distance

@@ -200,7 +200,7 @@ struct MissionPickerView: View {
             .sensoryFeedback(.success, trigger: viewModel.practiceSuccessCount)
             .sensoryFeedback(.selection, trigger: draft.difficulty)
             // Registration: camera (photo) and live scanner (barcode).
-            .photoCapture(isPresented: $viewModel.isShowingCamera) { image in
+            .photoCapture(isPresented: $viewModel.isShowingCamera, title: "Photograph a spot in ANOTHER room") { image in
                 Task { await viewModel.registerPhoto(image) }   // → Vision fingerprint → draft
             }
             .fullScreenCover(isPresented: $viewModel.isShowingScanner) {
@@ -321,6 +321,8 @@ struct MissionPickerView: View {
                 .foregroundStyle(Theme.Colors.textPrimary)
                 .frame(width: 40, height: 40)
                 .background(Theme.Colors.surfaceRaised, in: .circle)
+                .frame(width: 44, height: 44)        // 44-pt tap area around the 40-pt circle
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .buttonRepeatBehavior(.enabled)

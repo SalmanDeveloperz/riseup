@@ -51,7 +51,7 @@ struct PhotoMissionView: View {
             }
         }
         .onAppear { viewModel.start() }
-        .photoCapture(isPresented: $viewModel.isShowingCamera) { image in
+        .photoCapture(isPresented: $viewModel.isShowingCamera, title: "Photograph the same spot") { image in
             Task { await viewModel.check(image) }          // → Vision compares the two photos
         }
         .animation(.spring(duration: 0.3), value: viewModel.status)

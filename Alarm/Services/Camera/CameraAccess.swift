@@ -11,7 +11,8 @@
 //  CONNECTIONS:
 //    ← USED BY: PhotoMissionViewModel, BarcodeMissionViewModel, MissionPickerViewModel,
 //               AlarmHealthCheckViewModel, OnboardingViewModel
-//    → USES:    AVFoundation (AVCaptureDevice authorization), UIKit (UIImage drawing)
+//    → USES:    AVFoundation (AVCaptureDevice authorization), UIKit (UIImage drawing),
+//               CameraSession (pre-warming the camera)
 //
 
 import AVFoundation
@@ -45,6 +46,14 @@ enum CameraAccess {
         hasCamera && !MissionEnvironment.isSimulator
     }
 
+    /// Sets the camera up in the background (not switched on yet), so it opens fast when needed.
+    /// Only on a real iPhone, and only if already allowed (never triggers a popup).
+    /// → CameraSession.prepare()
+    static func prepareCamera() {
+        guard usesRealCamera, permission == .allowed else { return }
+        CameraSession.shared.prepare()
+    }
+
     /// Shows the system popup the first time; returns whether the camera may be used.
     ///
     /// WHY ask BEFORE opening the camera: if the user had said no earlier, the camera screen
@@ -53,7 +62,10 @@ enum CameraAccess {
         switch permission {
         case .allowed: return true
         case .denied: return false
-        case .notDetermined: return await AVCaptureDevice.requestAccess(for: .video)
+        case .notDetermined:
+            let allowed = await AVCaptureDevice.requestAccess(for: .video)
+            if allowed { prepareCamera() }          // start setting up while the screen slides in
+            return allowed
         }
     }
 
@@ -63,7 +75,7 @@ enum CameraAccess {
     /// flag. Vision works just as well on ~640 px, much faster, and drawing the image again
     /// bakes the rotation in.
     /// TRY: use 320 for `maxSide` and see if matching still works.
-    static func jpegData(from image: UIImage, maxSide: CGFloat = 640, quality: CGFloat = 0.8) -> Data? {
+    nonisolated static func jpegData(from image: UIImage, maxSide: CGFloat = 640, quality: CGFloat = 0.8) -> Data? {
         let longest = max(image.size.width, image.size.height)
         guard longest > 0 else { return nil }
         let scale = min(1, maxSide / longest)
@@ -74,5 +86,14 @@ enum CameraAccess {
             image.draw(in: CGRect(origin: .zero, size: size))
         }
         return resized.jpegData(compressionQuality: quality)
+    }
+
+    /// The same, but OFF the main thread, so a spinner can show while it works.
+    /// WHY (found in the smoothness review): resizing on the main thread froze the screen for a
+    /// moment right after the shutter, before "Checking…" could even appear.
+    /// LEARN: `@concurrent` = "run this async function on a background thread".
+    @concurrent
+    nonisolated static func makeJPEG(from image: UIImage, maxSide: CGFloat = 640, quality: CGFloat = 0.8) async -> Data? {
+        jpegData(from: image, maxSide: maxSide, quality: quality)
     }
 }

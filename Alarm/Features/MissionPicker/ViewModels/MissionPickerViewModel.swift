@@ -97,6 +97,9 @@ final class MissionPickerViewModel {
         }
         refreshSample()
         refreshThumbnail()
+        if type == .photo {
+            CameraAccess.prepareCamera()      // → camera gets ready in the background (fast "Take photo")
+        }
         path.append(.settings)
     }
 
@@ -171,8 +174,9 @@ final class MissionPickerViewModel {
         isRegistering = true
         defer { isRegistering = false }
         do {
-            guard let jpeg = CameraAccess.jpegData(from: image),
-                  let thumbnail = CameraAccess.jpegData(from: image, maxSide: 320, quality: 0.7) else {
+            // → resized on a background thread, so the "Saving…" state shows right away
+            guard let jpeg = await CameraAccess.makeJPEG(from: image),
+                  let thumbnail = await CameraAccess.makeJPEG(from: image, maxSide: 320, quality: 0.7) else {
                 throw CocoaError(.fileReadCorruptFile)
             }
             let fingerprint = try await services.photoMatcher.fingerprint(of: jpeg)   // → Vision
