@@ -53,6 +53,8 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
 - RiseUp is free: no StoreKit, no paywall. Never `fatalError` in production code paths.
 - Wallpapers: renderers are pure functions of (time, energy); `energy` changes LOOKS only, speed comes from
   `WallpaperEnergy.clock`. Debug-only UI also checks `@Environment(\.showsDeveloperTools)` (Developer mode).
+- Every `LiveWallpaper` has a `signatureSound`; the picker returns a `WallpaperChoice` (wallpaper + optional sound).
+  The Scene Player shares `WallpaperPickerViewModel`. New SF Symbol names must pass the `symbolsExist` test.
 
 ## Comment conventions (required in every file)
 - File header: what the file is, its LAYER, what DATA it touches, and a **CONNECTIONS** block:

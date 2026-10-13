@@ -213,3 +213,17 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | `.photosPicker` modifier | system photo library without camera permission | `WallpaperPickerView` |
 | `@Entry` environment values | an app-wide value every view (and sheet) can read | `DeveloperTools.swift` |
 | `ImageRenderer` | turn a SwiftUI view into an image (we used it to inspect wallpapers) | HOW_IT_WORKS "look at what you draw" |
+
+## Learned building the Scene Player (#33)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| `.fullScreenCover(isPresented:)` | a full-screen layer driven by a Bool in the ViewModel | `WallpaperPickerView` |
+| `.id(value)` + `.transition` | a new id = a new view, so SwiftUI fades the old one out and the new one in | `ScenePlayerView` |
+| `DragGesture().onEnded` | read where the finger ended: a sideways swipe | `ScenePlayerView` |
+| Wrap-around index | `(index + delta + count) % count` never goes below 0 or past the end | `WallpaperPickerViewModel.step` |
+| Looping audio | `AVAudioPlayer.numberOfLoops = -1` repeats until stopped | `AudioService.previewLooping` |
+| `.contentTransition(.symbolEffect(.replace))` | SF Symbols morph (▶︎ → ⏸, ♡ → ♥) | `ScenePlayerView` controls |
+| `.sensoryFeedback` | a haptic when a value changes, no extra code | `ScenePlayerView` |
+| Result structs | send back several answers at once (`WallpaperChoice`: wallpaper + optional sound) | `Wallpaper.swift` |
+| Harmonic & noise synthesis | sum of overtones = an instrument; shaped noise = rain, surf, breath | `Tools/generate_sounds.py` |
+| Testing string names | `UIImage(systemName:)` returns `nil` for a typo the compiler can't see | test `symbolsExist` |

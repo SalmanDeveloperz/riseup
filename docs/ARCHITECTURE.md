@@ -123,5 +123,6 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 | Sleep sounds | App bundle (`Alarm/Resources/SleepSounds`) | played by `AVAudioPlayer`, looping |
 | Wallpaper photos | Files in Application Support/Wallpapers (`WallpaperStore`) | big pictures stay out of the database |
 | Live wallpapers | Code (`Features/Wallpapers/Renderers`) | nothing to store or download |
+| Saved (♥) wallpapers | `AppSettings.savedWallpapers` (UserDefaults) | a short list of strings, a preference |
 | Backup, snooze and wake-up-check alarm IDs | Calculated (`backupID` / `snoozeID` / `wakeUpCheckID`) | nothing to keep in sync |
 | Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |

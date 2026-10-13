@@ -375,6 +375,29 @@ Rendering every wallpaper to PNG in a throwaway test (ImageRenderer) and viewing
 problems in one minute: a mesh gap, hidden stripes, faint aurora, dotty clouds. Then the Simulator found the clock
 being hard to read on a bright sun. **Rule:** for visual code, look at the output, not just the build.
 
+### Trace O: Tap a wallpaper, hear it, choose it with its sound
+```
+WallpaperPickerView card tap → viewModel.openPlayer(.live(.kyotoBlossoms))
+  → playlist = this tab's wallpapers · playerIndex = its position · isShowingPlayer = true
+  → audio.previewLooping(.koto)            (AudioService: plays the 12 s file, numberOfLoops = -1)
+.fullScreenCover(isPresented: $viewModel.isShowingPlayer) → ScenePlayerView
+  ⏭ → next() → playerIndex + 1 (wraps) → .id(wallpaper) fades in the new scene → its sound replaces the old one
+  ♥ → toggleSaved() → AppSettings.savedWallpapers.insert("live.kyotoBlossoms", at: 0)
+  "Use wallpaper + sound" → use(withSound: true) → closePlayer() (sound stops) → 350 ms
+     → coordinator.completeWallpaperPicker(with: WallpaperChoice(wallpaper:, sound: .koto))
+     → AlarmEditorViewModel onPick → draft.wallpaper + draft.sound → Save → WakeAlarm.wallpaperID, soundName
+```
+
+### Bug 41: A symbol that doesn't exist (caught by a test)
+Savanna Drums used `drum.fill`, which isn't an SF Symbol: the icon would just be blank, no error. The new test
+`symbolsExist` asks `UIImage(systemName:)` for every sound and category icon and failed at once. Fix:
+`hands.clap.fill`. **Rule:** names written as strings are never checked by the compiler, so check them in a test.
+
+### Bug 42: The clock's shadow greyed out the sun
+The dark "halo" that keeps the clock readable was a full-screen layer, so it also dimmed suns and snowy peaks.
+Fix: `clockHalo()` sits behind the clock only. Its first version showed the edges of its square; a bigger frame
+squeezed into an oval (`scaleEffect(y: 0.7)`) fades out before the edge.
+
 ### Bug 26: Day letters sat half a day left of their dots (Salman spotted it)
 A dot or bar drawn with `unit: .day` sits in the MIDDLE of its day (noon), but `.stride(by: .day)` labels sit at
 MIDNIGHT (the start). Fix: `ChartDays` (in `WakeTimeChart.swift`) puts labels at noon, and every chart uses it, so
