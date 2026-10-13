@@ -25,13 +25,33 @@ Every sound, image and font that ships in the app, where it came from, and wheth
 | `riseup_kalimba.caf` | Kalimba | Generated | Our own work |
 | `riseup_lofi.caf` | Lo-fi Morning | Generated | Our own work |
 | `riseup_ocean.caf` | Ocean Sunrise | Generated | Our own work |
+| `riseup_koto.caf` | Koto Morning (Japan) | Generated | Our own work |
+| `riseup_sitar.caf` | Sitar Sunrise (India) | Generated | Our own work |
+| `riseup_desertoud.caf` | Desert Oud (Sahara) | Generated | Our own work |
+| `riseup_savannadrums.caf` | Savanna Drums (Africa) | Generated | Our own work |
+| `riseup_steeldrum.caf` | Island Steel Drum (Caribbean) | Generated | Our own work |
+| `riseup_singingbowls.caf` | Singing Bowls (Himalaya) | Generated | Our own work |
+| `riseup_accordion.caf` | Paris Accordion | Generated | Our own work |
+| `riseup_alpinehorn.caf` | Alpine Horn | Generated | Our own work |
+| `riseup_highlandpipes.caf` | Highland Pipes (Scotland) | Generated | Our own work |
+| `riseup_panflute.caf` | Andean Pan Flute | Generated | Our own work |
+| `riseup_rainforest.caf` | Rainforest | Generated | Our own work |
+| `riseup_seashore.caf` | Seashore | Generated | Our own work |
+| `riseup_thunderstorm.caf` | Thunderstorm | Generated | Our own work |
+| `riseup_jazzpiano.caf` | Jazz Piano | Generated | Our own work |
+| `riseup_acousticguitar.caf` | Acoustic Guitar | Generated | Our own work |
+| `riseup_epicstrings.caf` | Epic Strings | Generated | Our own work |
+| `riseup_starlight.caf` | Starlight | Generated | Our own work |
 | — | iPhone Alarm | iOS system sound (`AlertSound.default`) | Provided by iOS; not bundled |
 
 Format: 12 seconds, IMA4-compressed CAF (~280 KB each), which both AlarmKit and `AVAudioPlayer` can play.
 To change or add a sound: edit `Tools/generate_sounds.py`, run `python3 Tools/generate_sounds.py` (or name only the
 sounds to rebuild, e.g. `python3 Tools/generate_sounds.py riseup_birds`), rebuild the app. The newer sounds use
 real instrument techniques: bell overtones, plucked strings (Karplus–Strong), FM electric piano, brass and drums,
-and loop seamlessly (iOS repeats the 12-second file).
+and loop seamlessly (iOS repeats the 12-second file). The "Around the world" sounds (2026-10-13) add
+harmonic tones (sitar drone, accordion reeds, bagpipes, alpine horn), breathy flutes, membranes (drums),
+steel-pan and singing-bowl partials, and filtered noise (rain, surf, thunder). Each one is also the signature
+sound of a wallpaper (`LiveWallpaper.signatureSound`).
 
 **Important:** the file names are stored in the database (`WakeAlarm.soundName`). Never rename a shipped file.
 Add a new one instead (see `AlarmSound.swift`).

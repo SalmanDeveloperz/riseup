@@ -40,6 +40,24 @@ nonisolated enum AlarmSound: String, CaseIterable, Identifiable, Sendable {
     case kalimba = "riseup_kalimba.caf"
     case lofi = "riseup_lofi.caf"
     case ocean = "riseup_ocean.caf"
+    // Added 2026-10-13, round 2: around the world, nature and music.
+    case koto = "riseup_koto.caf"
+    case sitar = "riseup_sitar.caf"
+    case desertOud = "riseup_desertoud.caf"
+    case savannaDrums = "riseup_savannadrums.caf"
+    case steelDrum = "riseup_steeldrum.caf"
+    case singingBowls = "riseup_singingbowls.caf"
+    case accordion = "riseup_accordion.caf"
+    case alpineHorn = "riseup_alpinehorn.caf"
+    case highlandPipes = "riseup_highlandpipes.caf"
+    case panFlute = "riseup_panflute.caf"
+    case rainforest = "riseup_rainforest.caf"
+    case seashore = "riseup_seashore.caf"
+    case thunderstorm = "riseup_thunderstorm.caf"
+    case jazzPiano = "riseup_jazzpiano.caf"
+    case acousticGuitar = "riseup_acousticguitar.caf"
+    case epicStrings = "riseup_epicstrings.caf"
+    case starlight = "riseup_starlight.caf"
 
     var id: String { rawValue }
 
@@ -66,6 +84,23 @@ nonisolated enum AlarmSound: String, CaseIterable, Identifiable, Sendable {
         case .kalimba: "Kalimba"
         case .lofi: "Lo-fi Morning"
         case .ocean: "Ocean Sunrise"
+        case .koto: "Koto Morning"
+        case .sitar: "Sitar Sunrise"
+        case .desertOud: "Desert Oud"
+        case .savannaDrums: "Savanna Drums"
+        case .steelDrum: "Island Steel Drum"
+        case .singingBowls: "Singing Bowls"
+        case .accordion: "Paris Accordion"
+        case .alpineHorn: "Alpine Horn"
+        case .highlandPipes: "Highland Pipes"
+        case .panFlute: "Andean Pan Flute"
+        case .rainforest: "Rainforest"
+        case .seashore: "Seashore"
+        case .thunderstorm: "Thunderstorm"
+        case .jazzPiano: "Jazz Piano"
+        case .acousticGuitar: "Acoustic Guitar"
+        case .epicStrings: "Epic Strings"
+        case .starlight: "Starlight"
         }
     }
 
@@ -92,14 +127,35 @@ nonisolated enum AlarmSound: String, CaseIterable, Identifiable, Sendable {
         case .kalimba: "Happy thumb-piano tune"
         case .lofi: "Mellow chords and a lazy beat"
         case .ocean: "Waves and chimes at dawn"
+        case .koto: "Japan · plucked silk strings"
+        case .sitar: "India · a morning raga with tabla"
+        case .desertOud: "Sahara · lute, wind and frame drum"
+        case .savannaDrums: "Africa · djembe groove and kalimba"
+        case .steelDrum: "Caribbean · sunny calypso"
+        case .singingBowls: "Himalaya · deep humming bowls"
+        case .accordion: "France · a café waltz"
+        case .alpineHorn: "Swiss Alps · horn calls and cowbells"
+        case .highlandPipes: "Scotland · bagpipes, loud and proud"
+        case .panFlute: "Andes · breathy flute and charango"
+        case .rainforest: "Tropical birds, frogs and rain"
+        case .seashore: "Waves and seagulls"
+        case .thunderstorm: "Heavy rain and rolling thunder"
+        case .jazzPiano: "Swinging chords and walking bass"
+        case .acousticGuitar: "Warm finger-picking"
+        case .epicStrings: "Orchestra rising, timpani rolling"
+        case .starlight: "A soft space pad with twinkling bells"
         }
     }
 
     var category: Category {
         switch self {
         case .systemDefault, .digital, .radar, .bell, .twinBell, .oldPhone, .westminster: .classic
-        case .siren, .pulse, .arcade, .electro, .fanfare, .schoolBell: .loud
-        case .sunrise, .marimba, .birds, .harp, .kalimba, .lofi, .ocean: .gentle
+        case .siren, .pulse, .arcade, .electro, .fanfare, .schoolBell, .thunderstorm: .loud
+        case .sunrise, .marimba, .harp, .kalimba, .lofi, .starlight: .gentle
+        case .birds, .ocean, .rainforest, .seashore: .nature
+        case .koto, .sitar, .desertOud, .savannaDrums, .steelDrum, .singingBowls, .accordion,
+             .alpineHorn, .highlandPipes, .panFlute: .world
+        case .jazzPiano, .acousticGuitar, .epicStrings: .music
         }
     }
 
@@ -125,6 +181,23 @@ nonisolated enum AlarmSound: String, CaseIterable, Identifiable, Sendable {
         case .kalimba: "music.note.list"
         case .lofi: "headphones"
         case .ocean: "water.waves"
+        case .koto: "leaf.fill"
+        case .sitar: "sun.horizon.fill"
+        case .desertOud: "sun.dust.fill"
+        case .savannaDrums: "hands.clap.fill"
+        case .steelDrum: "beach.umbrella.fill"
+        case .singingBowls: "circle.circle.fill"
+        case .accordion: "cup.and.saucer.fill"
+        case .alpineHorn: "mountain.2.fill"
+        case .highlandPipes: "flag.fill"
+        case .panFlute: "wind"
+        case .rainforest: "tree.fill"
+        case .seashore: "water.waves"
+        case .thunderstorm: "cloud.bolt.rain.fill"
+        case .jazzPiano: "pianokeys"
+        case .acousticGuitar: "guitars.fill"
+        case .epicStrings: "music.quarternote.3"
+        case .starlight: "sparkles"
         }
     }
 
@@ -146,6 +219,9 @@ nonisolated enum AlarmSound: String, CaseIterable, Identifiable, Sendable {
         case classic = "Classic"
         case loud = "Loud & energetic"
         case gentle = "Gentle wake-up"
+        case nature = "Nature"
+        case world = "Around the world"
+        case music = "Music"
 
         var id: String { rawValue }
 
