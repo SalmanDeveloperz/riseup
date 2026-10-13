@@ -44,12 +44,22 @@ struct WallpaperTests {
         #expect(Wallpaper(rawValue: "") == nil)
     }
 
-    @Test("Every category except My Photos has live wallpapers, and each wallpaper is in one")
+    @Test("Each live wallpaper is in exactly one category; Saved and My Photos list other things")
     func categories() {
         let listed = WallpaperCategory.allCases.flatMap(\.liveWallpapers)
         #expect(Set(listed) == Set(LiveWallpaper.allCases))
         #expect(listed.count == LiveWallpaper.allCases.count)
         #expect(WallpaperCategory.myPhotos.liveWallpapers.isEmpty)
+        #expect(WallpaperCategory.saved.liveWallpapers.isEmpty)
+        #expect(WallpaperCategory.world.liveWallpapers.count == 11)
+    }
+
+    @Test("Every icon name used for sounds and wallpapers exists in SF Symbols")
+    func symbolsExist() {
+        let names = AlarmSound.allCases.map(\.systemImage) + WallpaperCategory.allCases.map(\.systemImage)
+        for name in names {
+            #expect(UIImage(systemName: name) != nil, "missing SF Symbol: \(name)")
+        }
     }
 
     @Test("Surprise me: the same all day, different tomorrow")
@@ -213,5 +223,102 @@ struct WallpaperTests {
         let container = try ModelContainerFactory.make(inMemory: true)
         let settings = AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!)
         return (AlarmRepository(context: container.mainContext), settings)
+    }
+}
+
+// MARK: - Scene Player (#33)
+
+@Suite("Scene player")
+struct ScenePlayerTests {
+    let audio = MockAudioService()
+    let coordinator = AppCoordinator()
+    let settings = AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!)
+
+    func makePicker(selected: Wallpaper? = nil, sound: AlarmSound = .radar) -> WallpaperPickerViewModel {
+        WallpaperPickerViewModel(selected: selected, allowsDefault: true, defaultWallpaper: .standard, currentSound: sound,
+                                 store: MockWallpaperStore(), audio: audio, settings: settings, coordinator: coordinator)
+    }
+
+    @Test("Opening a scene plays its own sound, looping")
+    func opensWithSound() {
+        let picker = makePicker()
+        picker.category = .world
+        picker.openPlayer(.live(.kyotoBlossoms))
+        #expect(picker.isShowingPlayer)
+        #expect(audio.previewedSound == .koto)
+        #expect(audio.isPreviewLooping)
+        #expect(picker.playlist.count == 11, "the whole tab is the playlist")
+    }
+
+    @Test("Next and previous step through the tab, wrap around and switch the sound")
+    func nextPrevious() {
+        let picker = makePicker()
+        picker.category = .world
+        picker.openPlayer(.live(.cityLights))                 // the last world scene
+        picker.next()
+        #expect(picker.playing == .live(.kyotoBlossoms), "wraps to the first")
+        #expect(audio.previewedSound == .koto)
+        picker.previous()
+        #expect(picker.playing == .live(.cityLights))
+        #expect(audio.previewedSound == .jazzPiano)
+    }
+
+    @Test("Pause stops the sound; changing scene while paused stays quiet")
+    func pause() {
+        let picker = makePicker()
+        picker.category = .world
+        picker.openPlayer(.live(.himalaya))
+        picker.togglePlay()
+        #expect(!picker.isSoundPlaying)
+        #expect(audio.previewedSound == nil)
+        picker.next()
+        #expect(audio.previewedSound == nil)
+        picker.togglePlay()
+        #expect(audio.previewedSound == .accordion, "Paris comes after Himalaya")
+    }
+
+    @Test("♥ saves a scene into the Saved tab, and again removes it")
+    func bookmarks() {
+        let picker = makePicker()
+        picker.category = .space
+        picker.openPlayer(.live(.nebula))
+        picker.toggleSaved()
+        #expect(picker.isSaved(.live(.nebula)))
+        #expect(picker.wallpapers(in: .saved) == [.live(.nebula)])
+        picker.toggleSaved()
+        #expect(picker.wallpapers(in: .saved).isEmpty)
+    }
+
+    @Test("Your own photos play the alarm's current sound and never change it")
+    func photosKeepTheSound() async {
+        let picker = makePicker(sound: .bell)
+        let photo = Wallpaper.photo(id: UUID())
+        picker.openPlayer(photo)
+        #expect(audio.previewedSound == .bell)
+        #expect(!picker.hasSignatureSound(photo))
+    }
+
+    @Test("'Use wallpaper + sound' gives the editor both; 'Wallpaper only' keeps the alarm's sound")
+    func useSceneInEditor() async throws {
+        let container = try ModelContainerFactory.make(inMemory: true)
+        let editor = AlarmEditorViewModel(alarmID: nil, repository: AlarmRepository(context: container.mainContext),
+                                          scheduler: MockAlarmScheduler(), settings: settings,
+                                          wallpaperStore: MockWallpaperStore(), coordinator: coordinator)
+        let originalSound = editor.draft.sound
+
+        editor.chooseWallpaper()                               // registers the editor's callback
+        let picker = makePicker(sound: originalSound)
+        picker.category = .world
+        picker.openPlayer(.live(.tropicalIsland))
+        await picker.use(withSound: false)
+        #expect(editor.draft.wallpaper == .live(.tropicalIsland))
+        #expect(editor.draft.sound == originalSound)
+        #expect(audio.previewedSound == nil, "the sound stops when the player closes")
+
+        editor.chooseWallpaper()
+        picker.openPlayer(.live(.saharaDunes))
+        await picker.use(withSound: true)
+        #expect(editor.draft.wallpaper == .live(.saharaDunes))
+        #expect(editor.draft.sound == .desertOud)
     }
 }

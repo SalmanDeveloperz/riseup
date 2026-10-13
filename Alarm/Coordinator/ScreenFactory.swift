@@ -174,13 +174,16 @@ struct ScreenFactory {
                 services: dependencies.missionServices,   // sensors for "Try it", Vision for photo registration
                 coordinator: coordinator
             ))
-        case .wallpaperPicker(let selected, let allowsDefault):
-            // Screen #32. The result goes back through coordinator.completeWallpaperPicker.
+        case .wallpaperPicker(let selected, let allowsDefault, let sound):
+            // Screens #32 + #33. The result goes back through coordinator.completeWallpaperPicker.
             WallpaperPickerView(viewModel: WallpaperPickerViewModel(
                 selected: selected,
                 allowsDefault: allowsDefault,
                 defaultWallpaper: dependencies.settings.defaultWallpaper,   // what "Default" means
+                currentSound: sound,                                       // plays with your own photos
                 store: dependencies.wallpaperStore,                        // the user's own photos
+                audio: dependencies.audio,                                 // the scene's sound
+                settings: dependencies.settings,                           // ♥ Saved scenes
                 coordinator: coordinator
             ))
         case .sleepPlayer:

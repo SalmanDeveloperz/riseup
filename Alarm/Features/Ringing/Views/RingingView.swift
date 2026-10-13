@@ -127,6 +127,7 @@ struct RingingView: View {
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: context.date)
                 BigClockText(hour: parts.hour ?? 0, minute: parts.minute ?? 0, size: 96)
             }
+            .clockHalo()                                  // readable on any wallpaper
             .background {
                 Circle()
                     .fill(Theme.Colors.neonPink.opacity(0.35))

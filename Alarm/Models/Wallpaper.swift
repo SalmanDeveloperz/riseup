@@ -23,6 +23,13 @@
 
 import Foundation
 
+/// What the Wallpaper Picker hands back: the wallpaper (nil = "Default"), and optionally the
+/// scene's sound when the user tapped "Use wallpaper + sound" (nil = keep the current sound).
+nonisolated struct WallpaperChoice: Equatable, Sendable {
+    var wallpaper: Wallpaper?
+    var sound: AlarmSound?
+}
+
 /// Everything that can be an alarm's wallpaper.
 nonisolated enum Wallpaper: Hashable, Sendable, Identifiable {
     case live(LiveWallpaper)
@@ -90,6 +97,9 @@ nonisolated enum LiveWallpaper: String, CaseIterable, Identifiable, Sendable {
     case synthwave, neonPulse, lavaLamp
     // Calm
     case breathe, bokeh
+    // Around the world (added 2026-10-13, round 2)
+    case kyotoBlossoms, tajDawn, saharaDunes, savannaSunset, tropicalIsland, himalaya,
+         parisNights, alpineMeadow, scottishHighlands, andesCondor, cityLights
 
     var id: String { rawValue }
 
@@ -109,6 +119,17 @@ nonisolated enum LiveWallpaper: String, CaseIterable, Identifiable, Sendable {
         case .lavaLamp: "Lava Lamp"
         case .breathe: "Breathe"
         case .bokeh: "Bokeh Lights"
+        case .kyotoBlossoms: "Kyoto Blossoms"
+        case .tajDawn: "Taj at Dawn"
+        case .saharaDunes: "Sahara Dunes"
+        case .savannaSunset: "Savanna Sunset"
+        case .tropicalIsland: "Tropical Island"
+        case .himalaya: "Himalaya"
+        case .parisNights: "Paris Nights"
+        case .alpineMeadow: "Alpine Meadow"
+        case .scottishHighlands: "Scottish Highlands"
+        case .andesCondor: "Andes Condor"
+        case .cityLights: "City Lights"
         }
     }
 
@@ -119,18 +140,55 @@ nonisolated enum LiveWallpaper: String, CaseIterable, Identifiable, Sendable {
         case .hyperspace, .nebula, .planetRise: .space
         case .synthwave, .neonPulse, .lavaLamp: .energy
         case .breathe, .bokeh: .calm
+        case .kyotoBlossoms, .tajDawn, .saharaDunes, .savannaSunset, .tropicalIsland, .himalaya,
+             .parisNights, .alpineMeadow, .scottishHighlands, .andesCondor, .cityLights: .world
+        }
+    }
+
+    /// The sound that belongs to this scene. It plays with the wallpaper in the picker's player,
+    /// and "Use wallpaper + sound" sets it as the alarm's sound.
+    /// TRY: give Hyperspace the `.siren` instead.
+    var signatureSound: AlarmSound {
+        switch self {
+        case .goldenHour: .sunrise
+        case .aurora: .harp
+        case .dawnDrift: .kalimba
+        case .ocean: .seashore
+        case .fireflies: .rainforest
+        case .rainyWindow: .lofi
+        case .hyperspace: .electro
+        case .nebula: .starlight
+        case .planetRise: .epicStrings
+        case .synthwave: .arcade
+        case .neonPulse: .pulse
+        case .lavaLamp: .marimba
+        case .breathe: .singingBowls
+        case .bokeh: .acousticGuitar
+        case .kyotoBlossoms: .koto
+        case .tajDawn: .sitar
+        case .saharaDunes: .desertOud
+        case .savannaSunset: .savannaDrums
+        case .tropicalIsland: .steelDrum
+        case .himalaya: .singingBowls
+        case .parisNights: .accordion
+        case .alpineMeadow: .alpineHorn
+        case .scottishHighlands: .highlandPipes
+        case .andesCondor: .panFlute
+        case .cityLights: .jazzPiano
         }
     }
 }
 
 /// Picker tabs, in display order.
 nonisolated enum WallpaperCategory: String, CaseIterable, Identifiable, Sendable {
-    case sunrise, nature, space, energy, calm, myPhotos
+    case saved, world, sunrise, nature, space, energy, calm, myPhotos
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .saved: "Saved"
+        case .world: "Around the World"
         case .sunrise: "Sunrise"
         case .nature: "Nature"
         case .space: "Space"
@@ -142,6 +200,8 @@ nonisolated enum WallpaperCategory: String, CaseIterable, Identifiable, Sendable
 
     var systemImage: String {
         switch self {
+        case .saved: "heart.fill"
+        case .world: "globe.americas.fill"
         case .sunrise: "sunrise.fill"
         case .nature: "leaf.fill"
         case .space: "sparkles"
@@ -151,7 +211,7 @@ nonisolated enum WallpaperCategory: String, CaseIterable, Identifiable, Sendable
         }
     }
 
-    /// The live wallpapers in this tab (empty for My Photos, which lists files instead).
+    /// The live wallpapers in this tab (empty for Saved and My Photos, which the ViewModel fills).
     var liveWallpapers: [LiveWallpaper] {
         LiveWallpaper.allCases.filter { $0.category == self }
     }
@@ -206,6 +266,9 @@ extension LiveWallpaper {
         case .ocean, .rainyWindow, .aurora, .fireflies: 1.2
         case .goldenHour, .dawnDrift, .nebula, .planetRise: 0.8
         case .breathe, .bokeh: 0.4
+        case .cityLights, .savannaSunset, .tropicalIsland: 1.2
+        case .kyotoBlossoms, .tajDawn, .saharaDunes, .himalaya, .parisNights,
+             .alpineMeadow, .scottishHighlands, .andesCondor: 0.8
         }
     }
 }

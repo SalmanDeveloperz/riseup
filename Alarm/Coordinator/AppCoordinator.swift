@@ -65,7 +65,7 @@ final class AppCoordinator {
     // `@ObservationIgnored`: no view displays these, so SwiftUI needn't watch them.
     @ObservationIgnored private var onSoundPicked: ((AlarmSound) -> Void)?
     @ObservationIgnored private var onMissionPicked: ((MissionDraft) -> Void)?
-    @ObservationIgnored private var onWallpaperPicked: ((Wallpaper?) -> Void)?
+    @ObservationIgnored private var onWallpaperPicked: ((WallpaperChoice) -> Void)?
 
     // MARK: - Alarms tab
 
@@ -135,16 +135,18 @@ final class AppCoordinator {
         dismissSheet()
     }
 
-    /// Opens the Wallpaper Picker. `onPick` gets the choice (`nil` = "Default") when the user confirms.
+    /// Opens the Wallpaper Picker. `onPick` gets the choice when the user confirms: the wallpaper
+    /// (`nil` = "Default") and, after "Use wallpaper + sound", the scene's sound.
     /// ← CALLED BY: AlarmEditorViewModel.chooseWallpaper(), SettingsViewModel.chooseDefaultWallpaper()
-    func presentWallpaperPicker(selected: Wallpaper?, allowsDefault: Bool, onPick: @escaping (Wallpaper?) -> Void) {
+    func presentWallpaperPicker(selected: Wallpaper?, allowsDefault: Bool, sound: AlarmSound,
+                                onPick: @escaping (WallpaperChoice) -> Void) {
         onWallpaperPicked = onPick
-        sheet = .wallpaperPicker(selected: selected, allowsDefault: allowsDefault)
+        sheet = .wallpaperPicker(selected: selected, allowsDefault: allowsDefault, sound: sound)
     }
 
-    /// ← CALLED BY: WallpaperPickerViewModel.done() / use(_:) → delivers the result, closes the sheet.
-    func completeWallpaperPicker(with wallpaper: Wallpaper?) {
-        onWallpaperPicked?(wallpaper)
+    /// ← CALLED BY: WallpaperPickerViewModel.done() / use(…) → delivers the result, closes the sheet.
+    func completeWallpaperPicker(with choice: WallpaperChoice) {
+        onWallpaperPicked?(choice)
         dismissSheet()
     }
 

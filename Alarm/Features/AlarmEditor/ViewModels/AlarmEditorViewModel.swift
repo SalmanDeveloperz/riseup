@@ -204,8 +204,9 @@ final class AlarmEditorViewModel {
     /// ← CALLED BY: the Wallpaper row
     /// → AppCoordinator.presentWallpaperPicker → WallpaperPickerViewModel → completeWallpaperPicker → closure
     func chooseWallpaper() {
-        coordinator.presentWallpaperPicker(selected: draft.wallpaper, allowsDefault: true) { [weak self] wallpaper in
-            self?.draft.wallpaper = wallpaper
+        coordinator.presentWallpaperPicker(selected: draft.wallpaper, allowsDefault: true, sound: draft.sound) { [weak self] choice in
+            self?.draft.wallpaper = choice.wallpaper
+            if let sound = choice.sound { self?.draft.sound = sound }   // "Use wallpaper + sound"
             Task { await self?.loadWallpaperPhoto() }
         }
     }

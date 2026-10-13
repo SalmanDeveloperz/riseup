@@ -50,8 +50,9 @@ struct SettingsView: View {
                             value: viewModel.defaultSoundTitle) {
                     viewModel.chooseDefaultSound()                   // → Sound Picker sheet
                 }
-                SettingsRow(title: "Alarm wallpaper", subtitle: "Live and animated, or your own photo",
-                            systemImage: "photo.artframe", value: viewModel.defaultWallpaperTitle) {
+                // WHY short (found in the Simulator): a longer title + subtitle next to "Golden Hour"
+                // wrapped into five cramped lines.
+                SettingsRow(title: "Wallpaper", systemImage: "photo.artframe", value: viewModel.defaultWallpaperTitle) {
                     viewModel.chooseDefaultWallpaper()               // → Wallpaper Picker sheet
                 }
                 GlowCard {

@@ -3,13 +3,14 @@
 //  RiseUp
 //
 //  LAYER: View (Screen #32 Wallpaper Picker)
-//  WHAT:  "Default" + "Surprise me" rows · category tabs · a grid of LIVE animated wallpaper cards ·
-//         My Photos (add from the library, long-press to delete). Tap a card → full-screen "Try it".
+//  WHAT:  "Default" + "Surprise me" rows · category tabs (♥ Saved, Around the World…) · a grid of LIVE
+//         animated cards, each showing its sound · My Photos (add, long-press to delete).
+//         Tap a card → the full-screen Scene Player (#33): wallpaper + sound together.
 //  VIEWMODEL: WallpaperPickerViewModel.
 //
 //  CONNECTIONS:
 //    ← BUILT BY: ScreenFactory.makeScreen(for: SheetRoute.wallpaperPicker)
-//    → card tap → viewModel.openPreview → WallpaperPreviewView (full screen)
+//    → card tap → viewModel.openPlayer → ScenePlayerView (full screen, sound plays)
 //    → Done / Use → viewModel → AppCoordinator.completeWallpaperPicker
 //
 //  WHY the grid shows one category at a time: every card is a live animation. A few at once is
@@ -36,7 +37,7 @@ struct WallpaperPickerView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                    Text("Your alarm screen comes alive: wallpapers get more energetic the longer the alarm rings, until you're up.")
+                    Text("Every scene has its own sound. Tap one to play it full screen. Wallpapers come alive when the alarm rings, more and more until you're up.")
                         .font(.riseCaption)
                         .foregroundStyle(Theme.Colors.textSecondary)
                     if viewModel.allowsDefault {
@@ -76,14 +77,10 @@ struct WallpaperPickerView: View {
                 pickedItem = nil
             }
         }
-        .fullScreenCover(item: $viewModel.previewing) { wallpaper in
-            WallpaperPreviewView(
-                wallpaper: wallpaper,
-                photo: viewModel.photo(for: wallpaper),
-                onUse: { Task { await viewModel.use(wallpaper) } },
-                onClose: { viewModel.previewing = nil }
-            )
+        .fullScreenCover(isPresented: $viewModel.isShowingPlayer) {
+            ScenePlayerView(viewModel: viewModel)          // the same ViewModel: playlist, bookmarks, choice
         }
+        .onDisappear { viewModel.stopSound() }             // never leave a scene's sound playing
         .alert("Wallpaper", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.dismissError() } }
@@ -169,18 +166,16 @@ struct WallpaperPickerView: View {
         LazyVGrid(columns: columns, spacing: Theme.Spacing.sm) {
             if viewModel.category == .myPhotos {
                 addPhotoCard
-                ForEach(viewModel.photoIDs, id: \.self) { id in
-                    card(.photo(id: id), title: "My photo")
-                        .contextMenu {
+            }
+            ForEach(viewModel.wallpapersInCategory) { wallpaper in
+                card(wallpaper, title: wallpaper.title)
+                    .contextMenu {
+                        if case .photo(let id) = wallpaper {
                             Button("Delete photo", systemImage: "trash", role: .destructive) {
                                 viewModel.deletePhoto(id)
                             }
                         }
-                }
-            } else {
-                ForEach(viewModel.category.liveWallpapers) { style in
-                    card(.live(style), title: style.title)
-                }
+                    }
             }
         }
         .id(viewModel.category)                       // fresh grid per tab (with a fade)
@@ -190,12 +185,17 @@ struct WallpaperPickerView: View {
                 .font(.riseCaption)
                 .foregroundStyle(Theme.Colors.textTertiary)
         }
+        if viewModel.category == .saved && viewModel.wallpapersInCategory.isEmpty {
+            Label("Tap ♥ in the player to save the scenes you love. They'll wait for you here.", systemImage: "heart")
+                .font(.riseCaption)
+                .foregroundStyle(Theme.Colors.textTertiary)
+        }
     }
 
     private func card(_ wallpaper: Wallpaper, title: String) -> some View {
         let isOn = viewModel.isSelected(wallpaper)
         return Button {
-            viewModel.openPreview(wallpaper)              // → full-screen "Try it"
+            viewModel.openPlayer(wallpaper)               // → Scene Player: wallpaper + its sound
         } label: {
             WallpaperView(wallpaper: wallpaper, photo: viewModel.photo(for: wallpaper),
                           energy: .fixed(0.35), isThumbnail: true)
@@ -208,6 +208,18 @@ struct WallpaperPickerView: View {
                         .padding(Theme.Spacing.sm)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .top, endPoint: .bottom))
+                }
+                .overlay(alignment: .topLeading) {
+                    if viewModel.hasSignatureSound(wallpaper) {
+                        Label(viewModel.sound(for: wallpaper).title, systemImage: "music.note")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(.ultraThinMaterial, in: .capsule)
+                            .padding(Theme.Spacing.xs)
+                    }
                 }
                 .overlay(alignment: .topTrailing) {
                     if isOn {
@@ -225,7 +237,7 @@ struct WallpaperPickerView: View {
         }
         .buttonStyle(PressScaleButtonStyle())
         .accessibilityLabel("\(title) wallpaper")
-        .accessibilityHint("Shows a full-screen preview")
+        .accessibilityHint("Plays the scene full screen with its sound")
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 
@@ -262,8 +274,9 @@ struct WallpaperPickerView: View {
 #Preview {
     Color.black.sheet(isPresented: .constant(true)) {
         WallpaperPickerView(viewModel: WallpaperPickerViewModel(
-            selected: .live(.aurora), allowsDefault: true, defaultWallpaper: .standard,
-            store: MockWallpaperStore(), coordinator: AppCoordinator()
+            selected: .live(.aurora), allowsDefault: true, defaultWallpaper: .standard, currentSound: .radar,
+            store: MockWallpaperStore(), audio: MockAudioService(),
+            settings: AppSettings(store: UserDefaults(suiteName: "preview")!), coordinator: AppCoordinator()
         ))
     }
 }

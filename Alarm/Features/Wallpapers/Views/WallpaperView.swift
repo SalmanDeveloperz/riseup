@@ -51,10 +51,6 @@ struct WallpaperView: View {
             if showsScrim {
                 LinearGradient(colors: [.black.opacity(0.35), .black.opacity(0.05), .black.opacity(0.15), .black.opacity(0.6)],
                                startPoint: .top, endPoint: .bottom)
-                // WHY (found in the Simulator): the gradient clock sat on Synthwave's orange sun and
-                // was hard to read. A soft dark halo where the clock goes fixes it on every wallpaper.
-                RadialGradient(colors: [.black.opacity(0.5), .black.opacity(0.2), .clear],
-                               center: UnitPoint(x: 0.5, y: 0.46), startRadius: 0, endRadius: 240)
             }
         }
         .animation(.easeInOut(duration: 0.4), value: photo != nil)
@@ -117,6 +113,17 @@ struct LiveWallpaperView: View {
         case .lavaLamp: LavaLampRenderer.draw(&context, size: size, time: time, energy: energy)
         case .bokeh: BokehRenderer.draw(&context, size: size, time: time, energy: energy)
         case .breathe: break                                  // a SwiftUI view, see body
+        case .kyotoBlossoms: KyotoBlossomsRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .tajDawn: TajDawnRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .saharaDunes: SaharaDunesRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .savannaSunset: SavannaSunsetRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .tropicalIsland: TropicalIslandRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .himalaya: HimalayaRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .parisNights: ParisNightsRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .alpineMeadow: AlpineMeadowRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .scottishHighlands: ScottishHighlandsRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .andesCondor: AndesCondorRenderer.draw(&context, size: size, time: time, energy: energy)
+        case .cityLights: CityLightsRenderer.draw(&context, size: size, time: time, energy: energy)
         }
     }
 }
@@ -147,6 +154,26 @@ struct PhotoWallpaperView: View {
                                        startPoint: .center, endPoint: .bottom)
                     }
             }
+        }
+    }
+}
+
+extension View {
+    /// A soft dark glow right behind the clock, so it stays readable on any wallpaper.
+    ///
+    /// WHY behind the clock only (found in the Simulator): first we darkened a fixed spot in the
+    /// middle of every wallpaper. That made the clock readable on Synthwave's bright sun, but it
+    /// also turned other wallpapers' suns and snowy peaks a muddy grey. Now it follows the clock.
+    /// ← USED BY: RingingView, ScenePlayerView
+    func clockHalo() -> some View {
+        background {
+            // WHY a square squashed into an oval (found in the Simulator): a gradient wider than its
+            // frame is tall gets cut off at the frame's top and bottom, leaving faint straight edges.
+            RadialGradient(colors: [.black.opacity(0.45), .black.opacity(0.15), .clear],
+                           center: .center, startRadius: 0, endRadius: 200)
+                .frame(width: 420, height: 420)
+                .scaleEffect(x: 1, y: 0.7)
+                .allowsHitTesting(false)
         }
     }
 }

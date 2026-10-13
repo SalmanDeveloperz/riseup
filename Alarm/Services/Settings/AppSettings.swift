@@ -79,6 +79,7 @@ final class AppSettings {
         static let lastSleepMix = "lastSleepMix"
         static let defaultWallpaper = "defaultWallpaper"
         static let showsDeveloperTools = "showsDeveloperTools"
+        static let savedWallpapers = "savedWallpapers"
     }
 
     @ObservationIgnored private let store: UserDefaults
@@ -137,6 +138,11 @@ final class AppSettings {
         didSet { store.set(showsDeveloperTools, forKey: Key.showsDeveloperTools) }
     }
 
+    /// Bookmarked wallpapers (♥ in the scene player), newest first, as `Wallpaper.rawValue`.
+    var savedWallpapers: [String] {
+        didSet { store.set(savedWallpapers, forKey: Key.savedWallpapers) }
+    }
+
     init(store: UserDefaults = .standard) {
         self.store = store
         // LEARN: `object(forKey:) as? Bool ?? true` = "the saved value, or `true` if never saved".
@@ -151,5 +157,6 @@ final class AppSettings {
         lastSleepMix = store.dictionary(forKey: Key.lastSleepMix) as? [String: Double] ?? [:]
         defaultWallpaper = store.string(forKey: Key.defaultWallpaper).flatMap(Wallpaper.init(rawValue:)) ?? .standard
         showsDeveloperTools = store.bool(forKey: Key.showsDeveloperTools)
+        savedWallpapers = store.stringArray(forKey: Key.savedWallpapers) ?? []
     }
 }

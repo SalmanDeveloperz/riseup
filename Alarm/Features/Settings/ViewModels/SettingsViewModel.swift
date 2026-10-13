@@ -76,8 +76,10 @@ final class SettingsViewModel {
     /// ← CALLED BY: "Alarm wallpaper" row → Wallpaper Picker (no "Default" row: this IS the default)
     /// → saved in AppSettings; every alarm without its own wallpaper uses it.
     func chooseDefaultWallpaper() {
-        coordinator.presentWallpaperPicker(selected: settings.defaultWallpaper, allowsDefault: false) { [weak self] wallpaper in
-            self?.settings.defaultWallpaper = wallpaper ?? .standard
+        coordinator.presentWallpaperPicker(selected: settings.defaultWallpaper, allowsDefault: false,
+                                           sound: settings.defaultSound) { [weak self] choice in
+            self?.settings.defaultWallpaper = choice.wallpaper ?? .standard
+            if let sound = choice.sound { self?.settings.defaultSound = sound }   // "Use wallpaper + sound"
         }
     }
 

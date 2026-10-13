@@ -27,6 +27,8 @@ import Foundation
 protocol AudioPlaying: AnyObject {
     /// Plays a sound once (stops any other preview first).
     func preview(_ sound: AlarmSound)
+    /// Plays a sound over and over until `stopPreview()` (the wallpaper scene player).
+    func previewLooping(_ sound: AlarmSound)
     /// Stops the preview, if any.
     func stopPreview()
     /// Starts looping an alarm sound. `rampUp` starts quiet and reaches full volume after ~15 s.
@@ -74,6 +76,12 @@ final class AudioService: AudioPlaying {
         activateSession()
         player.play()
         previewPlayer = player
+    }
+
+    func previewLooping(_ sound: AlarmSound) {
+        preview(sound)
+        // LEARN: -1 = loop forever. The 12-second sounds are made to loop without a gap.
+        previewPlayer?.numberOfLoops = -1
     }
 
     func stopPreview() {
@@ -154,11 +162,13 @@ final class AudioService: AudioPlaying {
 /// Fake audio for Previews and tests: remembers what it was asked to do, plays nothing.
 final class MockAudioService: AudioPlaying {
     private(set) var previewedSound: AlarmSound?
+    private(set) var isPreviewLooping = false
     private(set) var alarmSound: AlarmSound?
     private(set) var isMuted = false
 
-    func preview(_ sound: AlarmSound) { previewedSound = sound }
-    func stopPreview() { previewedSound = nil }
+    func preview(_ sound: AlarmSound) { previewedSound = sound; isPreviewLooping = false }
+    func previewLooping(_ sound: AlarmSound) { previewedSound = sound; isPreviewLooping = true }
+    func stopPreview() { previewedSound = nil; isPreviewLooping = false }
     func startAlarm(_ sound: AlarmSound, rampUp: Bool) { alarmSound = sound }
     func stopAlarm() { alarmSound = nil }
     func setAlarmMuted(_ isMuted: Bool) { self.isMuted = isMuted }
