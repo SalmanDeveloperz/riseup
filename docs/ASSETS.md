@@ -14,10 +14,24 @@ Every sound, image and font that ships in the app, where it came from, and wheth
 | `riseup_arcade.caf` | Arcade | Generated | Our own work |
 | `riseup_sunrise.caf` | Sunrise | Generated | Our own work |
 | `riseup_marimba.caf` | Marimba | Generated | Our own work |
+| `riseup_twinbell.caf` | Twin Bell Clock | Generated | Our own work |
+| `riseup_oldphone.caf` | Old Phone | Generated | Our own work |
+| `riseup_westminster.caf` | Westminster Chimes (melody: Westminster Quarters, 1793, public domain) | Generated | Our own work |
+| `riseup_electro.caf` | Electro Beat | Generated | Our own work |
+| `riseup_fanfare.caf` | Fanfare | Generated | Our own work |
+| `riseup_schoolbell.caf` | School Bell | Generated | Our own work |
+| `riseup_birds.caf` | Morning Birds | Generated | Our own work |
+| `riseup_harp.caf` | Harp Rise | Generated | Our own work |
+| `riseup_kalimba.caf` | Kalimba | Generated | Our own work |
+| `riseup_lofi.caf` | Lo-fi Morning | Generated | Our own work |
+| `riseup_ocean.caf` | Ocean Sunrise | Generated | Our own work |
 | — | iPhone Alarm | iOS system sound (`AlertSound.default`) | Provided by iOS; not bundled |
 
 Format: 12 seconds, IMA4-compressed CAF (~280 KB each), which both AlarmKit and `AVAudioPlayer` can play.
-To change or add a sound: edit `Tools/generate_sounds.py`, run `python3 Tools/generate_sounds.py`, rebuild.
+To change or add a sound: edit `Tools/generate_sounds.py`, run `python3 Tools/generate_sounds.py` (or name only the
+sounds to rebuild, e.g. `python3 Tools/generate_sounds.py riseup_birds`), rebuild the app. The newer sounds use
+real instrument techniques: bell overtones, plucked strings (Karplus–Strong), FM electric piano, brass and drums,
+and loop seamlessly (iOS repeats the 12-second file).
 
 **Important:** the file names are stored in the database (`WakeAlarm.soundName`). Never rename a shipped file.
 Add a new one instead (see `AlarmSound.swift`).
