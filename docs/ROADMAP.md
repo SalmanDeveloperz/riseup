@@ -107,11 +107,15 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | — | Final bundle ID, App Store Connect, hosted privacy policy, TestFlight, submit | ⬜ Salman (steps in `docs/APP_STORE.md`) |
 | ~~5, 27~~ | ~~Paywall, premium management~~ | ➖ dropped: the app is free |
 
+| — | `README.md` + `docs/TALKING_POINTS.md` (explain the app to anyone) | 🟡 done 2026-10-14 |
+| — | Widgets show the rooster logo (`RoosterMark`, lock screen `RoosterGlyph`) | 🟡 done 2026-10-14 |
+
 ## Phase 8 — Post-launch
 | # | Screen / item | Status |
 |---|---|---|
 | 21–22 | Sleep tracking + snore detection + report | ⬜ |
 | — | Localization (English + Urdu first) | ⬜ |
+| — | Optional: iOS 18 support via a notification-based alarm engine (plan in `TALKING_POINTS.md`) | ⬜ decide after launch |
 
 ---
 

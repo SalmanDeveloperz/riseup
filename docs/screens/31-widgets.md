@@ -4,6 +4,8 @@
 
 ## What it does
 "Next alarm" in the widget gallery (it wasn't there before: the extension only had the alarm Live Activity).
+- **Signed with our rooster:** the colour `RoosterMark` in every home-screen widget header, the one-colour
+  `RoosterGlyph` (a "template" image iOS tints) on the lock screen. Both made by `Tools/generate_app_icon.swift`.
 - **Small:** the next alarm on **its own wallpaper**, day ("TOMORROW"), missions, time, title, live countdown.
 - **Medium:** + the next two alarms and **quick naps** (+10 / +20 / +30 min).
 - **Large:** + sound and wallpaper names, three more alarms, quick naps.

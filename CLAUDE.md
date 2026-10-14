@@ -4,6 +4,8 @@ RiseUp is an Alarmy-style mission alarm clock for iPhone. The owner (Salman) is 
 who learns by reviewing every file, so **code clarity and learning comments are part of the product**.
 
 Start every session by reading `docs/ROADMAP.md` (what's done / next) and this file.
+`README.md` is the front page; `docs/TALKING_POINTS.md` explains the app in plain language (keep it current
+when a feature, framework or number changes).
 
 ## Tech
 - iOS 26.0+, iPhone only, portrait, dark-only UI. Swift 6 language mode, default actor isolation = MainActor.

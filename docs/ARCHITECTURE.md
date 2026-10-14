@@ -118,7 +118,6 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 | Settings (onboarding done, Time Pressure, default sound/snooze, goal, bedtime reminder, last sleep mix) | `AppSettings` → UserDefaults | small key-value data |
 | The sleep mix that is playing now (sounds, volumes, timer) | `SleepSoundPlayer` (in memory, long-lived service) | must outlive the screens; nothing to keep after a restart except "last mix" |
 | Bedtime reminder | One pending `UNNotificationRequest` (`riseup.bedtime`) in iOS | iOS delivers it even when the app is closed |
-| Premium status | StoreKit 2 entitlements | Apple is the source of truth |
 | Photos for photo mission | Files in Application Support | keeps the database small |
 | Alarm sounds | App bundle (`Alarm/Resources/Sounds`) | AlarmKit plays them from the bundle |
 | Sleep sounds | App bundle (`Alarm/Resources/SleepSounds`) | played by `AVAudioPlayer`, looping |
@@ -128,3 +127,28 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 | Widget data (next rings + wallpaper pictures) | App Group `group.com.testProject.Alarm`: UserDefaults JSON + JPEG files (`WidgetBridge` → `Shared/WidgetSnapshot.swift`) | the widget extension can't open the app's database |
 | Backup, snooze and wake-up-check alarm IDs | Calculated (`backupID` / `snoozeID` / `wakeUpCheckID`) | nothing to keep in sync |
 | Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |
+
+## 6. Apple frameworks, and what each one does here
+| Framework | Where | What for |
+|---|---|---|
+| SwiftUI | every `Views/` folder, wallpaper renderers (`Canvas`, `TimelineView`) | all UI and animation |
+| SwiftData | `Models/SchemaV*.swift`, `Repositories/` | the database + versioned migrations |
+| Observation | every ViewModel, `AppSettings`, `AppCoordinator` | `@Observable` state the UI follows |
+| AlarmKit | `Services/AlarmKit/` (+ widget, Lab) | system alarms, snooze, re-ring chain (iOS 26) |
+| App Intents | `StartMissionIntent` | the "Start Mission / Wake up" button on a ringing alarm |
+| ActivityKit + WidgetKit | `RiseUpWidgets/` | the alarm's Live Activity; the Next alarm widgets |
+| AVFoundation | `AudioService`, `SleepSoundPlayer`, `CameraSession`, `TimeAnnouncer` | sounds, camera, spoken time |
+| MediaPlayer | `SleepSoundPlayer` | lock screen Now Playing for sleep sounds |
+| Core Motion | `Services/Motion/` | shake, steps (`CMPedometer`), squat missions |
+| Vision | `PhotoMatcher` (`GenerateImageFeaturePrintRequest`) | photo mission: is it the same place? |
+| VisionKit | `BarcodeScanScreen` (`DataScannerViewController`) | barcode / QR mission |
+| PhotosUI | `WallpaperPickerView` | picking a wallpaper photo (no library permission) |
+| UserNotifications | `BedtimeReminder` | the only real notification: the bedtime reminder |
+| Charts | Stats screen | wake-up trends |
+No third-party dependencies. Plain-language version of all this: `docs/TALKING_POINTS.md`.
+
+## 7. iOS versions
+The app requires **iOS 26** (AlarmKit). iOS 26 runs on iPhone 11 and newer. Supporting iOS 18 would need a second
+alarm engine behind the same `AlarmScheduling` protocol (local notifications + limits); the full plan is in
+`docs/TALKING_POINTS.md` → "Why doesn't it run on my iPhone 11 / 12 with iOS 18?".
+
