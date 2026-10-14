@@ -448,9 +448,19 @@ Tap → riseup://alarm/<id> → RootView .onOpenURL → DeepLink → AppCoordina
 - A Quick Alarm sheet left open stayed on top of the editor that a widget tap opened.
 - **Fix:** `AppCoordinator.open(_:)` closes any sheet first (test `coordinatorOpensLinks`).
 
-### Lesson: an icon must say what the app is
-The first icon (a sunrise) was beautiful but didn't say "alarm" (Salman noticed). v2 keeps the sunrise and the
-up-arrow, inside a ringing twin-bell alarm clock: the category is clear in 0.1 s, the brand in 1 s.
+### Lesson: an icon must say what the app is, AND be ownable (the logo journey)
+- **v1, a sunrise with an up-arrow:** beautiful, but it didn't say "alarm" (Salman noticed). It's also almost
+  Apple's own "sunrise" SF Symbol, which anyone can use.
+- **v2, a ringing twin-bell alarm clock with a sunrise face:** said "alarm", but looking at the App Store showed
+  the problem: Alarmy's icon IS a pink-orange twin-bell clock, and the whole category is bells, digits and cartoon
+  clock faces. v2 blended in, and its many details looked "generated".
+- **The process that worked:** a "logo lab" script drew ~20 minimal concepts and put each on a fake home screen
+  at real sizes (120, 60, 40, 29 px) on light and dark wallpapers. Most failed in a way you only see that way:
+  sound waves read as Wi-Fi, a sun with a slot looked like a helmet, "arms raising the sun" looked like a download
+  arrow, a dial with one hand looked like a power button.
+- **v3, the Crowing Rooster:** a character (like Twitter's bird or Duolingo's owl, the strongest kind of brand
+  asset) that means "morning" and "alarm" at once, and that no alarm app owns. **Rules:** judge an icon at 29 px next
+  to other icons, not at 1024 px alone; check what the market leader looks like; one idea, few shapes.
 
 ### Bug 26: Day letters sat half a day left of their dots (Salman spotted it)
 A dot or bar drawn with `unit: .day` sits in the MIDDLE of its day (noon), but `.stride(by: .day)` labels sit at

@@ -93,7 +93,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | — | 11 new alarm sounds (20 in total) | 🟡 listen on iPhone |
 | — | Pre-launch code reviews (alarm core + smoothness) and fixes | 🟡 see HOW_IT_WORKS Bugs 27–40 |
 | — | Database-failure recovery (no more `fatalError`) | 🟡 |
-| — | App icon + in-app logo (`Tools/generate_app_icon.swift`), v2: ringing alarm clock + sunrise | 🟡 done 2026-10-13 |
+| — | App icon + in-app logo (`Tools/generate_app_icon.swift`), v3: the Crowing Rooster (chosen by Salman) | 🟡 done 2026-10-14 |
 | — | Privacy manifest, export compliance key, dark launch screen | 🟡 |
 | — | Release build check (zero warnings, no debug tools inside) | 🟡 |
 | — | App Store texts, privacy policy, review notes, screenshot plan | 🟡 `docs/APP_STORE.md`, `docs/PRIVACY_POLICY.md` |

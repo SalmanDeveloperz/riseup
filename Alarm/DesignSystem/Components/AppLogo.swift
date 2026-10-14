@@ -4,7 +4,7 @@
 //
 //  LAYER: Design System (reusable component)
 //  WHAT:  The RiseUp logo (the same picture as the app icon) with the iPhone icon's rounded
-//         shape and a soft sunrise glow. Optionally "breathes" (the glow slowly pulses).
+//         shape and a soft sunrise glow (the Crowing Rooster, v3). Optionally "breathes" (the glow slowly pulses).
 //  DATA:  the `AppLogo` image in Assets.xcassets (made by Tools/generate_app_icon.swift).
 //
 //  CONNECTIONS:

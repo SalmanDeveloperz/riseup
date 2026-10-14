@@ -7,17 +7,22 @@
 //          • the in-app logo                                 → Alarm/Assets.xcassets/AppLogo.imageset
 // RUN:   swift Tools/generate_app_icon.swift      (from the project folder; takes a few seconds)
 //
-// THE DESIGN (v2, 2026-10-13): a ringing alarm clock whose face is a sunrise.
-//   • twin bells, a hammer knob and little feet: anyone sees "alarm clock" in a split second
-//     (v1 was only a sunrise, and Salman found it didn't say "alarm")
-//   • ringing arcs beside the bells: it's alive, it's morning
-//   • inside the face: the sun rising over the horizon, and the clock's hand is an arrow
-//     pointing straight up to 12 = "wake time" and "Rise Up"; dots mark 3, 9 and 6
-//   • colours = Theme.Gradients.sunrise (purple → pink → orange) on Theme's night navy
+// THE DESIGN (v3, "the Crowing Rooster", chosen by Salman on 2026-10-14)
+// ─────────────────────────────────────────────────────────────────────
+// A rooster is nature's alarm clock: it crows at sunrise. So one character says "morning" AND
+// "alarm" with no explanation, and no alarm app uses one (the App Store is full of twin-bell
+// clocks, digits and cartoon clock faces; Alarmy's own icon is a pink-orange twin-bell clock).
+//   • its HEAD is the sun (golden circle), its COMB the sun's rays (three lobes pointing outward
+//     from the head's centre), its open BEAK + two sound waves = the crow = the alarm
+//   • the whole bird is tilted up 10°: crowing at the sky = "Rise Up"
+//   • the background is night breaking into dawn: a warm glow rising from the bottom edge
+//   • only 6 simple shapes, so it still reads at 29 pt (Settings) and as a widget
+// The journey (see docs/HOW_IT_WORKS.md "the logo"): v1 sunrise (didn't say alarm) → v2 alarm clock
+// (looked like Alarmy, too busy) → 20 minimal concepts compared on a home screen → the rooster.
 //
 // WHY a script instead of a drawing app: like our sounds, the logo is code. Every size is sharp,
-// the colours match Theme.swift exactly, and a change is one number + one run.
-// TRY: change `faceRadius` or `bellAngle`, run the script, rebuild, and look at the Home Screen.
+// the colours match Theme.swift, and a change is one number + one run.
+// TRY: change `tilt` to 0 or 16 (degrees), run the script, rebuild, and look at the Home Screen.
 //
 
 import CoreGraphics
@@ -28,45 +33,63 @@ import UniformTypeIdentifiers
 // MARK: - Settings
 
 let size: CGFloat = 1024
-let center = CGPoint(x: 512, y: 560)   // the clock's centre, measured from the TOP
-let faceRadius: CGFloat = 262          // the inside of the clock face
-let ringWidth: CGFloat = 46            // the glowing rim
-let bellAngle: CGFloat = 46            // degrees from straight up, for each bell
-let sunRadius: CGFloat = 158
+let head = CGPoint(x: 476, y: 586)     // centre of the head (measured from the TOP)
+let headRadius: CGFloat = 190
+let tilt: CGFloat = 10                 // degrees the whole rooster leans back to crow at the sky
+let lift: CGFloat = 20                 // moves the bird down a little, so the tilted mark sits centred
 
-// Theme colours (same hex values as Shared/DesignSystem/Theme.swift).
 func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> CGColor {
     CGColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
             green: CGFloat((hex >> 8) & 0xFF) / 255,
             blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)
 }
-let navy = rgb(0x0B0B1A)
-let deepPurple = rgb(0x1E0B3D)
-let purple = rgb(0x8B5CFF)
-let pink = rgb(0xFF3D8B)
-let orange = rgb(0xFF8A3D)
-let cutout = rgb(0x120A28)           // the arrow is "cut out" of the sun in this colour
-
 let space = CGColorSpace(name: CGColorSpace.sRGB)!
-
 func gradient(_ colors: [CGColor], _ locations: [CGFloat]) -> CGGradient {
     CGGradient(colorsSpace: space, colors: colors as CFArray, locations: locations)!
 }
-let sunrise = gradient([orange, pink, purple], [0, 0.45, 1])   // bottom → top
 
-/// A point `distance` away from the clock's centre, `degrees` clockwise from straight up.
-func polar(_ degrees: CGFloat, _ distance: CGFloat) -> CGPoint {
+// Colours (Theme's neon pink/purple/orange, plus the sun's gold).
+let headGold = gradient([rgb(0xFFB13D), rgb(0xFFCF5A)], [0, 1])           // bottom → top: sunlit from above
+let crimson = gradient([rgb(0xFF2D55), rgb(0xFF3D8B)], [0, 1])            // comb + wattle
+let waves = gradient([rgb(0xFF3D8B), rgb(0xB04DFF)], [0, 1])              // the crow's sound waves
+let upperBeak = rgb(0xFFD36B), lowerBeak = rgb(0xFFB13D)
+let eyeInk = rgb(0x120B2C)
+
+// MARK: - Shape helpers
+
+/// A point `distance` from `c`, `degrees` clockwise from straight up.
+func polar(_ c: CGPoint, _ degrees: CGFloat, _ distance: CGFloat) -> CGPoint {
     let r = degrees * .pi / 180
-    return CGPoint(x: center.x + sin(r) * distance, y: center.y - cos(r) * distance)
+    return CGPoint(x: c.x + sin(r) * distance, y: c.y - cos(r) * distance)
 }
-
-/// Fills `path` with the sunrise gradient running from `bottom` up to `top` (y values).
-func fillSunrise(_ ctx: CGContext, _ path: CGPath, bottom: CGFloat, top: CGFloat) {
+func circle(_ c: CGPoint, _ r: CGFloat) -> CGPath {
+    CGPath(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2), transform: nil)
+}
+/// An ellipse turned by `degrees` (the comb lobes and the wattle).
+func ellipse(_ c: CGPoint, rx: CGFloat, ry: CGFloat, degrees: CGFloat) -> CGPath {
+    var t = CGAffineTransform(translationX: c.x, y: c.y).rotated(by: degrees * .pi / 180)
+    return CGPath(ellipseIn: CGRect(x: -rx, y: -ry, width: rx * 2, height: ry * 2), transform: &t)
+}
+/// Fills `path` with a vertical gradient between two y values.
+func fill(_ ctx: CGContext, _ path: CGPath, _ g: CGGradient, top: CGFloat, bottom: CGFloat, alpha: CGFloat = 1) {
     ctx.saveGState()
+    ctx.setAlpha(alpha)
     ctx.addPath(path)
     ctx.clip()
-    ctx.drawLinearGradient(sunrise, start: CGPoint(x: 0, y: bottom), end: CGPoint(x: 0, y: top), options: [])
+    ctx.drawLinearGradient(g, start: CGPoint(x: 0, y: bottom), end: CGPoint(x: 0, y: top), options: [])
     ctx.restoreGState()
+}
+/// A triangle with rounded corners (fill + a thick round-joined outline in the same colour).
+/// WHY two steps: filling the triangle and its outline as ONE path made the inside empty
+/// (overlapping shapes cancel out), and the beak looked like an outline (found in the logo lab).
+func roundedTriangle(_ ctx: CGContext, _ points: [CGPoint], _ color: CGColor, rounding: CGFloat) {
+    let p = CGMutablePath()
+    p.addLines(between: points)
+    p.closeSubpath()
+    ctx.setFillColor(color)
+    ctx.addPath(p); ctx.fillPath()
+    ctx.setStrokeColor(color); ctx.setLineWidth(rounding); ctx.setLineJoin(.round)
+    ctx.addPath(p); ctx.strokePath()
 }
 
 // MARK: - Drawing
@@ -78,170 +101,55 @@ func drawLogo(in ctx: CGContext, background: Bool) {
     ctx.scaleBy(x: 1, y: -1)
 
     if background {
-        // 1. Night sky: deep purple at the top fading into navy, and a pink glow behind the clock.
-        ctx.drawLinearGradient(gradient([deepPurple, navy, navy], [0, 0.6, 1]),
-                               start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: size), options: [])
-        ctx.drawRadialGradient(gradient([rgb(0xFF3D8B, 0.38), rgb(0x8B5CFF, 0.14), rgb(0x8B5CFF, 0)], [0, 0.55, 1]),
-                               startCenter: center, startRadius: 0, endCenter: center, endRadius: 500, options: [])
+        // 1. Night sky, breaking into dawn: a warm glow rises from below the bottom edge.
+        ctx.drawLinearGradient(gradient([rgb(0x22104A), rgb(0x150B32), rgb(0x1A0B30)], [0, 0.6, 1]),
+                               start: .zero, end: CGPoint(x: 0, y: size), options: [])
+        let glow = CGPoint(x: 512, y: size + 260)
+        ctx.drawRadialGradient(gradient([rgb(0xFF5A5F, 0.55), rgb(0xFF3D8B, 0.28), rgb(0x8B5CFF, 0)], [0, 0.45, 1]),
+                               startCenter: glow, startRadius: 0, endCenter: glow, endRadius: 720, options: [])
     }
 
-    let outer = faceRadius + ringWidth            // outside edge of the rim
-
-    // 2. Ringing arcs: two curved lines beside each bell ("it's ringing!").
+    // 2. Lean the whole bird back by `tilt` degrees around its head (crowing at the sky).
+    // LEARN: translate → rotate → translate back = "rotate around this point".
     ctx.saveGState()
-    for (radius, alpha) in [(outer + 150, CGFloat(0.95)), (outer + 204, 0.55)] {
-        for side: CGFloat in [-1, 1] {
-            let path = CGMutablePath()
-            // LEARN: angles here are CoreGraphics angles (0 = right, counter-clockwise in the
-            // flipped space we draw in = clockwise on screen). We convert from "degrees from up".
-            let from = (-90 + side * (bellAngle - 13)) * .pi / 180
-            let to = (-90 + side * (bellAngle + 13)) * .pi / 180
-            path.addArc(center: center, radius: radius, startAngle: min(from, to), endAngle: max(from, to), clockwise: false)
-            ctx.setAlpha(alpha)
-            fillSunrise(ctx, path.copy(strokingWithWidth: 26, lineCap: .round, lineJoin: .round, miterLimit: 1),
-                        bottom: center.y, top: center.y - outer - 200)
-        }
-    }
-    ctx.restoreGState()
+    ctx.translateBy(x: head.x, y: head.y + lift)
+    ctx.rotate(by: -tilt * .pi / 180)
+    ctx.translateBy(x: -head.x, y: -head.y)
 
-    // 3. Feet: two short rounded legs at the bottom.
-    for side: CGFloat in [-1, 1] {
-        let a = polar(180 - side * 38, outer - 10), b = polar(180 - side * 44, outer + 62)
-        let leg = CGMutablePath()
-        leg.move(to: a); leg.addLine(to: b)
-        fillSunrise(ctx, leg.copy(strokingWithWidth: 40, lineCap: .round, lineJoin: .round, miterLimit: 1),
-                    bottom: center.y + outer + 70, top: center.y)
+    let r = headRadius
+    let top = head.y - r - 150, bottom = head.y + r
+
+    // 3. Comb: three lobes pointing outward from the head's centre (the sun's rays), the middle one tallest.
+    for (degrees, rx, ry) in [(CGFloat(-40), CGFloat(54), CGFloat(84)), (-7, 62, 102), (25, 54, 84)] {
+        fill(ctx, ellipse(polar(head, degrees, r + 40), rx: rx, ry: ry, degrees: degrees), crimson, top: top, bottom: bottom)
     }
 
-    // 4. Bells: a dome on each side of the top, tilted outwards, with a little stem.
-    for side: CGFloat in [-1, 1] {
-        ctx.saveGState()
-        // WHY so close (found when looking at the render): further out, a dark gap made the bells float.
-        let anchor = polar(side * bellAngle, outer + 4)
-        ctx.translateBy(x: anchor.x, y: anchor.y)
-        ctx.rotate(by: side * bellAngle * .pi / 180)
-        let dome = CGMutablePath()
-        dome.addArc(center: CGPoint(x: 0, y: 8), radius: 98, startAngle: .pi, endAngle: 0, clockwise: false)
-        dome.closeSubpath()
-        ctx.addPath(dome)
-        ctx.clip()
-        ctx.drawLinearGradient(gradient([pink, purple], [0, 1]),
-                               start: CGPoint(x: 0, y: 8), end: CGPoint(x: 0, y: -100), options: [])
-        ctx.restoreGState()
+    // 4. Wattle: the little drop under the beak (drawn first, so the head overlaps it).
+    fill(ctx, ellipse(polar(head, 128, r - 10), rx: 46, ry: 66, degrees: -14), crimson, top: top, bottom: bottom + 80)
+
+    // 5. Open beak (crowing): upper and lower halves with a gap between them.
+    let tip = CGPoint(x: head.x + r + 86, y: head.y - 36)
+    roundedTriangle(ctx, [polar(head, 60, r - 18), CGPoint(x: tip.x + 10, y: tip.y - 26), polar(head, 86, r - 10)],
+                    upperBeak, rounding: 34)
+    roundedTriangle(ctx, [polar(head, 96, r - 12), CGPoint(x: tip.x - 28, y: tip.y + 46), polar(head, 112, r - 16)],
+                    lowerBeak, rounding: 34)
+
+    // 6. The crow: two sound waves in front of the beak (the near one bright, the far one softer).
+    for (radius, alpha) in [(CGFloat(96), CGFloat(1)), (160, 0.55)] {
+        let arc = CGMutablePath()
+        arc.addArc(center: CGPoint(x: tip.x - 30, y: tip.y + 12), radius: radius, startAngle: -0.55, endAngle: 0.55, clockwise: false)
+        fill(ctx, arc.copy(strokingWithWidth: 30, lineCap: .round, lineJoin: .round, miterLimit: 1), waves,
+             top: 380, bottom: 760, alpha: alpha)
     }
 
-    // 5. The hammer knob on top: a short stem and a ball.
-    let stem = CGMutablePath()
-    stem.move(to: polar(0, outer - 8)); stem.addLine(to: polar(0, outer + 44))
-    fillSunrise(ctx, stem.copy(strokingWithWidth: 30, lineCap: .round, lineJoin: .round, miterLimit: 1),
-                bottom: center.y - outer, top: center.y - outer - 90)
-    let knob = polar(0, outer + 66)
-    ctx.setFillColor(purple)
-    ctx.fillEllipse(in: CGRect(x: knob.x - 30, y: knob.y - 30, width: 60, height: 60))
+    // 7. The head: the sun.
+    fill(ctx, circle(head, r), headGold, top: head.y - r, bottom: head.y + r)
 
-    // 6. The face: dark sky above the horizon, darker water below.
-    ctx.saveGState()
-    let face = CGPath(ellipseIn: CGRect(x: center.x - faceRadius, y: center.y - faceRadius,
-                                        width: faceRadius * 2, height: faceRadius * 2), transform: nil)
-    ctx.addPath(face)
-    ctx.clip()
-    ctx.drawLinearGradient(gradient([rgb(0x2A0F52), rgb(0x3A1450)], [0, 1]),
-                           start: CGPoint(x: 0, y: center.y - faceRadius), end: CGPoint(x: 0, y: center.y), options: [])
-    ctx.setFillColor(rgb(0x0E0A24))
-    ctx.fill(CGRect(x: 0, y: center.y + 46, width: size, height: faceRadius))
+    // 8. The eye: wide awake, with a tiny highlight.
+    let eye = CGPoint(x: head.x + 78, y: head.y - 52)
+    ctx.setFillColor(eyeInk); ctx.addPath(circle(eye, 30)); ctx.fillPath()
+    ctx.setFillColor(rgb(0xFFFFFF, 0.9)); ctx.addPath(circle(CGPoint(x: eye.x + 10, y: eye.y - 10), 9)); ctx.fillPath()
 
-    // 7. The sun: a half disc on the horizon (a little below the centre), in the sunrise gradient.
-    let horizonY = center.y + 46
-    let sun = CGMutablePath()
-    sun.addArc(center: CGPoint(x: center.x, y: horizonY), radius: sunRadius, startAngle: .pi, endAngle: 0, clockwise: false)
-    sun.closeSubpath()
-    fillSunrise(ctx, sun, bottom: horizonY, top: horizonY - sunRadius)
-
-    // Soft rays around the sun.
-    for degrees: CGFloat in [-60, -30, 0, 30, 60] {
-        let r = degrees * .pi / 180
-        let base = CGPoint(x: center.x, y: horizonY)
-        let a = CGPoint(x: base.x + sin(r) * (sunRadius + 24), y: base.y - cos(r) * (sunRadius + 24))
-        let b = CGPoint(x: base.x + sin(r) * (sunRadius + (degrees == 0 ? 0 : 58)), y: base.y - cos(r) * (sunRadius + (degrees == 0 ? 0 : 58)))
-        guard degrees != 0 else { continue }                // 12 o'clock is the arrow's
-        let ray = CGMutablePath()
-        ray.move(to: a); ray.addLine(to: b)
-        ctx.setAlpha(0.85)
-        fillSunrise(ctx, ray.copy(strokingWithWidth: 18, lineCap: .round, lineJoin: .round, miterLimit: 1),
-                    bottom: horizonY, top: horizonY - sunRadius - 70)
-        ctx.setAlpha(1)
-    }
-
-    // 8. The hand: an arrow from the sun's centre straight up to 12 o'clock ("Rise Up").
-    //    It's cut out of the sun (dark) and continues bright above it.
-    let shaftWidth: CGFloat = 40
-    let apexY = center.y - faceRadius + 40, headBaseY = apexY + 92, headHalf: CGFloat = 64
-    let arrow = CGMutablePath()
-    arrow.addPath(CGPath(roundedRect: CGRect(x: center.x - shaftWidth / 2, y: headBaseY - 10,
-                                             width: shaftWidth, height: horizonY - headBaseY - 6),
-                         cornerWidth: shaftWidth / 2, cornerHeight: shaftWidth / 2, transform: nil))
-    let head = CGMutablePath()
-    head.move(to: CGPoint(x: center.x, y: apexY))
-    head.addLine(to: CGPoint(x: center.x + headHalf, y: headBaseY))
-    head.addLine(to: CGPoint(x: center.x - headHalf, y: headBaseY))
-    head.closeSubpath()
-    // WHY three separate fills: filled together, overlapping shapes cancel out and leave holes.
-    ctx.setFillColor(rgb(0xFFE3C8))
-    ctx.addPath(arrow); ctx.fillPath()
-    ctx.addPath(head); ctx.fillPath()
-    ctx.addPath(head.copy(strokingWithWidth: 18, lineCap: .round, lineJoin: .round, miterLimit: 1)); ctx.fillPath()
-    // The part inside the sun is cut out (dark), so the sun reads as a dial with a hand.
-    ctx.saveGState()
-    ctx.addPath(sun)
-    ctx.clip()
-    ctx.setFillColor(cutout)
-    ctx.addPath(arrow); ctx.fillPath()
-    ctx.restoreGState()
-
-    // 9. Hour dots at 3, 9 and 6 o'clock (12 belongs to the arrow).
-    for degrees: CGFloat in [90, 270] {
-        let dot = polar(degrees, faceRadius - 44)
-        ctx.setFillColor(rgb(0xFFE3C8, 0.9))
-        ctx.fillEllipse(in: CGRect(x: dot.x - 15, y: dot.y - 15, width: 30, height: 30))
-    }
-
-    // 10. Reflection on the water: two soft bars below the horizon.
-    for (i, width) in [CGFloat(250), 150].enumerated() {
-        let y = horizonY + 40 + CGFloat(i) * 44
-        let bar = CGPath(roundedRect: CGRect(x: center.x - width / 2, y: y, width: width, height: 18),
-                         cornerWidth: 9, cornerHeight: 9, transform: nil)
-        ctx.setAlpha([0.75, 0.45][i])
-        ctx.saveGState()
-        ctx.addPath(bar); ctx.clip()
-        ctx.drawLinearGradient(gradient([orange, pink, purple], [0, 0.5, 1]),
-                               start: CGPoint(x: center.x - width / 2, y: 0), end: CGPoint(x: center.x + width / 2, y: 0), options: [])
-        ctx.restoreGState()
-        ctx.setAlpha(1)
-    }
-    let dot6 = polar(180, faceRadius - 40)
-    ctx.setFillColor(rgb(0xFFE3C8, 0.9))
-    ctx.fillEllipse(in: CGRect(x: dot6.x - 15, y: dot6.y - 15, width: 30, height: 30))
-
-    // Horizon line: bright in the middle, fading towards the rim.
-    ctx.saveGState()
-    let horizon = CGPath(roundedRect: CGRect(x: center.x - faceRadius, y: horizonY - 6, width: faceRadius * 2, height: 12),
-                         cornerWidth: 6, cornerHeight: 6, transform: nil)
-    ctx.addPath(horizon); ctx.clip()
-    ctx.drawLinearGradient(gradient([rgb(0xFF8A3D, 0), rgb(0xFFE3C8), rgb(0xFF3D8B, 0)], [0, 0.5, 1]),
-                           start: CGPoint(x: center.x - faceRadius, y: 0), end: CGPoint(x: center.x + faceRadius, y: 0), options: [])
-    ctx.restoreGState()
-    ctx.restoreGState()                                  // end of the face clip
-
-    // 11. The rim: a thick glowing ring in the sunrise gradient (purple top → orange bottom).
-    ctx.saveGState()
-    ctx.setShadow(offset: .zero, blur: 40, color: rgb(0xFF3D8B, 0.6))
-    let ring = CGPath(ellipseIn: CGRect(x: center.x - faceRadius - ringWidth / 2, y: center.y - faceRadius - ringWidth / 2,
-                                        width: (faceRadius + ringWidth / 2) * 2, height: (faceRadius + ringWidth / 2) * 2),
-                      transform: nil)
-    ctx.addPath(ring.copy(strokingWithWidth: ringWidth, lineCap: .round, lineJoin: .round, miterLimit: 1))
-    ctx.clip()
-    ctx.drawLinearGradient(gradient([orange, pink, purple], [0, 0.5, 1]),
-                           start: CGPoint(x: 0, y: center.y + outer), end: CGPoint(x: 0, y: center.y - outer), options: [])
     ctx.restoreGState()
 }
 

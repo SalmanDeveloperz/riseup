@@ -62,10 +62,11 @@ Add a new one instead (see `AlarmSound.swift`).
 | All in-app icons | SF Symbols | Free to use in apps on Apple platforms (not as the app icon) |
 | App icon (normal, dark, tinted) + in-app logo `AppLogo` | Drawn by `Tools/generate_app_icon.swift` (CoreGraphics) | Our own work: no restrictions |
 
-**The logo (v2, 2026-10-13):** a ringing twin-bell alarm clock (bells, hammer knob, feet and ringing arcs, so it
-reads as "alarm" at a glance) whose face is a sunrise: the sun on the horizon, one hand shaped like an upward
-arrow pointing to 12 ("wake time" + "Rise Up"), rays, hour dots and a reflection. Colours are
-`Theme.Gradients.sunrise` on Theme's night navy. To change it: edit the numbers at the top of the script, run
+**The logo (v3, "the Crowing Rooster", 2026-10-14):** a rooster, nature's alarm clock, crowing at the sky.
+Its head is the sun (gold), its comb the sun's rays (three pink lobes), its open beak and two sound waves are the
+crow (the alarm). The bird leans back 10° ("Rise Up") on a night sky with dawn glowing up from the bottom edge.
+Six simple shapes, so it reads at every size. No alarm app uses a rooster (they use twin-bell clocks, digits or
+cartoon clock faces). To change it: edit the numbers at the top of the script, run
 `swift Tools/generate_app_icon.swift`, rebuild. It writes all 3 icon versions and the in-app logo at once.
 
 ## Fonts
