@@ -74,11 +74,11 @@ struct SoundPickerView: View {
             HStack(spacing: Theme.Spacing.md) {
                 Image(systemName: sound.systemImage)
                     .font(.title3)
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.Gradients.sunrise))
+                    .foregroundStyle(isSelected ? AnyShapeStyle(Theme.Colors.onAccent) : AnyShapeStyle(Theme.Gradients.brand))
                     .frame(width: 44, height: 44)
                     .background {
                         RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                            .fill(isSelected ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised))
+                            .fill(isSelected ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised))
                     }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -96,14 +96,14 @@ struct SoundPickerView: View {
                     // LEARN: `.symbolEffect(.variableColor.iterative)` animates the waves
                     // one by one, a cheap "now playing" indicator.
                     Image(systemName: "speaker.wave.3.fill")
-                        .foregroundStyle(Theme.Colors.neonPink)
+                        .foregroundStyle(Theme.Colors.accent)
                         .symbolEffect(.variableColor.iterative, options: .repeating)
                         .accessibilityLabel("Playing")
                 }
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(Theme.Colors.neonPink)
+                        .foregroundStyle(Theme.Colors.accent)
                         .accessibilityHidden(true)
                 }
             }
@@ -114,7 +114,7 @@ struct SoundPickerView: View {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
-                    .strokeBorder(isSelected ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.hairline),
+                    .strokeBorder(isSelected ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.hairline),
                                   lineWidth: isSelected ? 1.5 : 1)
             }
             .contentShape(Rectangle())

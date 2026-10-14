@@ -71,7 +71,7 @@ struct PhotoMissionView: View {
                 .clipShape(.rect(cornerRadius: Theme.Radius.card, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
-                        .strokeBorder(viewModel.status == .matched ? AnyShapeStyle(Theme.Gradients.success) : AnyShapeStyle(Theme.Gradients.sunrise), lineWidth: 3)
+                        .strokeBorder(viewModel.status == .matched ? AnyShapeStyle(Theme.Gradients.success) : AnyShapeStyle(Theme.Gradients.brand), lineWidth: 3)
                 }
                 .overlay {
                     if viewModel.status == .matched {
@@ -94,7 +94,7 @@ struct PhotoMissionView: View {
                 .foregroundStyle(Theme.Colors.textSecondary)
         case .checking:
             HStack(spacing: Theme.Spacing.xs) {
-                ProgressView().tint(Theme.Colors.neonPink)
+                ProgressView().tint(Theme.Colors.accent)
                 Text("Checking…").foregroundStyle(Theme.Colors.textSecondary)
             }
             .font(.riseBody)

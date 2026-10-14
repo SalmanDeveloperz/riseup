@@ -7,7 +7,7 @@
 //  USED BY: Settings → Developer → Design Gallery.
 //
 //  WHY: when we tweak Theme.swift, this screen shows the effect everywhere at once.
-//  TRY: change `Theme.Colors.neonPink` to another hex value and look at this screen.
+//  TRY: change `Theme.Colors.accent` to another hex value and look at this screen.
 //
 
 import SwiftUI
@@ -29,10 +29,10 @@ struct DesignGalleryView: View {
                     // LEARN: `LazyVGrid` lays items out in columns; `.adaptive(minimum:)`
                     // fits as many 64-pt columns as the screen width allows.
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 64))], spacing: Theme.Spacing.sm) {
-                        swatch(Theme.Colors.neonPink, "Pink")
-                        swatch(Theme.Colors.neonPurple, "Purple")
-                        swatch(Theme.Colors.neonOrange, "Orange")
-                        swatch(Theme.Colors.neonBlue, "Blue")
+                        swatch(Theme.Colors.accent, "Pink")
+                        swatch(Theme.Colors.accentDeep, "Purple")
+                        swatch(Theme.Colors.accentWarm, "Orange")
+                        swatch(Theme.Colors.accentCool, "Blue")
                         swatch(Theme.Colors.success, "Success")
                         swatch(Theme.Colors.warning, "Warning")
                         swatch(Theme.Colors.danger, "Danger")
@@ -42,7 +42,7 @@ struct DesignGalleryView: View {
 
                 section("Gradients") {
                     HStack(spacing: Theme.Spacing.sm) {
-                        gradientTile(Theme.Gradients.sunrise, "Sunrise")
+                        gradientTile(Theme.Gradients.brand, "Sunrise")
                         gradientTile(Theme.Gradients.night, "Night")
                         gradientTile(Theme.Gradients.success, "Success")
                     }

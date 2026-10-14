@@ -38,8 +38,9 @@ struct AlarmLiveActivity: Widget {
         ActivityConfiguration(for: AlarmAttributes<RiseUpAlarmMetadata>.self) { context in
             // 1. Lock screen / notification banner.
             AlarmLockScreenView(info: AlarmActivityInfo(attributes: context.attributes, state: context.state))
-                .activityBackgroundTint(Theme.Colors.background)
-                .activitySystemActionForegroundColor(Theme.Colors.neonPink)
+                .environment(\.colorScheme, .dark)              // WHY: always our dark alarm look (#35)
+                .activityBackgroundTint(Theme.Colors.alwaysDarkBackground)
+                .activitySystemActionForegroundColor(Theme.Colors.accent)
         } dynamicIsland: { context in
             let info = AlarmActivityInfo(attributes: context.attributes, state: context.state)
 
@@ -53,7 +54,7 @@ struct AlarmLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     AlarmTimingText(info: info)
                         .font(.system(.title, design: .rounded, weight: .bold))
-                        .foregroundStyle(Theme.Gradients.sunrise)
+                        .foregroundStyle(Theme.Gradients.brand)
                         // WHY: "11:54 AM" was cut to "11:54…" in testing. Shrink to fit instead.
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
@@ -71,19 +72,19 @@ struct AlarmLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: info.systemImage)
-                    .foregroundStyle(Theme.Colors.neonPink)
+                    .foregroundStyle(Theme.Colors.accent)
             } compactTrailing: {
                 AlarmTimingText(info: info, isCompact: true)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Theme.Colors.neonPink)
+                    .foregroundStyle(Theme.Colors.accent)
                     // WHY a max width: a timer text is as wide as "00:00:00" by default,
                     // which would push the island too wide.
                     .frame(maxWidth: 52)
             } minimal: {
                 Image(systemName: info.systemImage)
-                    .foregroundStyle(Theme.Colors.neonPink)
+                    .foregroundStyle(Theme.Colors.accent)
             }
-            .keylineTint(Theme.Colors.neonPink)
+            .keylineTint(Theme.Colors.accent)
         }
     }
 }
@@ -189,7 +190,7 @@ struct AlarmIconBadge: View {
             .font(.system(size: size * 0.42, weight: .bold))
             .foregroundStyle(Theme.Colors.textPrimary)
             .frame(width: size, height: size)
-            .background(Theme.Gradients.sunrise, in: .circle)
+            .background(Theme.Gradients.brand, in: .circle)
     }
 }
 
@@ -218,7 +219,7 @@ struct AlarmLockScreenView: View {
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
                 .frame(maxWidth: 110, alignment: .trailing)
         }
         .padding(Theme.Spacing.md)
@@ -239,7 +240,7 @@ struct AlarmLockScreenView: View {
         countdown: AlarmPresentation.Countdown(title: "Snoozing")
     ),
     metadata: RiseUpAlarmMetadata(wakeAlarmID: UUID(), isBackup: false),
-    tintColor: Theme.Colors.neonPink
+    tintColor: Theme.Colors.accent
 )) {
     AlarmLiveActivity()
 } contentStates: {

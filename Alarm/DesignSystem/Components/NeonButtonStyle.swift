@@ -22,12 +22,12 @@ struct NeonButtonStyle: ButtonStyle {
         configuration.label
             .font(.riseHeadline)
             .multilineTextAlignment(.center)
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.Colors.onAccent)
             .padding(.vertical, Theme.Spacing.md)
             .padding(.horizontal, Theme.Spacing.xl)
             .frame(maxWidth: .infinity)
-            .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.button, style: .continuous))
-            .shadow(color: Theme.Colors.neonPink.opacity(isEnabled ? 0.45 : 0), radius: 16, y: 6)
+            .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.button, style: .continuous))
+            .shadow(color: Theme.Colors.accent.opacity(isEnabled ? 0.45 : 0), radius: 16, y: 6)
             .opacity(isEnabled ? 1 : 0.4)
             // LEARN: `configuration.isPressed` is true while the finger is down,
             // so the button shrinks slightly while pressed. That small detail makes the UI feel alive.

@@ -32,10 +32,10 @@ struct FloatingAddButton: View {
         } label: {
             Image(systemName: "plus")
                 .font(.system(size: 28, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.Colors.onAccent)
                 .frame(width: 64, height: 64)
-                .background(Theme.Gradients.sunrise, in: .circle)
-                .shadow(color: Theme.Colors.neonPink.opacity(0.6), radius: 16, y: 6)
+                .background(Theme.Gradients.brand, in: .circle)
+                .shadow(color: Theme.Colors.accent.opacity(0.6), radius: 16, y: 6)
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.impact(weight: .medium), trigger: tapCount)

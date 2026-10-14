@@ -34,15 +34,15 @@ struct MissionCounterRing: View {
             // Rotating by −90° makes it start at 12 o'clock instead of 3 o'clock.
             Circle()
                 .trim(from: 0, to: min(1, max(0, progress)))
-                .stroke(Theme.Gradients.sunrise, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                .stroke(Theme.Gradients.brand, style: StrokeStyle(lineWidth: 18, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .shadow(color: Theme.Colors.neonPink.opacity(0.6), radius: 12)
+                .shadow(color: Theme.Colors.accent.opacity(0.6), radius: 12)
                 .animation(.spring(duration: 0.3), value: progress)
 
             VStack(spacing: Theme.Spacing.xs) {
                 Image(systemName: systemImage)
                     .font(.system(size: 44, weight: .bold))
-                    .foregroundStyle(Theme.Gradients.sunrise)
+                    .foregroundStyle(Theme.Gradients.brand)
                     // LEARN: `.symbolEffect(.wiggle, value:)` wiggles every time the value changes.
                     .symbolEffect(.wiggle, value: trigger)
                 Text("\(remaining)")

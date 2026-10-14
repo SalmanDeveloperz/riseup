@@ -110,7 +110,7 @@ struct AlarmHealthCheckView: View {
     private func color(for status: AlarmHealthCheckViewModel.Status) -> Color {
         switch status {
         case .ok: Theme.Colors.success
-        case .info: Theme.Colors.neonBlue
+        case .info: Theme.Colors.accentCool
         case .warning: Theme.Colors.warning
         case .problem: Theme.Colors.danger
         }

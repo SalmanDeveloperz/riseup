@@ -8,7 +8,7 @@ Start every session by reading `docs/ROADMAP.md` (what's done / next) and this f
 when a feature, framework or number changes).
 
 ## Tech
-- iOS 26.0+, iPhone only, portrait, dark-only UI. Swift 6 language mode, default actor isolation = MainActor.
+- iOS 26.0+, iPhone only, portrait. Dark by default; Settings offers System/Light/Dark + 5 colour palettes (#35). Swift 6 language mode, default actor isolation = MainActor.
 - SwiftUI + SwiftData + AlarmKit. MVVM + Coordinator.
 - Xcode project uses file-system-synchronized folders: new files under `Alarm/` join the app target automatically.
 - Two targets: `Alarm` (the app) and `RiseUpWidgets` (widget extension: lock screen / Dynamic Island alarm UI).
@@ -28,6 +28,9 @@ when a feature, framework or number changes).
 - Our alarm model is `WakeAlarm` (Apple already owns the name `Alarm`).
 - Call `AlarmManager.shared` directly at each use (don't store it): Swift 6 Sendable rule.
 - Use `Theme.*` tokens and DesignSystem components; no raw colours/numbers in screens.
+- Themes (#35): colours are role tokens (`accent`, `accentDeep`, `accentWarm`, `accentCool`, `Gradients.brand`), each
+  adaptive light/dark. Text/icons ON an accent fill use `Theme.Colors.onAccent`, never `textPrimary`. The Ringing
+  flow, Scene Player, widgets and Live Activity are always dark. Never rename a `ColorPalette` case (saved).
 - Pure value types (enums/structs without UI) are marked `nonisolated`.
 - **Single source of truth:** `AlarmRepository.alarms` and `WakeRecordRepository.entries` are the live lists
   (refreshed inside every write). ViewModels read them through computed properties and never keep their own copy.

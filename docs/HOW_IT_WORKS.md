@@ -448,6 +448,15 @@ Tap → riseup://alarm/<id> → RootView .onOpenURL → DeepLink → AppCoordina
 - A Quick Alarm sheet left open stayed on top of the editor that a widget tap opened.
 - **Fix:** `AppCoordinator.open(_:)` closes any sheet first (test `coordinatorOpensLinks`).
 
+### Lesson: a design system pays off on the day you add themes (#35)
+Light mode + 5 palettes touched ONE file of colour logic (`Theme.swift`) because no screen ever typed a raw colour.
+Two things still needed care:
+- **Colour names that become lies:** `neonPink` would be blue in Ocean, so the tokens became roles (`accent`…).
+- **White text on gradients was spelled `textPrimary`:** that's white in dark mode only. In light mode the icon on the
+  "Check my alarms" badge turned dark ink (found in the Simulator). Fix: `Theme.Colors.onAccent` for anything drawn
+  ON an accent; a small script found the 6 places.
+**Rule:** name colours by what they're FOR, not what they look like.
+
 ### Lesson: an icon must say what the app is, AND be ownable (the logo journey)
 - **v1, a sunrise with an up-arrow:** beautiful, but it didn't say "alarm" (Salman noticed). It's also almost
   Apple's own "sunrise" SF Symbol, which anyone can use.

@@ -71,9 +71,9 @@ struct MemoryMissionView: View {
                 .fill(fill(for: state))
                 .overlay {
                     RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                        .strokeBorder(state == .missed ? Theme.Colors.neonPink : Theme.Colors.hairline, lineWidth: state == .missed ? 2 : 1)
+                        .strokeBorder(state == .missed ? Theme.Colors.accent : Theme.Colors.hairline, lineWidth: state == .missed ? 2 : 1)
                 }
-                .shadow(color: state == .lit ? Theme.Colors.neonPink.opacity(0.7) : .clear, radius: 12)
+                .shadow(color: state == .lit ? Theme.Colors.accent.opacity(0.7) : .clear, radius: 12)
                 .scaleEffect(state == .lit || state == .found ? 1.0 : 0.94)
                 .aspectRatio(1, contentMode: .fit)
                 .animation(.spring(duration: 0.25), value: state)
@@ -86,7 +86,7 @@ struct MemoryMissionView: View {
     private func fill(for state: MemoryMissionViewModel.TileState) -> AnyShapeStyle {
         switch state {
         case .dark, .missed: AnyShapeStyle(Theme.Colors.surfaceRaised)
-        case .lit: AnyShapeStyle(Theme.Gradients.sunrise)
+        case .lit: AnyShapeStyle(Theme.Gradients.brand)
         case .found: AnyShapeStyle(Theme.Gradients.success)
         case .wrong: AnyShapeStyle(Theme.Colors.danger)
         }

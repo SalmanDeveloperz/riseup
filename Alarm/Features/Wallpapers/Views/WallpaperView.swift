@@ -150,7 +150,7 @@ struct PhotoWallpaperView: View {
                     .offset(x: 14 * WallpaperMath.wave(t, period: 23), y: 10 * WallpaperMath.wave(t, period: 29, phase: 0.25))
                     .clipped()
                     .overlay {
-                        LinearGradient(colors: [.clear, Theme.Colors.neonPink.opacity(0.25 * energy.level(at: timeline.date))],
+                        LinearGradient(colors: [.clear, Theme.Colors.accent.opacity(0.25 * energy.level(at: timeline.date))],
                                        startPoint: .center, endPoint: .bottom)
                     }
             }

@@ -15,7 +15,7 @@ wallpaper with its own sound, there are home and lock screen widgets, sleep soun
 stats. It's free, has no account, no server and no tracking: everything stays on the phone.
 
 **In numbers:** ~140 Swift files, 8 missions, 36 alarm sounds, 10 sleep sounds, 25 live wallpapers,
-6 widget sizes, 97 unit tests, 0 build warnings.
+6 widget sizes, light & dark themes with 5 colour palettes, 101 unit tests, 0 build warnings.
 
 ---
 
@@ -67,6 +67,16 @@ Careful: RiseUp has **three different things** people call "notifications":
 
 There are **no push notifications** (there's no server to send them).
 👉 `Alarm/Services/Notifications/BedtimeReminder.swift`, `RiseUpWidgets/AlarmLiveActivity.swift`
+
+## "Does it have dark mode / themes?"
+- Yes: Settings → Appearance. **System / Light / Dark** (dark is the default neon look) and **5 colour palettes**:
+  Sunrise, Ocean, Aurora, Ember, Lavender.
+- **How it works:** every colour in the app comes from one file, `Theme.swift`, so themes only had to change that
+  file. Each colour is "adaptive": it holds a light AND a dark value, and iOS picks while drawing. Accent colours come
+  from the chosen palette in four roles (main, deep, warm, cool). The palette is also saved in the App Group, so the
+  widgets match.
+- **Always dark on purpose:** the ringing screen, the wallpaper player and the widgets sit on night-sky wallpapers.
+- 👉 `Shared/DesignSystem/Theme.swift`, `docs/screens/35-themes.md`
 
 ## "How are the wallpapers / backgrounds made?"
 - **They're code, not videos or images.** Each of the 25 live wallpapers (Golden Hour, Aurora, Kyoto Blossoms,
@@ -146,7 +156,7 @@ with a ringing alarm. While you work, the alarm goes quiet; stop for 15 s and it
 | UserNotifications | the bedtime reminder |
 | Charts (Swift Charts) | wake-up statistics |
 | UIKit / ImageIO / CoreGraphics | images, haptics, drawing the app icon (tool) |
-| Swift Testing | 97 unit tests |
+| Swift Testing | 101 unit tests |
 
 No third-party libraries at all, so nothing to update and nothing that tracks users.
 
@@ -212,7 +222,7 @@ modern Swift API), and SwiftData needs 17 anyway.
 - 👉 `docs/screens/31-widgets.md`
 
 ## "How do you know it works?" (quality)
-- **97 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
+- **101 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
   ViewModels with mocks, widget planning, deep links.
 - **Zero-warning builds** in Swift 6 strict concurrency, Debug and Release.
 - **Real-device test matrix for alarms:** locked, Silent mode, Focus, app killed, reboot, snooze, Stop without

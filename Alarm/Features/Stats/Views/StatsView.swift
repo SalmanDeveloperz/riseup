@@ -71,7 +71,7 @@ struct StatsView: View {
 
     private func tile(_ value: String, _ label: String, _ icon: String) -> some View {
         VStack(spacing: Theme.Spacing.xxs) {
-            Image(systemName: icon).foregroundStyle(Theme.Gradients.sunrise)
+            Image(systemName: icon).foregroundStyle(Theme.Gradients.brand)
             Text(value)
                 .font(.riseTitle)
                 .monospacedDigit()
@@ -105,7 +105,7 @@ struct StatsView: View {
                 x: .value("Day", point.day, unit: .day),
                 y: .value("Snoozes", point.snoozes)
             )
-            .foregroundStyle(Theme.Gradients.sunrise)
+            .foregroundStyle(Theme.Gradients.brand)
             .cornerRadius(4)
         }
         .chartXScale(domain: ChartDays.domain(for: viewModel.points(now: now)))
@@ -161,7 +161,7 @@ struct StatsView: View {
         VStack(spacing: Theme.Spacing.md) {
             Image(systemName: "chart.xyaxis.line")
                 .font(.system(size: 56, weight: .bold))
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
             Text("Your stats appear after your first wake-ups with RiseUp.")
                 .font(.riseBody)
                 .foregroundStyle(Theme.Colors.textSecondary)

@@ -108,6 +108,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | ~~5, 27~~ | ~~Paywall, premium management~~ | ➖ dropped: the app is free |
 
 | — | `README.md` + `docs/TALKING_POINTS.md` (explain the app to anyone) | 🟡 done 2026-10-14 |
+| 35 | Themes: System / Light / Dark + 5 colour palettes (widgets follow; wake-up screens stay dark) | 🟡 brief: `docs/screens/35-themes.md` · check Light on iPhone |
 | — | Widgets show the rooster logo (`RoosterMark`, lock screen `RoosterGlyph`) | 🟡 done 2026-10-14 |
 
 ## Phase 8 — Post-launch

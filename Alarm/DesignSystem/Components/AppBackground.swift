@@ -18,14 +18,14 @@ struct AppBackground: View {
             // LEARN: `RadialGradient` fades a colour out from a centre point.
             // Two of them at opposite corners create the "neon glow" atmosphere.
             RadialGradient(
-                colors: [Theme.Colors.neonPink.opacity(0.28), .clear],
+                colors: [Theme.Colors.accent.opacity(0.28), .clear],
                 center: .topLeading,
                 startRadius: 0,
                 endRadius: 420
             )
             RadialGradient(
-                colors: [Theme.Colors.neonBlue.opacity(0.30), .clear],
-//              colors: [Theme.Colors.neonPink.opacity(0.30), .clear],
+                colors: [Theme.Colors.accentCool.opacity(0.30), .clear],
+//              colors: [Theme.Colors.accent.opacity(0.30), .clear],
                 center: .bottomTrailing,
                 startRadius: 0,
                 endRadius: 480

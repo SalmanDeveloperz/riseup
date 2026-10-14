@@ -140,7 +140,7 @@ struct MissionProgressHeader: View {
                 Label(type.title.uppercased(), systemImage: type.systemImage)
                     .font(.riseCaption)
                     .tracking(1)
-                    .foregroundStyle(Theme.Colors.neonPink)
+                    .foregroundStyle(Theme.Colors.accent)
                 Spacer()
                 Text("\(done) / \(total)")
                     .font(.riseHeadline)
@@ -153,7 +153,7 @@ struct MissionProgressHeader: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Theme.Colors.surfaceRaised)
-                    Capsule().fill(Theme.Gradients.sunrise)
+                    Capsule().fill(Theme.Gradients.brand)
                         .frame(width: geo.size.width * CGFloat(min(done, total)) / CGFloat(max(total, 1)))
                 }
             }

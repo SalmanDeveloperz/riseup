@@ -76,7 +76,7 @@ struct QuickAlarmView: View {
                 Text(viewModel.durationText)
                     .font(.riseClock(size: 52))
                     .monospacedDigit()
-                    .foregroundStyle(Theme.Gradients.sunrise)
+                    .foregroundStyle(Theme.Gradients.brand)
                     // LEARN: `.contentTransition(.numericText())` rolls the digits like an
                     // odometer when the number changes.
                     .contentTransition(.numericText())
@@ -106,10 +106,10 @@ struct QuickAlarmView: View {
                 } label: {
                     Text(value >= 60 && value % 60 == 0 ? "\(value / 60) h" : "\(value) min")
                         .font(.riseHeadline)
-                        .foregroundStyle(isOn ? .white : Theme.Colors.textSecondary)
+                        .foregroundStyle(isOn ? Theme.Colors.onAccent : Theme.Colors.textSecondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, Theme.Spacing.sm)
-                        .background(isOn ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised),
+                        .background(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised),
                                     in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                 }
                 .buttonStyle(.plain)

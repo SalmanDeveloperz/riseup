@@ -101,7 +101,7 @@ struct SleepView: View {
             Image(systemName: "moon.stars.fill")
                 .font(.system(size: 54, weight: .bold))
                 .foregroundStyle(Theme.Gradients.night)
-                .shadow(color: Theme.Colors.neonBlue.opacity(isGlowing ? 0.7 : 0.2), radius: isGlowing ? 26 : 8)
+                .shadow(color: Theme.Colors.accentCool.opacity(isGlowing ? 0.7 : 0.2), radius: isGlowing ? 26 : 8)
                 .onAppear {
                     guard !reduceMotion else { return }
                     withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) { isGlowing = true }
@@ -150,7 +150,7 @@ struct SleepView: View {
                     } label: {
                         Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                             .font(.title3)
-                            .foregroundStyle(Theme.Colors.textPrimary)
+                            .foregroundStyle(Theme.Colors.onAccent)
                             .frame(width: 44, height: 44)
                             .background(Theme.Gradients.night, in: .circle)
                     }
@@ -176,7 +176,7 @@ struct SleepView: View {
                     .foregroundStyle(isOn ? AnyShapeStyle(Theme.Colors.textPrimary) : AnyShapeStyle(Theme.Gradients.night))
                     .frame(width: 56, height: 56)
                     .background(isOn ? AnyShapeStyle(Theme.Gradients.night) : AnyShapeStyle(Theme.Colors.surfaceRaised), in: .circle)
-                    .shadow(color: isOn ? Theme.Colors.neonBlue.opacity(0.6) : .clear, radius: 12)
+                    .shadow(color: isOn ? Theme.Colors.accentCool.opacity(0.6) : .clear, radius: 12)
                     .symbolEffect(.pulse, isActive: isOn && viewModel.isPlaying)
                 Text(sound.title)
                     .font(.riseCaption)
@@ -217,7 +217,7 @@ struct SleepView: View {
                     DatePicker("Remind me at", selection: $viewModel.bedtime, displayedComponents: .hourAndMinute)
                         .font(.riseBody)
                         .foregroundStyle(Theme.Colors.textSecondary)
-                        .tint(Theme.Colors.neonPink)
+                        .tint(Theme.Colors.accent)
                 }
                 Text("A gentle nudge to put the phone down. Good mornings start the night before.")
                     .font(.riseCaption)

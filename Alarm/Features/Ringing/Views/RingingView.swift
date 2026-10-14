@@ -41,6 +41,9 @@ struct RingingView: View {
                 .padding(Theme.Spacing.lg)
         }
         .onAppear { viewModel.start() }                 // → silence iOS, play our sound, open record
+        // WHY always dark (#35): the whole wake-up happens on a night-sky wallpaper; light-mode text
+        // (dark ink) would vanish on it. LEARN: inside a full-screen cover this only affects the cover.
+        .preferredColorScheme(.dark)
         .onChange(of: scenePhase) {
             viewModel.appActivityChanged(isActive: scenePhase == .active)   // → hold the chain or let iOS ring
         }
@@ -125,7 +128,7 @@ struct RingingView: View {
             Text(info.title.uppercased())
                 .font(.riseHeadline)
                 .tracking(2)
-                .foregroundStyle(Theme.Colors.neonPink)
+                .foregroundStyle(Theme.Colors.accent)
 
             // The live clock, with a glow that "breathes" like a heartbeat.
             TimelineView(.everyMinute) { context in
@@ -135,7 +138,7 @@ struct RingingView: View {
             .clockHalo()                                  // readable on any wallpaper
             .background {
                 Circle()
-                    .fill(Theme.Colors.neonPink.opacity(0.35))
+                    .fill(Theme.Colors.accent.opacity(0.35))
                     .blur(radius: 60)
                     .scaleEffect(isPulsing ? 1.25 : 0.85)
             }
@@ -228,7 +231,7 @@ struct RingingView: View {
                 Label(viewModel.isQuiet ? "Alarm paused" : "Alarm ringing",
                       systemImage: viewModel.isQuiet ? "speaker.slash.fill" : "speaker.wave.3.fill")
                     .font(.riseCaption)
-                    .foregroundStyle(viewModel.isQuiet ? Theme.Colors.textTertiary : Theme.Colors.neonPink)
+                    .foregroundStyle(viewModel.isQuiet ? Theme.Colors.textTertiary : Theme.Colors.accent)
             }
 
             if viewModel.isIdleWarning {

@@ -31,9 +31,9 @@ struct SuccessView: View {
 
                 Image(systemName: "sun.max.fill")
                     .font(.system(size: 88, weight: .bold))
-                    .foregroundStyle(Theme.Gradients.sunrise)
+                    .foregroundStyle(Theme.Gradients.brand)
                     .symbolEffect(.bounce, value: appeared)
-                    .shadow(color: Theme.Colors.neonOrange.opacity(0.6), radius: 30)
+                    .shadow(color: Theme.Colors.accentWarm.opacity(0.6), radius: 30)
 
                 VStack(spacing: Theme.Spacing.xs) {
                     Text("You're up!")
@@ -100,7 +100,7 @@ struct SuccessView: View {
                         Text(option.emoji)
                             .font(.system(size: 34))
                             .frame(width: 54, height: 54)
-                            .background(mood == option ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surface),
+                            .background(mood == option ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surface),
                                         in: .circle)
                             .scaleEffect(mood == option ? 1.12 : (mood == nil ? 1 : 0.9))
                             .opacity(mood == nil || mood == option ? 1 : 0.5)
@@ -118,7 +118,7 @@ struct SuccessView: View {
     private func statTile(value: String, label: String, icon: String) -> some View {
         VStack(spacing: Theme.Spacing.xxs) {
             Image(systemName: icon)
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
             Text(value)
                 .font(.riseTitle)
                 .monospacedDigit()

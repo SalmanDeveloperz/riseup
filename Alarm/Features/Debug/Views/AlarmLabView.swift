@@ -118,7 +118,7 @@ struct AlarmLabView: View {
                         Text(row.title).font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
                         Text("\(row.schedule) · \(row.state)")
                             .font(.riseCaption)
-                            .foregroundStyle(row.isRinging ? Theme.Colors.neonPink : Theme.Colors.textSecondary)
+                            .foregroundStyle(row.isRinging ? Theme.Colors.accent : Theme.Colors.textSecondary)
                     }
                 }
                 Button("Cancel all & delete lab alarms", role: .destructive) {
@@ -149,7 +149,7 @@ struct AlarmLabView: View {
             Text(title).font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
             Spacer()
             if let detail {
-                Text(detail).font(.riseCaption).foregroundStyle(Theme.Colors.neonPink)
+                Text(detail).font(.riseCaption).foregroundStyle(Theme.Colors.accent)
             }
         }
     }

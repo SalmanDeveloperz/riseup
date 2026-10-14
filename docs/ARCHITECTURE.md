@@ -124,6 +124,7 @@ Quick alarm: `.fixed(fixedFireDate)` → rings once → deleted (in finish(), or
 | Wallpaper photos | Files in Application Support/Wallpapers (`WallpaperStore`) | big pictures stay out of the database |
 | Live wallpapers | Code (`Features/Wallpapers/Renderers`) | nothing to store or download |
 | Saved (♥) wallpapers | `AppSettings.savedWallpapers` (UserDefaults) | a short list of strings, a preference |
+| Appearance + colour palette (#35) | `AppSettings.appearance` (UserDefaults); palette also in the App Group (`ThemeStorage`) | the widget extension needs the palette too |
 | Widget data (next rings + wallpaper pictures) | App Group `group.com.testProject.Alarm`: UserDefaults JSON + JPEG files (`WidgetBridge` → `Shared/WidgetSnapshot.swift`) | the widget extension can't open the app's database |
 | Backup, snooze and wake-up-check alarm IDs | Calculated (`backupID` / `snoozeID` / `wakeUpCheckID`) | nothing to keep in sync |
 | Alarm metadata for the lock screen | Inside AlarmKit's `AlarmAttributes` (iOS stores it) | the widget extension can't open our database |

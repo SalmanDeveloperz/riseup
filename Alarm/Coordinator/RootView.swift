@@ -87,7 +87,7 @@ struct RootView: View {
                 }
             }
         }
-        .tint(Theme.Colors.neonPink)
+        .tint(Theme.Colors.accent)
         // Shows a sheet whenever `coordinator.sheet` is not nil (sound picker, quick alarm, missions).
         // `onDismiss` also runs when the user swipes the sheet down → forget pending callbacks.
         .sheet(item: $coordinator.sheet, onDismiss: { coordinator.dismissSheet() }) { route in

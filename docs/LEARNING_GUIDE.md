@@ -245,3 +245,13 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | `AnyLayout` | switch between HStack and VStack without repeating the children | `UpcomingRow` |
 | `AVAudioSession.outputVolume` | read (never set) the media volume | `AudioService`, volume hint |
 
+## Learned building themes (#35)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Dynamic colours | `UIColor { traits in … }` gives a different colour in light and dark, chosen while drawing | `Color.adaptive` in `Theme.swift` |
+| `.preferredColorScheme` | forces light/dark for a window or a presentation (`nil` = follow the iPhone) | `RiseUpApp`, `RingingView` |
+| `.environment(\.colorScheme, …)` | makes one part of the screen think it's in dark mode | widgets |
+| `.id(value)` to rebuild | a new id throws a view tree away and builds it fresh | `RiseUpApp` `.id(palette)` |
+| Semantic tokens | name colours by role (`accent`, `onAccent`), not by look (`neonPink`) | `Theme.Colors` |
+| HSB colour maths | change brightness/saturation to derive a deeper shade | `Color.accent` |
+

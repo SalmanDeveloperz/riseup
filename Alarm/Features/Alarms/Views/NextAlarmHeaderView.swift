@@ -31,7 +31,7 @@ struct NextAlarmHeaderView: View {
                 Image(systemName: next == nil ? "moon.zzz.fill" : "alarm.waves.left.and.right.fill")
                     .font(.system(size: 34, weight: .bold))
                     .foregroundStyle(next == nil ? AnyShapeStyle(Theme.Colors.textTertiary)
-                                                 : AnyShapeStyle(Theme.Gradients.sunrise))
+                                                 : AnyShapeStyle(Theme.Gradients.brand))
                     .frame(width: 44)
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {

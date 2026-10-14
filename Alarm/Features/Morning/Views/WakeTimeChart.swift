@@ -40,13 +40,13 @@ struct WakeTimeChart: View {
                     x: .value("Day", point.day, unit: .day),
                     y: .value("Up at", time(point.wakeMinuteOfDay ?? 0))
                 )
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
                 .interpolationMethod(.catmullRom)
                 PointMark(
                     x: .value("Day", point.day, unit: .day),
                     y: .value("Up at", time(point.wakeMinuteOfDay ?? 0))
                 )
-                .foregroundStyle(Theme.Colors.neonPink)
+                .foregroundStyle(Theme.Colors.accent)
                 .symbolSize(60)
             }
         }

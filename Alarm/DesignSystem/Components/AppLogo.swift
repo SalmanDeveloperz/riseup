@@ -47,7 +47,7 @@ struct AppLogo: View {
                 RoundedRectangle(cornerRadius: size * 0.225, style: .continuous)
                     .strokeBorder(Theme.Colors.hairline, lineWidth: 1)
             }
-            .shadow(color: Theme.Colors.neonPink.opacity(isGlowing ? 0.55 : 0.25),
+            .shadow(color: Theme.Colors.accent.opacity(isGlowing ? 0.55 : 0.25),
                     radius: isGlowing ? size * 0.3 : size * 0.14, y: size * 0.04)
             .scaleEffect(isGlowing ? 1.03 : 1)
             .onAppear {

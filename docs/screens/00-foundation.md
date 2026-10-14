@@ -68,7 +68,7 @@ Write anything unclear in `docs/LEARNING_LOG.md`.
 Follow `docs/SPIKE_RESULTS.md` and fill in the blanks.
 
 ## Exercises (do them yourself, then tell Claude to check)
-1. **Design tokens:** in `Theme.swift` change `neonPink` to `Color(hex: 0x00E5FF)`. Run, open
+1. **Design tokens:** in `Theme.swift` change Sunrise's `accent` to `0x00E5FF` (it was called `neonPink` back then). Run, open
    Settings → Design Gallery and see what changed. Then change it back.
 2. **Backup chain:** in `AlarmKitScheduler.swift` change `backupOffsetsInMinutes` to `[1, 2, 3]`.
    In the Lab, create a mission alarm and count the backups in the list. Change it back.

@@ -26,13 +26,13 @@ struct NeonToggleStyle: ToggleStyle {
             // The switch itself, drawn by hand: a capsule track with a circle knob.
             ZStack(alignment: configuration.isOn ? .trailing : .leading) {
                 Capsule()
-                    .fill(configuration.isOn ? AnyShapeStyle(Theme.Gradients.sunrise)
+                    .fill(configuration.isOn ? AnyShapeStyle(Theme.Gradients.brand)
                                              : AnyShapeStyle(Theme.Colors.surfaceRaised))
                     .frame(width: 56, height: 32)
-                    .shadow(color: configuration.isOn ? Theme.Colors.neonPink.opacity(0.5) : .clear, radius: 8)
+                    .shadow(color: configuration.isOn ? Theme.Colors.accent.opacity(0.5) : .clear, radius: 8)
 
                 Circle()
-                    .fill(.white)
+                    .fill(Theme.Colors.onAccent)
                     .frame(width: 26, height: 26)
                     .padding(3)
                     .shadow(radius: 2)

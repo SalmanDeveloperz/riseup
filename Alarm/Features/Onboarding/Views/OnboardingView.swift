@@ -84,7 +84,7 @@ struct OnboardingView: View {
             HStack(spacing: Theme.Spacing.xs) {
                 ForEach(OnboardingViewModel.Page.allCases, id: \.self) { page in
                     Capsule()
-                        .fill(page == viewModel.page ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised))
+                        .fill(page == viewModel.page ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised))
                         .frame(width: page == viewModel.page ? 24 : 8, height: 8)
                 }
             }
@@ -125,7 +125,7 @@ struct OnboardingView: View {
     private func feature(_ icon: String, _ text: String) -> some View {
         HStack(spacing: Theme.Spacing.sm) {
             Image(systemName: icon)
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
                 .frame(width: 28)
             Text(text)
                 .font(.riseBody)
@@ -161,7 +161,7 @@ struct OnboardingView: View {
                     .font(.title2.weight(.bold))
                     .foregroundStyle(Theme.Colors.textPrimary)
                     .frame(width: 48, height: 48)
-                    .background(isOn ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised),
+                    .background(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised),
                                 in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                 Text(goal.title)
                     .font(.riseHeadline)
@@ -175,7 +175,7 @@ struct OnboardingView: View {
             .background(Theme.Colors.surface, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
-                    .strokeBorder(isOn ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.hairline), lineWidth: isOn ? 2 : 1)
+                    .strokeBorder(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.hairline), lineWidth: isOn ? 2 : 1)
             }
         }
         .buttonStyle(PressScaleButtonStyle())
@@ -189,7 +189,7 @@ struct OnboardingView: View {
             Spacer()
             Image(systemName: viewModel.permission == .authorized ? "checkmark.seal.fill" : "alarm.waves.left.and.right.fill")
                 .font(.system(size: 90, weight: .bold))
-                .foregroundStyle(viewModel.permission == .authorized ? AnyShapeStyle(Theme.Gradients.success) : AnyShapeStyle(Theme.Gradients.sunrise))
+                .foregroundStyle(viewModel.permission == .authorized ? AnyShapeStyle(Theme.Gradients.success) : AnyShapeStyle(Theme.Gradients.brand))
                 .contentTransition(.symbolEffect(.replace))
             pageTitle("Let RiseUp ring", "iOS will ask if RiseUp may schedule alarms. Please tap “Allow”: without it, no alarm can ring.", centered: true)
 
@@ -246,7 +246,7 @@ struct OnboardingView: View {
                         TimelineView(.everyMinute) { _ in
                             Text(viewModel.ringsInText(now: .now))
                                 .font(.riseHeadline)
-                                .foregroundStyle(Theme.Gradients.sunrise)
+                                .foregroundStyle(Theme.Gradients.brand)
                         }
                     }
                 }
@@ -289,9 +289,9 @@ struct OnboardingView: View {
                 HStack(spacing: Theme.Spacing.sm) {
                     Image(systemName: mission.type.systemImage)
                         .font(.headline)
-                        .foregroundStyle(Theme.Colors.textPrimary)
+                        .foregroundStyle(Theme.Colors.onAccent)
                         .frame(width: 40, height: 40)
-                        .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
+                        .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Add a \(mission.type.title) mission")
                             .font(.riseHeadline)

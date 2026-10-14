@@ -97,7 +97,7 @@ final class AlarmLabViewModel {
                     stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill")
                 )),
                 metadata: RiseUpAlarmMetadata(wakeAlarmID: UUID(), isBackup: false),
-                tintColor: Theme.Colors.neonPink
+                tintColor: Theme.Colors.accent
             )
             let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
                 schedule: .fixed(fireDate),
@@ -173,7 +173,7 @@ final class AlarmLabViewModel {
                             stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill")
                         )),
                         metadata: RiseUpAlarmMetadata(wakeAlarmID: UUID(), isBackup: false),
-                        tintColor: Theme.Colors.neonPink
+                        tintColor: Theme.Colors.accent
                     )
                 )
                 do {

@@ -117,7 +117,7 @@ struct CameraScreen: View {
             ZStack {
                 Circle().strokeBorder(Theme.Colors.textPrimary, lineWidth: 5)
                     .frame(width: 84, height: 84)
-                Circle().fill(Theme.Gradients.sunrise)
+                Circle().fill(Theme.Gradients.brand)
                     .frame(width: 66, height: 66)
                 if phase == .capturing {
                     ProgressView().tint(Theme.Colors.textPrimary)

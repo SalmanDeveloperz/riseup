@@ -81,11 +81,11 @@ struct SleepPlayerView: View {
                     } label: {
                         Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 40, weight: .bold))
-                            .foregroundStyle(Theme.Colors.textPrimary)
+                            .foregroundStyle(Theme.Colors.onAccent)
                             .contentTransition(.symbolEffect(.replace))
                             .frame(width: 96, height: 96)
                             .background(Theme.Gradients.night, in: .circle)
-                            .shadow(color: Theme.Colors.neonBlue.opacity(viewModel.isPlaying ? 0.6 : 0), radius: 20)
+                            .shadow(color: Theme.Colors.accentCool.opacity(viewModel.isPlaying ? 0.6 : 0), radius: 20)
                     }
                     .buttonStyle(PressScaleButtonStyle())
                     .sensoryFeedback(.impact, trigger: viewModel.isPlaying)
@@ -161,7 +161,7 @@ struct SleepPlayerView: View {
                             if !isEditing { viewModel.saveVolumes() }
                         }
                     )
-                    .tint(Theme.Colors.neonBlue)
+                    .tint(Theme.Colors.accentCool)
                     .accessibilityLabel("\(sound.title) volume")
                 }
                 Button {

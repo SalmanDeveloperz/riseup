@@ -71,7 +71,7 @@ struct AlarmCardView: View {
             ForEach(Array(row.missionTypes.enumerated()), id: \.offset) { _, type in
                 Image(systemName: type.systemImage)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(row.isEnabled ? Theme.Colors.neonPink : Theme.Colors.textTertiary)
+                    .foregroundStyle(row.isEnabled ? Theme.Colors.accent : Theme.Colors.textTertiary)
                     .padding(.horizontal, Theme.Spacing.xs)
                     .padding(.vertical, Theme.Spacing.xxs)
                     .background(Theme.Colors.surfaceRaised, in: .capsule)

@@ -74,6 +74,12 @@ enum WidgetBridge {
         }
     }
 
+    /// Redraws the widgets in the new colours after the palette changed (#35).
+    /// ← CALLED BY: SettingsViewModel.palette
+    static func reloadForNewTheme() {
+        WidgetCenter.shared.reloadTimelines(ofKind: WidgetShared.nextAlarmKind)
+    }
+
     // MARK: - Planning (pure: no files, easy to test)
 
     /// Every ring of every switched-on alarm in the next `daysAhead` days, earliest first,

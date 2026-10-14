@@ -67,14 +67,14 @@ struct RepeatDaysPicker: View {
         } label: {
             Text(day.veryShortName)
                 .font(.riseHeadline)
-                .foregroundStyle(isOn ? .white : Theme.Colors.textSecondary)
+                .foregroundStyle(isOn ? Theme.Colors.onAccent : Theme.Colors.textSecondary)
                 .frame(width: chipSize, height: chipSize)
                 .minimumScaleFactor(0.7)
                 .background {
-                    Circle().fill(isOn ? AnyShapeStyle(Theme.Gradients.sunrise)
+                    Circle().fill(isOn ? AnyShapeStyle(Theme.Gradients.brand)
                                        : AnyShapeStyle(Theme.Colors.surfaceRaised))
                 }
-                .shadow(color: isOn ? Theme.Colors.neonPink.opacity(0.45) : .clear, radius: 8)
+                .shadow(color: isOn ? Theme.Colors.accent.opacity(0.45) : .clear, radius: 8)
                 // LEARN: each 40-pt circle sits in a slot that stretches (`maxWidth: .infinity`),
                 // so the 7 slots share the row equally and the circles spread evenly on any iPhone.
                 .frame(maxWidth: .infinity)
@@ -93,8 +93,8 @@ struct RepeatDaysPicker: View {
             .foregroundStyle(isActive ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
             .padding(.horizontal, Theme.Spacing.xs + 2)
             .padding(.vertical, Theme.Spacing.xs)
-            .background(isActive ? Theme.Colors.neonPink.opacity(0.22) : Theme.Colors.surfaceRaised, in: .capsule)
-            .overlay { Capsule().strokeBorder(isActive ? Theme.Colors.neonPink : .clear) }
+            .background(isActive ? Theme.Colors.accent.opacity(0.22) : Theme.Colors.surfaceRaised, in: .capsule)
+            .overlay { Capsule().strokeBorder(isActive ? Theme.Colors.accent : .clear) }
             .frame(minHeight: 44)                 // finger-sized tap area; the capsule still looks small
             .contentShape(Rectangle())
             .buttonStyle(.plain)

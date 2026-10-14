@@ -46,7 +46,7 @@ struct TypingMissionView: View {
                 .background(Theme.Colors.surfaceRaised, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
-                        .strokeBorder(Theme.Gradients.sunrise, lineWidth: 1)
+                        .strokeBorder(Theme.Gradients.brand, lineWidth: 1)
                 }
 
             Spacer(minLength: 0)

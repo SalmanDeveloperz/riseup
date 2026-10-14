@@ -120,14 +120,14 @@ struct WallpaperPickerView: View {
                 if isOn {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(Theme.Gradients.sunrise)
+                        .foregroundStyle(Theme.Gradients.brand)
                 }
             }
             .padding(Theme.Spacing.sm)
             .background(Theme.Colors.surface, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
-                    .strokeBorder(isOn ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.hairline), lineWidth: isOn ? 2 : 1)
+                    .strokeBorder(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.hairline), lineWidth: isOn ? 2 : 1)
             }
         }
         .buttonStyle(PressScaleButtonStyle())
@@ -149,7 +149,7 @@ struct WallpaperPickerView: View {
                             .foregroundStyle(isOn ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
                             .padding(.horizontal, Theme.Spacing.sm)
                             .frame(minHeight: 40)
-                            .background(isOn ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised), in: .capsule)
+                            .background(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised), in: .capsule)
                     }
                     .buttonStyle(PressScaleButtonStyle())
                     .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -225,14 +225,14 @@ struct WallpaperPickerView: View {
                     if isOn {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(.white, Theme.Colors.neonPink)
+                            .foregroundStyle(.white, Theme.Colors.accent)
                             .padding(Theme.Spacing.xs)
                     }
                 }
                 .clipShape(.rect(cornerRadius: Theme.Radius.card, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
-                        .strokeBorder(isOn ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.hairline), lineWidth: isOn ? 3 : 1)
+                        .strokeBorder(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.hairline), lineWidth: isOn ? 3 : 1)
                 }
         }
         .buttonStyle(PressScaleButtonStyle())
@@ -251,7 +251,7 @@ struct WallpaperPickerView: View {
                 } else {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 40))
-                        .foregroundStyle(Theme.Gradients.sunrise)
+                        .foregroundStyle(Theme.Gradients.brand)
                 }
                 Text("Add your photo")
                     .font(.riseHeadline)

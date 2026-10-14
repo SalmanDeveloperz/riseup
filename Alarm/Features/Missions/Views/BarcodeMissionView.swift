@@ -28,9 +28,9 @@ struct BarcodeMissionView: View {
 
             Image(systemName: viewModel.status == .matched ? "checkmark.circle.fill" : "qrcode.viewfinder")
                 .font(.system(size: 110, weight: .bold))
-                .foregroundStyle(viewModel.status == .matched ? AnyShapeStyle(Theme.Gradients.success) : AnyShapeStyle(Theme.Gradients.sunrise))
+                .foregroundStyle(viewModel.status == .matched ? AnyShapeStyle(Theme.Gradients.success) : AnyShapeStyle(Theme.Gradients.brand))
                 .contentTransition(.symbolEffect(.replace))
-                .shadow(color: Theme.Colors.neonPink.opacity(0.5), radius: 24)
+                .shadow(color: Theme.Colors.accent.opacity(0.5), radius: 24)
 
             VStack(spacing: Theme.Spacing.xs) {
                 Text("Walk to your code and scan it")

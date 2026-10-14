@@ -31,14 +31,14 @@ struct GlowCard<Content: View>: View {
                     // WHY the shadow is on the background shape only (found in the smoothness review):
                     // a shadow on the whole card made iOS trace every letter inside it too, an extra
                     // drawing pass per card that made long lists scroll less smoothly.
-                    .shadow(color: isGlowing ? Theme.Colors.neonPink.opacity(0.35) : .clear, radius: 18, y: 6)
+                    .shadow(color: isGlowing ? Theme.Colors.accent.opacity(0.35) : .clear, radius: 18, y: 6)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
                     // LEARN: `AnyShapeStyle` lets one expression return either a gradient
                     // or a plain colour. Swift needs a single concrete type there.
                     .strokeBorder(
-                        isGlowing ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.hairline),
+                        isGlowing ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.hairline),
                         lineWidth: isGlowing ? 1.5 : 1
                     )
             }

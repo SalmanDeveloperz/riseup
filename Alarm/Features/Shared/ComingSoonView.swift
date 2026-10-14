@@ -36,7 +36,7 @@ struct ComingSoonView: View {
             } else {
                 Image(systemName: systemImage)
                     .font(.system(size: 72, weight: .bold))
-                    .foregroundStyle(Theme.Gradients.sunrise)
+                    .foregroundStyle(Theme.Gradients.brand)
                     // LEARN: `.symbolEffect(.pulse)` animates SF Symbols for free.
                     .symbolEffect(.pulse)
             }
@@ -45,7 +45,7 @@ struct ComingSoonView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text("Coming in Phase \(phase)")
                         .font(.riseCaption)
-                        .foregroundStyle(Theme.Colors.neonPink)
+                        .foregroundStyle(Theme.Colors.accent)
                     Text(message)
                         .font(.riseBody)
                         .foregroundStyle(Theme.Colors.textSecondary)

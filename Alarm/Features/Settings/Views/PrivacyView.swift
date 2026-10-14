@@ -45,7 +45,7 @@ struct PrivacyView: View {
                         HStack(alignment: .top, spacing: Theme.Spacing.md) {
                             Image(systemName: point.systemImage)
                                 .font(.title3)
-                                .foregroundStyle(Theme.Gradients.sunrise)
+                                .foregroundStyle(Theme.Gradients.brand)
                                 .frame(width: 32)
                             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                                 Text(point.title).font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)

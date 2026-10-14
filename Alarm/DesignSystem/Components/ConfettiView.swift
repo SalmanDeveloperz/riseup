@@ -59,8 +59,8 @@ struct ConfettiView: View {
             .allowsHitTesting(false)
             .onAppear {
                 startDate = .now
-                let colors = [Theme.Colors.neonPink, Theme.Colors.neonPurple, Theme.Colors.neonOrange,
-                              Theme.Colors.neonBlue, Theme.Colors.success, Theme.Colors.warning]
+                let colors = [Theme.Colors.accent, Theme.Colors.accentDeep, Theme.Colors.accentWarm,
+                              Theme.Colors.accentCool, Theme.Colors.success, Theme.Colors.warning]
                 pieces = (0..<pieceCount).map { _ in
                     Piece(x: .random(in: 0...1),
                           speedX: .random(in: -60...60),

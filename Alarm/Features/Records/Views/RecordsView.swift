@@ -84,7 +84,7 @@ struct RecordsView: View {
             .opacity(viewModel.canGoForward() ? 1 : 0.3)
             .accessibilityLabel("Next month")
         }
-        .foregroundStyle(Theme.Colors.neonPink)
+        .foregroundStyle(Theme.Colors.accent)
     }
 
     private var weekdayRow: some View {
@@ -114,7 +114,7 @@ struct RecordsView: View {
                     .frame(maxWidth: .infinity, minHeight: 40)
                     .background(fill(for: cell.status), in: .circle)
                     .overlay {
-                        Circle().strokeBorder(isSelected ? Theme.Colors.textPrimary : (cell.isToday ? Theme.Colors.neonPink : .clear),
+                        Circle().strokeBorder(isSelected ? Theme.Colors.textPrimary : (cell.isToday ? Theme.Colors.accent : .clear),
                                               lineWidth: isSelected ? 2 : 1)
                     }
             }
@@ -184,7 +184,7 @@ struct RecordsView: View {
     private func fill(for status: RecordsViewModel.DayStatus) -> AnyShapeStyle {
         switch status {
         case .none: AnyShapeStyle(Theme.Colors.surfaceRaised.opacity(0.5))
-        case .clean: AnyShapeStyle(Theme.Gradients.sunrise)
+        case .clean: AnyShapeStyle(Theme.Gradients.brand)
         case .snoozed: AnyShapeStyle(Theme.Colors.warning.opacity(0.7))
         case .missed: AnyShapeStyle(Theme.Colors.danger.opacity(0.6))
         }

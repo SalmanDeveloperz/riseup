@@ -62,7 +62,7 @@ struct AlarmListView: View {
                 } label: {
                     Label("Quick alarm", systemImage: "bolt.fill")
                 }
-                .tint(Theme.Colors.neonOrange)
+                .tint(Theme.Colors.accentWarm)
             }
             // WHY the #if is HERE and not only inside `debugToolbar` (found when building the App
             // Store version): an empty toolbar builder doesn't compile, so the Release build failed.
@@ -145,7 +145,7 @@ struct AlarmListView: View {
             Spacer()
             Image(systemName: "alarm.waves.left.and.right.fill")
                 .font(.system(size: 72, weight: .bold))
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
                 .symbolEffect(.pulse)
 
             VStack(spacing: Theme.Spacing.xs) {
@@ -199,10 +199,10 @@ struct AlarmListView: View {
                 Spacer()
                 Image(systemName: "chevron.right")
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.Colors.onAccent)
             .padding(Theme.Spacing.md)
-            .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
-            .shadow(color: Theme.Colors.neonPink.opacity(0.5), radius: 14, y: 4)
+            .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
+            .shadow(color: Theme.Colors.accent.opacity(0.5), radius: 14, y: 4)
         }
         .buttonStyle(.plain)
     }

@@ -79,7 +79,7 @@ struct FAQView: View {
                             .multilineTextAlignment(.leading)
                         Spacer()
                         Image(systemName: "chevron.down")
-                            .foregroundStyle(Theme.Colors.neonPink)
+                            .foregroundStyle(Theme.Colors.accent)
                             .rotationEffect(.degrees(isOpen ? 180 : 0))
                     }
                     if isOpen {

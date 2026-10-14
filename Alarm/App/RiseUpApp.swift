@@ -35,8 +35,13 @@ struct RiseUpApp: App {
                 //We're injecting AppDependencies and AppCoordinator via .environment
                 .environment(dependencies)
                 .environment(coordinator)
-                // WHY: RiseUp is designed dark-only (neon on black).
-                .preferredColorScheme(.dark)
+                // Settings → Appearance (#35): System / Light / Dark. `nil` = follow the iPhone.
+                // (Dark by default: RiseUp's neon look. The Ringing flow and widgets always stay dark.)
+                .preferredColorScheme(dependencies.settings.appearance.colorScheme)
+                // WHY `.id`: colours are read when a view is drawn; a new palette must redraw EVERYTHING.
+                // LEARN: changing a view's `.id` makes SwiftUI throw it away and build it fresh. Navigation
+                // survives because it lives in AppCoordinator, not in the views.
+                .id(dependencies.settings.palette)
         }
     }
 }

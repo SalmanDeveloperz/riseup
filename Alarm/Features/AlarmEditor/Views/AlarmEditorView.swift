@@ -44,10 +44,10 @@ struct AlarmEditorView: View {
                 if viewModel.isLocked {
                     Label("This alarm's mission is pending. Finish it before editing.", systemImage: "lock.fill")
                         .font(.riseHeadline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.Colors.onAccent)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(Theme.Spacing.md)
-                        .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
+                        .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
                 }
                 timeCard
                 repeatCard
@@ -105,7 +105,7 @@ struct AlarmEditorView: View {
                 TimelineView(.everyMinute) { _ in
                     Text(viewModel.ringsInText(now: .now))     // `.now`: see AlarmListView's WHY
                         .font(.riseHeadline)
-                        .foregroundStyle(Theme.Gradients.sunrise)
+                        .foregroundStyle(Theme.Gradients.brand)
                         .contentTransition(.numericText())
                 }
             }
@@ -128,7 +128,7 @@ struct AlarmEditorView: View {
         GlowCard {
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: "tag.fill")
-                    .foregroundStyle(Theme.Gradients.sunrise)
+                    .foregroundStyle(Theme.Gradients.brand)
                 // `$viewModel.label` goes through the ViewModel's computed property,
                 // which trims it to maxLabelLength characters.
                 TextField("Label (e.g. Gym)", text: $viewModel.label)
@@ -183,9 +183,9 @@ struct AlarmEditorView: View {
                 HStack(spacing: Theme.Spacing.sm) {
                     Image(systemName: mission.type.systemImage)
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.Colors.onAccent)
                         .frame(width: 40, height: 40)
-                        .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
+                        .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
                         Text(mission.type.title).font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
                         Text(mission.summary).font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
@@ -221,7 +221,7 @@ struct AlarmEditorView: View {
                 HStack(spacing: Theme.Spacing.md) {
                     Image(systemName: viewModel.draft.sound.systemImage)
                         .font(.title3)
-                        .foregroundStyle(Theme.Gradients.sunrise)
+                        .foregroundStyle(Theme.Gradients.brand)
                         .frame(width: 32)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Sound").font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
@@ -230,7 +230,7 @@ struct AlarmEditorView: View {
                     Spacer()
                     Text(viewModel.draft.sound.title)
                         .font(.riseBody)
-                        .foregroundStyle(Theme.Colors.neonPink)
+                        .foregroundStyle(Theme.Colors.accent)
                     Image(systemName: "chevron.right").foregroundStyle(Theme.Colors.textTertiary)
                 }
             }
@@ -255,7 +255,7 @@ struct AlarmEditorView: View {
                     Spacer()
                     Text(viewModel.wallpaperTitle)
                         .font(.riseBody)
-                        .foregroundStyle(Theme.Colors.neonPink)
+                        .foregroundStyle(Theme.Colors.accent)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                     Image(systemName: "chevron.right").foregroundStyle(Theme.Colors.textTertiary)
@@ -292,7 +292,7 @@ struct AlarmEditorView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(Theme.Colors.neonPink)
+                        .tint(Theme.Colors.accent)
                     }
                     .font(.riseBody)
 
@@ -305,7 +305,7 @@ struct AlarmEditorView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(Theme.Colors.neonPink)
+                        .tint(Theme.Colors.accent)
                     }
                     .font(.riseBody)
 
@@ -334,7 +334,7 @@ struct AlarmEditorView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .tint(Theme.Colors.neonPink)
+                    .tint(Theme.Colors.accent)
                     .disabled(!viewModel.offersWakeUpCheck)
                 }
                 if !viewModel.offersWakeUpCheck {
@@ -391,7 +391,7 @@ struct AlarmEditorView: View {
             Spacer()
             Text(value)
                 .font(.riseCaption)
-                .foregroundStyle(Theme.Colors.neonPink)
+                .foregroundStyle(Theme.Colors.accent)
         }
     }
 

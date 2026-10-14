@@ -5,7 +5,7 @@
 //  LAYER: ViewModel (Screen #26 Settings)
 //  WHAT:  The Settings tab: Wake-up guarantee and Time Pressure on/off, defaults for new alarms (sound, snooze),
 //         links to the alarm check, FAQ, privacy, replaying the intro, and (Debug) dev tools.
-//  DATA:  reads/writes AppSettings (UserDefaults). No SwiftData.
+//  DATA:  reads/writes AppSettings (UserDefaults). No SwiftData. Appearance + palette (#35).
 //
 //  CONNECTIONS:
 //    ← CREATED BY: ScreenFactory.makeRoot(for: .settings)
@@ -40,6 +40,26 @@ final class SettingsViewModel {
         get { settings.speaksTimeWhileRinging }
         set { settings.speaksTimeWhileRinging = newValue }
     }
+
+    // MARK: Appearance (#35)
+
+    /// System / Light / Dark. → AppSettings.appearance → RiseUpApp `.preferredColorScheme`
+    var appearance: AppearanceMode {
+        get { settings.appearance }
+        set { settings.appearance = newValue }
+    }
+
+    /// The colour palette. → AppSettings.palette → Theme.palette; the whole app redraws (RiseUpApp `.id`).
+    var palette: ColorPalette {
+        get { settings.palette }
+        set {
+            settings.palette = newValue
+            WidgetBridge.reloadForNewTheme()                    // → the widgets redraw in the new colours
+        }
+    }
+
+    let appearances = AppearanceMode.allCases
+    let palettes = ColorPalette.allCases
 
     /// "Wake-up guarantee": every alarm rings again 30 s after it's silenced, until you're up in RiseUp.
     /// Changing it re-schedules every alarm (their buttons and backup chains change).

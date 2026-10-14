@@ -55,7 +55,7 @@ struct MorningView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
             Text(viewModel.greeting(now: now))
                 .font(.riseTitle)
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
             Text(now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
                 .font(.riseBody)
                 .foregroundStyle(Theme.Colors.textSecondary)
@@ -68,7 +68,7 @@ struct MorningView: View {
             HStack(spacing: Theme.Spacing.md) {
                 Image(systemName: "flame.fill")
                     .font(.system(size: 44, weight: .bold))
-                    .foregroundStyle(streak > 0 ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.textTertiary))
+                    .foregroundStyle(streak > 0 ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.textTertiary))
                     .symbolEffect(.bounce, value: streak)
                 VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                     Text(streak == 1 ? "1 day streak" : "\(streak) day streak")
@@ -110,7 +110,7 @@ struct MorningView: View {
                     Label("Next alarm: \(next.fireDate.formatted(.dateTime.weekday(.abbreviated).hour().minute())) · \(next.title)",
                           systemImage: "alarm.fill")
                         .font(.riseCaption)
-                        .foregroundStyle(Theme.Colors.neonPink)
+                        .foregroundStyle(Theme.Colors.accent)
                 }
             }
         }
@@ -129,7 +129,7 @@ struct MorningView: View {
                     Text(mood.emoji)
                         .font(.title3)
                         .padding(4)
-                        .background(entry.mood == mood ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Color.clear), in: .circle)
+                        .background(entry.mood == mood ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Color.clear), in: .circle)
                         .opacity(entry.mood == nil || entry.mood == mood ? 1 : 0.4)
                 }
                 .buttonStyle(.plain)
@@ -159,7 +159,7 @@ struct MorningView: View {
                 Text("LINE OF THE DAY")
                     .font(.riseCaption)
                     .tracking(1)
-                    .foregroundStyle(Theme.Colors.neonPink)
+                    .foregroundStyle(Theme.Colors.accent)
                 Text(viewModel.quote(now: now))
                     .font(.riseTitle)
                     .foregroundStyle(Theme.Colors.textPrimary)

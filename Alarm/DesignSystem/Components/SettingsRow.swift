@@ -30,9 +30,9 @@ struct SettingsRow: View {
                 HStack(spacing: Theme.Spacing.md) {
                     Image(systemName: systemImage)
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(Theme.Colors.textPrimary)
+                        .foregroundStyle(Theme.Colors.onAccent)
                         .frame(width: 40, height: 40)
-                        .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
+                        .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                     VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                         Text(title).font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
                         if let subtitle {
@@ -41,7 +41,7 @@ struct SettingsRow: View {
                     }
                     Spacer(minLength: Theme.Spacing.xs)
                     if let value {
-                        Text(value).font(.riseBody).foregroundStyle(Theme.Colors.neonPink)
+                        Text(value).font(.riseBody).foregroundStyle(Theme.Colors.accent)
                     }
                     Image(systemName: "chevron.right")
                         .foregroundStyle(Theme.Colors.textTertiary)

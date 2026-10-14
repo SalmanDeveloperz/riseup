@@ -51,6 +51,7 @@ struct ScenePlayerView: View {
             .padding(Theme.Spacing.lg)
         }
         .statusBarHidden()
+        .preferredColorScheme(.dark)                    // WHY: like the Ringing screen, it's drawn on a wallpaper
         // LEARN: a DragGesture that only cares where the finger ENDED: a quick swipe sideways.
         .gesture(DragGesture(minimumDistance: 30).onEnded { value in
             if value.translation.width < -60 { viewModel.next() }
@@ -107,9 +108,9 @@ struct ScenePlayerView: View {
             HStack(spacing: Theme.Spacing.sm) {
                 Image(systemName: sound.systemImage)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .foregroundStyle(Theme.Colors.onAccent)
                     .frame(width: 44, height: 44)
-                    .background(Theme.Gradients.sunrise, in: .circle)
+                    .background(Theme.Gradients.brand, in: .circle)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(sound.title)
                         .font(.riseHeadline)
@@ -126,7 +127,7 @@ struct ScenePlayerView: View {
             HStack {
                 controlButton(viewModel.isSaved(wallpaper) ? "heart.fill" : "heart",
                               label: viewModel.isSaved(wallpaper) ? "Remove from Saved" : "Save",
-                              tint: viewModel.isSaved(wallpaper) ? Theme.Colors.neonPink : Theme.Colors.textPrimary) {
+                              tint: viewModel.isSaved(wallpaper) ? Theme.Colors.accent : Theme.Colors.textPrimary) {
                     viewModel.toggleSaved()
                 }
                 Spacer()
@@ -137,11 +138,11 @@ struct ScenePlayerView: View {
                 } label: {
                     Image(systemName: viewModel.isSoundPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 26, weight: .bold))
-                        .foregroundStyle(Theme.Colors.textPrimary)
+                        .foregroundStyle(Theme.Colors.onAccent)
                         .contentTransition(.symbolEffect(.replace))
                         .frame(width: 64, height: 64)
-                        .background(Theme.Gradients.sunrise, in: .circle)
-                        .shadow(color: Theme.Colors.neonPink.opacity(0.5), radius: 12)
+                        .background(Theme.Gradients.brand, in: .circle)
+                        .shadow(color: Theme.Colors.accent.opacity(0.5), radius: 12)
                 }
                 .buttonStyle(PressScaleButtonStyle())
                 .accessibilityLabel(viewModel.isSoundPlaying ? "Pause sound" : "Play sound")
@@ -217,7 +218,7 @@ private struct Equalizer: View {
                 ForEach(0..<4, id: \.self) { i in
                     let level = isPlaying ? 0.35 + 0.65 * abs(sin(t * (2.5 + Double(i) * 0.7) + Double(i))) : 0.2
                     Capsule()
-                        .fill(Theme.Gradients.sunrise)
+                        .fill(Theme.Gradients.brand)
                         .frame(width: 4, height: 22 * level)
                 }
             }

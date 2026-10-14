@@ -70,9 +70,9 @@ struct MissionPickerView: View {
                 HStack {
                     Image(systemName: type.systemImage)
                         .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.Colors.onAccent)
                         .frame(width: 48, height: 48)
-                        .background(type.isAvailable ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised),
+                        .background(type.isAvailable ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised),
                                     in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                     Spacer()
                     if !type.isAvailable {
@@ -99,7 +99,7 @@ struct MissionPickerView: View {
             .background(Theme.Colors.surface, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
-                    .strokeBorder(viewModel.draft?.type == type ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.hairline))
+                    .strokeBorder(viewModel.draft?.type == type ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.hairline))
             }
             .opacity(type.isAvailable ? 1 : 0.5)
         }
@@ -118,9 +118,9 @@ struct MissionPickerView: View {
                     HStack(spacing: Theme.Spacing.md) {
                         Image(systemName: draft.type.systemImage)
                             .font(.title.weight(.bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.Colors.onAccent)
                             .frame(width: 64, height: 64)
-                            .background(Theme.Gradients.sunrise, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
+                            .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
                         VStack(alignment: .leading) {
                             Text(draft.type.title).font(.riseTitle).foregroundStyle(Theme.Colors.textPrimary)
                             Text(draft.type.pitch).font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
@@ -149,7 +149,7 @@ struct MissionPickerView: View {
                                 Text("\(draft.repetitions)")
                                     .font(.riseClock(size: 30))
                                     .monospacedDigit()
-                                    .foregroundStyle(Theme.Gradients.sunrise)
+                                    .foregroundStyle(Theme.Gradients.brand)
                                     .frame(minWidth: 60)
                                     .contentTransition(.numericText())
                                     .animation(.snappy, value: draft.repetitions)
@@ -160,7 +160,7 @@ struct MissionPickerView: View {
 
                     GlowCard(isGlowing: true) {
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                            Text("EXAMPLE").font(.riseCaption).tracking(1).foregroundStyle(Theme.Colors.neonPink)
+                            Text("EXAMPLE").font(.riseCaption).tracking(1).foregroundStyle(Theme.Colors.accent)
                             Text(viewModel.sampleText)
                                 .font(.riseTitle)
                                 .foregroundStyle(Theme.Colors.textPrimary)
@@ -302,10 +302,10 @@ struct MissionPickerView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                     }
-                    .foregroundStyle(isOn ? .white : Theme.Colors.textSecondary)
+                    .foregroundStyle(isOn ? Theme.Colors.onAccent : Theme.Colors.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Theme.Spacing.xs)
-                    .background(isOn ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised),
+                    .background(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised),
                                 in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
                 }
                 .buttonStyle(.plain)

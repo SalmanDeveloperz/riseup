@@ -30,7 +30,7 @@ struct BigClockText: View {
                     .font(.riseClock(size: size * 0.32))
             }
         }
-        .foregroundStyle(isActive ? AnyShapeStyle(Theme.Gradients.sunrise)
+        .foregroundStyle(isActive ? AnyShapeStyle(Theme.Gradients.brand)
                                   : AnyShapeStyle(Theme.Colors.textTertiary))
         // WHY: VoiceOver should read "6:30 AM", not "six, colon, thirty".
         .accessibilityElement(children: .ignore)

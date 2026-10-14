@@ -41,13 +41,13 @@ struct MathMissionView: View {
             Text(viewModel.input.isEmpty ? "?" : viewModel.input)
                 .font(.riseClock(size: 56))
                 .monospacedDigit()
-                .foregroundStyle(viewModel.input.isEmpty ? AnyShapeStyle(Theme.Colors.textTertiary) : AnyShapeStyle(Theme.Gradients.sunrise))
+                .foregroundStyle(viewModel.input.isEmpty ? AnyShapeStyle(Theme.Colors.textTertiary) : AnyShapeStyle(Theme.Gradients.brand))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Theme.Spacing.sm)
                 .background(Theme.Colors.surface, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
-                        .strokeBorder(Theme.Gradients.sunrise, lineWidth: 1.5)
+                        .strokeBorder(Theme.Gradients.brand, lineWidth: 1.5)
                 }
                 .offset(x: wobble)
 
@@ -89,7 +89,7 @@ struct MathMissionView: View {
                 .frame(maxWidth: .infinity, minHeight: 64)
                 .background {
                     RoundedRectangle(cornerRadius: Theme.Radius.button, style: .continuous)
-                        .fill(isPrimary ? AnyShapeStyle(Theme.Gradients.sunrise) : AnyShapeStyle(Theme.Colors.surfaceRaised))
+                        .fill(isPrimary ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised))
                 }
         }
         .buttonStyle(PressScaleButtonStyle())

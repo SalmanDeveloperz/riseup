@@ -34,6 +34,8 @@ struct NextAlarmWidget: Widget {
         // LEARN: `kind` is the widget's ID. The app reloads it with the same string (WidgetBridge).
         StaticConfiguration(kind: WidgetShared.nextAlarmKind, provider: NextAlarmProvider()) { entry in
             NextAlarmWidgetView(entry: entry)
+                // WHY always dark (#35): the widgets show the alarm's (night-sky) wallpaper behind white text.
+                .environment(\.colorScheme, .dark)
         }
         .configurationDisplayName("Next alarm")
         .description("Your next alarm on its wallpaper, with a live countdown and quick naps.")
@@ -84,6 +86,8 @@ struct NextAlarmProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<NextAlarmEntry>) -> Void) {
+        // WHY: the widget program can stay alive between redraws; re-read the palette the app saved (#35).
+        Theme.palette = ThemeStorage.loadPalette()
         let snapshot = WidgetSnapshot.load()
         let entries = Self.entries(from: snapshot, now: .now)
         // `.atEnd`: when the last entry is reached, iOS asks again. The app also reloads us after changes.
@@ -379,7 +383,7 @@ private struct BigTime: View {
         HStack(alignment: .firstTextBaseline, spacing: 2) {
             Text(time.main)
                 .font(.system(size: size, weight: .heavy, design: .rounded))
-                .foregroundStyle(Theme.Gradients.sunrise)
+                .foregroundStyle(Theme.Gradients.brand)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             if !time.suffix.isEmpty {
@@ -452,7 +456,7 @@ private struct NapButtons: View {
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Theme.Colors.textPrimary)
                         .frame(maxWidth: .infinity, minHeight: 26)
-                        .background(Theme.Gradients.sunrise.opacity(0.85), in: .capsule)
+                        .background(Theme.Gradients.brand.opacity(0.85), in: .capsule)
                 }
             }
         }

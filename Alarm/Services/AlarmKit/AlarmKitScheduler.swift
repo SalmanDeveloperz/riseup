@@ -310,7 +310,7 @@ final class AlarmKitScheduler: AlarmScheduling {
             attributes: AlarmAttributes(
                 presentation: AlarmPresentation(alert: alert),
                 metadata: RiseUpAlarmMetadata(wakeAlarmID: alarm.id, isBackup: false),
-                tintColor: Theme.Colors.neonOrange
+                tintColor: Theme.Colors.accentWarm
             ),
             sound: Self.sound(named: alarm.soundName)
         )
@@ -529,7 +529,7 @@ final class AlarmKitScheduler: AlarmScheduling {
         return AlarmAttributes(
             presentation: presentation,
             metadata: RiseUpAlarmMetadata(wakeAlarmID: alarm.id, isBackup: isBackup),
-            tintColor: Theme.Colors.neonPink
+            tintColor: Theme.Colors.accent
         )
     }
 

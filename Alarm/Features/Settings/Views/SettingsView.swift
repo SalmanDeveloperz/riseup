@@ -3,7 +3,8 @@
 //  RiseUp
 //
 //  LAYER: View (Screen #26 Settings, the Settings tab's root)
-//  WHAT:  Grouped cards: Alarms (check, Time Pressure), New alarms (sound, snooze),
+//  WHAT:  Grouped cards: Appearance (System/Light/Dark + colour palette, #35), Alarms (check, guarantee,
+//         Time Pressure), New alarms (sound, snooze),
 //         Help (FAQ, privacy, replay intro), About, and Developer tools in Debug builds.
 //  VIEWMODEL: SettingsViewModel.
 //
@@ -22,9 +23,85 @@ struct SettingsView: View {
         _viewModel = State(initialValue: viewModel)
     }
 
+    // MARK: - Appearance (#35)
+
+    /// System / Light / Dark chips, then one swatch per colour palette.
+    private var appearanceCard: some View {
+        GlowCard {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                HStack(spacing: Theme.Spacing.xs) {
+                    ForEach(viewModel.appearances) { mode in
+                        let isOn = viewModel.appearance == mode
+                        Button {
+                            viewModel.appearance = mode                // → AppSettings → RiseUpApp
+                        } label: {
+                            VStack(spacing: Theme.Spacing.xxs) {
+                                Image(systemName: mode.systemImage).font(.title3)
+                                Text(mode.title).font(.riseCaption.weight(.semibold))
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 64)
+                            .foregroundStyle(isOn ? Theme.Colors.onAccent : Theme.Colors.textPrimary)
+                            .background(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised),
+                                        in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(isOn ? .isSelected : [])
+                    }
+                }
+
+                Text("Colours")
+                    .font(.riseHeadline)
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                HStack(spacing: 0) {
+                    ForEach(viewModel.palettes) { palette in
+                        paletteSwatch(palette)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+
+                Text("The alarm screen, wallpapers and widgets always stay dark, so the wallpapers shine.")
+                    .font(.riseCaption)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+            }
+        }
+        .sensoryFeedback(.selection, trigger: viewModel.appearance)
+    }
+
+    /// A round swatch showing the palette's gradient, with a ring when it's the chosen one.
+    private func paletteSwatch(_ palette: ColorPalette) -> some View {
+        let isOn = viewModel.palette == palette
+        return Button {
+            viewModel.palette = palette                          // → AppSettings → Theme.palette → redraw
+        } label: {
+            VStack(spacing: Theme.Spacing.xs) {
+                Circle()
+                    // LEARN: the swatch shows the palette's OWN colours (not the current theme's), so each
+                    // circle previews what you'd get.
+                    .fill(LinearGradient(colors: [Color(hex: palette.accentDeep), Color(hex: palette.accent), Color(hex: palette.accentWarm)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 44, height: 44)
+                    .padding(4)
+                    .overlay(Circle().strokeBorder(isOn ? Theme.Colors.textPrimary : .clear, lineWidth: 2.5))
+                Text(palette.title)
+                    .font(.riseCaption)
+                    .foregroundStyle(isOn ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(palette.title) colours")
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                // WHY first: picking a palette redraws the whole app (RiseUpApp `.id`), which scrolls back to
+                // the top. Here at the top, you still see what you just picked.
+                SettingsSectionHeader(title: "Appearance")
+                appearanceCard
+
                 SettingsSectionHeader(title: "Alarms")
                 SettingsRow(title: "Check my alarms",
                             subtitle: "Why didn't my alarm ring? Find and fix problems",
@@ -82,7 +159,7 @@ struct SettingsView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .tint(Theme.Colors.neonPink)
+                        .tint(Theme.Colors.accent)
                     }
                 }
 
@@ -123,7 +200,7 @@ struct SettingsView: View {
                     if let toast = viewModel.developerToast {
                         Text(toast)
                             .font(.riseCaption.weight(.semibold))
-                            .foregroundStyle(Theme.Colors.neonPink)
+                            .foregroundStyle(Theme.Colors.accent)
                             .transition(.opacity)
                             .task {
                                 try? await Task.sleep(for: .seconds(2))

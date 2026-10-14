@@ -6,7 +6,8 @@
 //  WHAT:  Small settings that aren't alarms: onboarding finished?, speak the time during
 //         missions?, default sound and snooze for new alarms, the wake-up goal from onboarding,
 //         bedtime reminder (on/off + time) and the last sleep-sound mix (Phase 6), the default
-//         alarm wallpaper, the hidden Developer mode switch and the Wake-up guarantee.
+//         alarm wallpaper, the hidden Developer mode switch, the Wake-up guarantee, and the look
+//         (appearance: System/Light/Dark + colour palette, #35).
 //  DATA:  UserDefaults (a tiny key-value store iOS keeps for every app). NOT SwiftData.
 //
 //  CONNECTIONS:
@@ -82,6 +83,7 @@ final class AppSettings {
         static let showsDeveloperTools = "showsDeveloperTools"
         static let savedWallpapers = "savedWallpapers"
         static let guaranteesWakeUp = "guaranteesWakeUp"
+        static let appearance = "appearance"
     }
 
     @ObservationIgnored private let store: UserDefaults
@@ -154,6 +156,21 @@ final class AppSettings {
         didSet { store.set(guaranteesWakeUp, forKey: Key.guaranteesWakeUp) }
     }
 
+    /// Settings → Appearance: System / Light / Dark (#35). Dark by default: RiseUp's signature neon look.
+    /// → RiseUpApp `.preferredColorScheme(appearance.colorScheme)`
+    var appearance: AppearanceMode {
+        didSet { store.set(appearance.rawValue, forKey: Key.appearance) }
+    }
+
+    /// Settings → Appearance: the colour palette (#35). Also saved in the App Group so the widgets match.
+    /// → Theme.palette (read by every colour) · RiseUpApp `.id(palette)` redraws every screen.
+    var palette: ColorPalette {
+        didSet {
+            Theme.palette = palette
+            ThemeStorage.save(palette)
+        }
+    }
+
     init(store: UserDefaults = .standard) {
         self.store = store
         // LEARN: `object(forKey:) as? Bool ?? true` = "the saved value, or `true` if never saved".
@@ -170,5 +187,7 @@ final class AppSettings {
         showsDeveloperTools = store.bool(forKey: Key.showsDeveloperTools)
         savedWallpapers = store.stringArray(forKey: Key.savedWallpapers) ?? []
         guaranteesWakeUp = store.object(forKey: Key.guaranteesWakeUp) as? Bool ?? true
+        appearance = store.string(forKey: Key.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .dark
+        palette = Theme.palette                                    // loaded by ThemeStorage at launch
     }
 }
