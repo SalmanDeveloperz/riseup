@@ -74,6 +74,7 @@ final class AppCoordinator {
     /// ← CALLED BY: AlarmListViewModel.addAlarmTapped() / alarmTapped(_:)
     /// → RESULT:    RootView's Alarms NavigationStack pushes ScreenFactory.makeScreen(for: .editor(...))
     func showAlarmEditor(alarmID: UUID?) {
+        Trace.log(.nav, "showAlarmEditor → push the editor (\(alarmID.map(Trace.short) ?? "new alarm"))")
         selectedTab = .alarms
         alarmsPath.append(.editor(alarmID: alarmID))
     }
@@ -168,6 +169,7 @@ final class AppCoordinator {
     /// ← CALLED BY: RootView `.onOpenURL`
     /// WHY ignored during a wake-up: a widget tap must never cover the Ringing screen or a mission.
     func open(_ link: DeepLink) {
+        Trace.log(.nav, "open(\(link)) ← a widget link")
         if case .ringing = fullScreen { return }
         // WHY (found in the Simulator): a sheet left open earlier stayed on top of the editor the
         // link opened. A link means "show me THIS", so whatever was open closes first.
@@ -205,6 +207,7 @@ final class AppCoordinator {
     /// the system alarm, so the user would get silence and no mission. We close the sheet, wait
     /// for its slide-down animation, then show the ringing screen.
     func presentRinging(alarmID: UUID) {
+        Trace.log(.nav, "presentRinging(\(Trace.short(alarmID))) → full-screen Ringing flow")
         guard sheet != nil else {
             fullScreen = .ringing(alarmID: alarmID)
             return

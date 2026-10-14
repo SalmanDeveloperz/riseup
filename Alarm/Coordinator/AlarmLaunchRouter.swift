@@ -28,6 +28,7 @@ final class AlarmLaunchRouter {
 
     /// Called by StartMissionIntent.
     func requestRinging(for alarmID: UUID) {
+        Trace.log(.ring, "AlarmLaunchRouter.requestRinging(\(Trace.short(alarmID))) → RootView will notice and present")
         pendingAlarmID = alarmID
     }
 

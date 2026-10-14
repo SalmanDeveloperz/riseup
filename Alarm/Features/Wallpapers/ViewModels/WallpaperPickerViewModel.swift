@@ -147,6 +147,7 @@ final class WallpaperPickerViewModel {
 
     /// Tap a card: open the player on it, with the rest of its tab as the playlist.
     func openPlayer(_ wallpaper: Wallpaper) {
+        Trace.log(.wallpaper, "openPlayer(\(wallpaper.rawValue)) → full screen + \(sound(for: wallpaper).rawValue)")
         var list = wallpapersInCategory
         if !list.contains(wallpaper) { list = [wallpaper] }
         playlist = list
@@ -192,6 +193,7 @@ final class WallpaperPickerViewModel {
     /// WHY the short wait: closing the full-screen player and the sheet in the same instant makes
     /// SwiftUI skip an animation (or complain). The player closes first, then the sheet.
     func use(withSound: Bool) async {
+        Trace.log(.wallpaper, "use(withSound: \(withSound)) → close player, then coordinator.completeWallpaperPicker")
         guard let wallpaper = playing else { return }
         selection = wallpaper
         let sound: AlarmSound? = withSound && hasSignatureSound(wallpaper) ? sound(for: wallpaper) : nil

@@ -51,6 +51,7 @@ struct StartMissionIntent: LiveActivityIntent {
     /// LEARN: `@MainActor` because we touch AlarmLaunchRouter, which the UI observes.
     @MainActor
     func perform() async throws -> some IntentResult {
+        Trace.log(.ring, "StartMissionIntent.perform() → the user tapped Wake up / Start Mission on the alarm")
         // 1. Silence the system alarm. The app takes over from here.
         // WHY: otherwise it keeps ringing on the lock screen while the user does the mission.
         // (Phase 2 plays the alarm sound inside the app during the mission.)

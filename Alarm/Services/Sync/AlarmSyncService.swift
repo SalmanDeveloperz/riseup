@@ -68,6 +68,7 @@ final class AlarmSyncService {
         guard !isSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
+        Trace.log(.sync, "AlarmSyncService.sync() → compare the database with iOS's alarms")
 
         try? repository.refresh()
         let system = scheduler.systemAlarms()            // → what iOS really has

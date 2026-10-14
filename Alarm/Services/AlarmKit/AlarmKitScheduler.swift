@@ -108,6 +108,8 @@ final class AlarmKitScheduler: AlarmScheduling {
         // Start clean: remove any older version of this alarm (main + backups).
         cancel(alarmID: id)
         guard alarm.isEnabled else { return }
+        Trace.log(.scheduler, "schedule(\(Trace.short(id))) \(alarm.hour):\(alarm.minute) → main alarm" +
+                  (isGuarded(alarm) ? " + backup chain" : " (no chain)"))
 
         // WHY all-or-nothing (found in the code review): if a backup failed after the main alarm
         // was scheduled, the caller showed the alarm as OFF but the leftovers still rang.
@@ -153,6 +155,7 @@ final class AlarmKitScheduler: AlarmScheduling {
     }
 
     func wakeUpCompleted(for alarm: WakeAlarm) async throws {
+        Trace.log(.scheduler, "wakeUpCompleted(\(Trace.short(alarm.id))) → cancel the chain, arm the next ring")
         try await serially(alarm.id) {
             self.cancelBackupChain(alarmID: alarm.id)
             try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarm.id))
@@ -221,6 +224,7 @@ final class AlarmKitScheduler: AlarmScheduling {
         try? AlarmManager.shared.cancel(id: id)
         let ringDate = Date.now.addingTimeInterval(TimeInterval(minutes * 60))
         let guarded = isGuarded(alarm)
+        Trace.log(.scheduler, "scheduleSnooze(\(Trace.short(alarm.id)), \(minutes) min)" + (guarded ? " → chain moves behind it" : ""))
         let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
             schedule: .fixed(ringDate),
             attributes: makeAttributes(for: alarm, isBackup: false, usesSnooze: false),
@@ -241,6 +245,7 @@ final class AlarmKitScheduler: AlarmScheduling {
     func holdBackupChain(for alarm: WakeAlarm) async {
         // LEARN: a deleted SwiftData object has no `modelContext`; never read it further.
         guard alarm.modelContext != nil, !alarm.isDeleted, isGuarded(alarm) else { return }
+        Trace.log(.scheduler, "holdBackupChain(\(Trace.short(alarm.id))) → first backup moved to +\(Int(Self.holdSeconds)) s")
         // The chain's FIRST backup lands `holdSeconds` from now; the others follow it.
         let ringDate = Date.now.addingTimeInterval(Self.holdSeconds - Self.backupOffsets[0])
         try? await serially(alarm.id) {

@@ -30,10 +30,11 @@ a morning check-in and stats. Free, no account, no server: everything stays on t
 ## Documentation, in reading order
 1. **`docs/TALKING_POINTS.md`**: how to explain RiseUp to anyone: how alarms ring, notifications, wallpapers,
    sounds, frameworks, iOS versions, privacy. **Start here.**
-2. `CLAUDE.md`: the project rules (architecture, comment style, git workflow)
-3. `docs/ROADMAP.md`: what's done, what's next
-4. `docs/ARCHITECTURE.md`: layers, start-up, alarm lifecycle, data map, frameworks
-5. `docs/HOW_IT_WORKS.md`: traces through the code, and every real bug with the rule it taught
-6. `docs/screens/NN-*.md`: one brief per screen, with a connection map and exercises
-7. `docs/LEARNING_GUIDE.md`: Swift/SwiftUI concepts, each linked to the file that uses it
-8. `docs/ASSETS.md` (sounds, icons, licences) · `docs/APP_STORE.md` (launch steps) · `docs/PRIVACY_POLICY.md`
+2. **`docs/DEBUGGING_GUIDE.md`**: how to trace any feature with breakpoints and the 🔎 console trace (8 labs)
+3. `CLAUDE.md`: the project rules (architecture, comment style, git workflow)
+4. `docs/ROADMAP.md`: what's done, what's next
+5. `docs/ARCHITECTURE.md`: layers, start-up, alarm lifecycle, data map, frameworks
+6. `docs/HOW_IT_WORKS.md`: traces through the code, and every real bug with the rule it taught
+7. `docs/screens/NN-*.md`: one brief per screen, with a connection map and exercises
+8. `docs/LEARNING_GUIDE.md`: Swift/SwiftUI concepts, each linked to the file that uses it
+9. `docs/ASSETS.md` (sounds, icons, licences) · `docs/APP_STORE.md` (launch steps) · `docs/PRIVACY_POLICY.md`

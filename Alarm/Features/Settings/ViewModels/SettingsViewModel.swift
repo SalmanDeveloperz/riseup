@@ -46,13 +46,17 @@ final class SettingsViewModel {
     /// System / Light / Dark. → AppSettings.appearance → RiseUpApp `.preferredColorScheme`
     var appearance: AppearanceMode {
         get { settings.appearance }
-        set { settings.appearance = newValue }
+        set {
+            Trace.log(.theme, "appearance → \(newValue.rawValue) (RiseUpApp .preferredColorScheme)")
+            settings.appearance = newValue
+        }
     }
 
     /// The colour palette. → AppSettings.palette → Theme.palette; the whole app redraws (RiseUpApp `.id`).
     var palette: ColorPalette {
         get { settings.palette }
         set {
+            Trace.log(.theme, "palette → \(newValue.rawValue) (Theme.palette, RiseUpApp .id redraw, widgets reload)")
             settings.palette = newValue
             WidgetBridge.reloadForNewTheme()                    // → the widgets redraw in the new colours
         }

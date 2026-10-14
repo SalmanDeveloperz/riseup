@@ -258,6 +258,7 @@ final class AlarmEditorViewModel {
         }
         isSaving = true
         defer { isSaving = false }
+        Trace.log(.editor, "AlarmEditorViewModel.save() → permission, database, then iOS (new alarm: \(alarmID == nil))")
 
         // 1. Permission FIRST, before anything is written.
         // WHY first: if we saved the alarm as "on" and then waited for the popup, the
@@ -308,6 +309,7 @@ final class AlarmEditorViewModel {
             showErrorThenClose("Your alarm was saved but is switched off. \(AlarmPermissionError.denied.localizedDescription)")
             return
         }
+        Trace.log(.editor, "save(): written to the database → scheduler.schedule(\(Trace.short(alarm.id)))")
         do {
             try await scheduler.schedule(alarm)        // → AlarmKitScheduler → AlarmManager
         } catch {
@@ -318,6 +320,7 @@ final class AlarmEditorViewModel {
         }
 
         // 4. Done → back to the list.
+        Trace.log(.editor, "save() done → coordinator.popAlarms() (back to the list)")
         coordinator.popAlarms()                        // → alarmsPath.removeLast → list shows again
     }
 

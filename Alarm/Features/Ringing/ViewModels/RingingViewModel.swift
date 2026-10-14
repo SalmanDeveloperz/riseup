@@ -201,6 +201,7 @@ final class RingingViewModel {
         ringStartedAt = .now
         loadWallpaperPhoto()                          // → WallpaperStore (background), usually instant
 
+        Trace.log(.ring, "RingingViewModel.start(\(Trace.short(alarm.id))) → stopRinging + our sound + keep-alive (missions: \(alarm.hasMissions))")
         // 1. iOS's alarm off, ours on. (WHY: see the header comment.)
         // Rain sounds from the night before must not play over the alarm. → SleepSoundPlayer
         sleepSounds.stopAll()
@@ -219,6 +220,7 @@ final class RingingViewModel {
     func startMissions() {
         guard let info, !info.missions.isEmpty else { return }
         missionStartedAt = .now
+        Trace.log(.ring, "startMissions() → mission 1 of \(info.missions.count): \(info.missions[0].type.rawValue), alarm goes quiet")
         phase = .mission(index: 0)
         quietAlarm()
         startWatchdog()
@@ -257,6 +259,7 @@ final class RingingViewModel {
     /// In the background → stop holding, so iOS takes over within about a minute.
     func appActivityChanged(isActive: Bool) {
         guard hasStarted else { return }
+        Trace.log(.ring, "appActivityChanged(active: \(isActive)) → " + (isActive ? "hold the chain again" : "stop holding: iOS rings within ~1 min"))
         if isActive {
             if let alarm = try? repository.fetch(id: alarmID) { scheduler.stopRinging(alarm) }
             startKeepAlive()
@@ -316,6 +319,7 @@ final class RingingViewModel {
     func missionFinished() {
         guard case .mission(let index) = phase, let info else { return }
         lastInteraction = .now
+        Trace.log(.ring, "missionFinished() → mission \(index + 1) of \(info.missions.count) done")
         if index + 1 < info.missions.count {
             phase = .mission(index: index + 1)
         } else {
@@ -365,6 +369,7 @@ final class RingingViewModel {
     private func finish() async {
         guard !isFinishing else { return }
         isFinishing = true
+        Trace.log(.ring, "finish() → stop sound + keep-alive, wakeUpCompleted, save the WakeRecord, show success")
         stopWatchdog()
         audio.stopAlarm()
         await stopKeepAliveAndWait()

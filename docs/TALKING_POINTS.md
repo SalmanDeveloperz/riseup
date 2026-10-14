@@ -221,6 +221,12 @@ modern Swift API), and SwiftData needs 17 anyway.
 - The widget moves to the next alarm by itself after each ring. Taps open the app via `riseup://` links.
 - 👉 `docs/screens/31-widgets.md`
 
+## "How would you debug or trace a feature?"
+- Breakpoints at each layer (View action → ViewModel method → Service), step through, read the call stack
+  bottom-up. For flows iOS starts by itself (an alarm's Wake up button): Edit Scheme → "Wait for the executable to
+  be launched", or watch the built-in 🔎 trace (`os.Logger`, subsystem `com.riseup.trace`) in Console.app.
+- 👉 `docs/DEBUGGING_GUIDE.md` (8 hands-on labs), `Alarm/Services/Logging/Trace.swift`
+
 ## "How do you know it works?" (quality)
 - **101 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
   ViewModels with mocks, widget planning, deep links.

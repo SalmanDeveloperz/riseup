@@ -96,6 +96,7 @@ final class AudioService: AudioPlaying {
     // MARK: - Alarm loop
 
     func startAlarm(_ sound: AlarmSound, rampUp: Bool) {
+        Trace.log(.audio, "AudioService.startAlarm(\(sound.rawValue)) rampUp: \(rampUp)")
         stopAlarm()
         stopPreview()
         guard let player = makePlayer(for: sound) else { return }

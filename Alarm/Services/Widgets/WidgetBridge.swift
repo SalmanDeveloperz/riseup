@@ -69,7 +69,9 @@ enum WidgetBridge {
 
         // 2. The list. `save()` says whether it differs from what the widgets have.
         let snapshot = WidgetSnapshot(upcoming: planned.map(\.event), writtenAt: now)
-        if snapshot.save() || drewNewPicture {
+        let changed = snapshot.save()
+        Trace.log(.widget, "WidgetBridge.update → \(planned.count) rings, \(neededFiles.count) pictures, changed: \(changed || drewNewPicture)")
+        if changed || drewNewPicture {
             WidgetCenter.shared.reloadTimelines(ofKind: WidgetShared.nextAlarmKind)   // → NextAlarmWidget
         }
     }

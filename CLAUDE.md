@@ -5,7 +5,8 @@ who learns by reviewing every file, so **code clarity and learning comments are 
 
 Start every session by reading `docs/ROADMAP.md` (what's done / next) and this file.
 `README.md` is the front page; `docs/TALKING_POINTS.md` explains the app in plain language (keep it current
-when a feature, framework or number changes).
+when a feature, framework or number changes); `docs/DEBUGGING_GUIDE.md` teaches tracing (keep its labs' file +
+function names valid when renaming).
 
 ## Tech
 - iOS 26.0+, iPhone only, portrait. Dark by default; Settings offers System/Light/Dark + 5 colour palettes (#35). Swift 6 language mode, default actor isolation = MainActor.
@@ -56,6 +57,8 @@ when a feature, framework or number changes).
 - Callbacks from Apple frameworks that run on background threads must be `@Sendable` closures that hop back with
   `Task { @MainActor in … }` (Swift 6 runtime crash otherwise).
 - Small preferences live in `AppSettings` (UserDefaults), not SwiftData.
+- Tracing: key junctions call `Trace.log(.area, "Type.method() → what happens next")` (`Services/Logging/Trace.swift`,
+  os.Logger `.debug`). Add one to every new feature's entry point; never log user text (alarm titles).
 - Camera: missions use `.photoCapture` → `CameraScreen` → `CameraSession` (background queue). Never
   `UIImagePickerController` (it froze the app). Slow hardware/file work never runs on the main thread.
 - After every `await` in code that schedules alarms, re-check that the alarm still exists and is still wanted.
