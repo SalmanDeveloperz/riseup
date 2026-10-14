@@ -66,7 +66,8 @@ Add a new one instead (see `AlarmSound.swift`).
 Its head is the sun (gold), its comb the sun's rays (three pink lobes), its open beak and two sound waves are the
 crow (the alarm). The bird leans back 10° ("Rise Up") on a night sky with dawn glowing up from the bottom edge.
 Six simple shapes, so it reads at every size. No alarm app uses a rooster (they use twin-bell clocks, digits or
-cartoon clock faces). To change it: edit the numbers at the top of the script, run
+cartoon clock faces). The same script also writes the widget marks in `RiseUpWidgets/Assets.xcassets`: `RoosterMark`
+(colour, home-screen widget headers) and `RoosterGlyph` (one-colour "template" silhouette, lock-screen widgets). To change it: edit the numbers at the top of the script, run
 `swift Tools/generate_app_icon.swift`, rebuild. It writes all 3 icon versions and the in-app logo at once.
 
 ## Fonts

@@ -5,6 +5,9 @@
 // WHAT:  Draws the RiseUp logo with CoreGraphics and saves it as PNG files:
 //          • the app icon (normal, dark and tinted versions) → Alarm/Assets.xcassets/AppIcon.appiconset
 //          • the in-app logo                                 → Alarm/Assets.xcassets/AppLogo.imageset
+//          • the widget marks (rooster only, no background)  → RiseUpWidgets/Assets.xcassets
+//              RoosterMark (colour, home-screen widgets) + RoosterGlyph (one-colour silhouette,
+//              lock-screen widgets: iOS tints it in the user's lock-screen colour)
 // RUN:   swift Tools/generate_app_icon.swift      (from the project folder; takes a few seconds)
 //
 // THE DESIGN (v3, "the Crowing Rooster", chosen by Salman on 2026-10-14)
@@ -55,6 +58,9 @@ let waves = gradient([rgb(0xFF3D8B), rgb(0xB04DFF)], [0, 1])              // the
 let upperBeak = rgb(0xFFD36B), lowerBeak = rgb(0xFFB13D)
 let eyeInk = rgb(0x120B2C)
 
+/// True while drawing the one-colour silhouette (RoosterGlyph): every part white, the eye punched out.
+var silhouette = false
+
 // MARK: - Shape helpers
 
 /// A point `distance` from `c`, `degrees` clockwise from straight up.
@@ -73,10 +79,14 @@ func ellipse(_ c: CGPoint, rx: CGFloat, ry: CGFloat, degrees: CGFloat) -> CGPath
 /// Fills `path` with a vertical gradient between two y values.
 func fill(_ ctx: CGContext, _ path: CGPath, _ g: CGGradient, top: CGFloat, bottom: CGFloat, alpha: CGFloat = 1) {
     ctx.saveGState()
-    ctx.setAlpha(alpha)
+    ctx.setAlpha(silhouette ? 1 : alpha)
     ctx.addPath(path)
     ctx.clip()
-    ctx.drawLinearGradient(g, start: CGPoint(x: 0, y: bottom), end: CGPoint(x: 0, y: top), options: [])
+    if silhouette {
+        ctx.setFillColor(rgb(0xFFFFFF)); ctx.fill(CGRect(x: 0, y: 0, width: size, height: size))
+    } else {
+        ctx.drawLinearGradient(g, start: CGPoint(x: 0, y: bottom), end: CGPoint(x: 0, y: top), options: [])
+    }
     ctx.restoreGState()
 }
 /// A triangle with rounded corners (fill + a thick round-joined outline in the same colour).
@@ -86,6 +96,7 @@ func roundedTriangle(_ ctx: CGContext, _ points: [CGPoint], _ color: CGColor, ro
     let p = CGMutablePath()
     p.addLines(between: points)
     p.closeSubpath()
+    let color = silhouette ? rgb(0xFFFFFF) : color
     ctx.setFillColor(color)
     ctx.addPath(p); ctx.fillPath()
     ctx.setStrokeColor(color); ctx.setLineWidth(rounding); ctx.setLineJoin(.round)
@@ -147,8 +158,13 @@ func drawLogo(in ctx: CGContext, background: Bool) {
 
     // 8. The eye: wide awake, with a tiny highlight.
     let eye = CGPoint(x: head.x + 78, y: head.y - 52)
-    ctx.setFillColor(eyeInk); ctx.addPath(circle(eye, 30)); ctx.fillPath()
-    ctx.setFillColor(rgb(0xFFFFFF, 0.9)); ctx.addPath(circle(CGPoint(x: eye.x + 10, y: eye.y - 10), 9)); ctx.fillPath()
+    if silhouette {
+        // LEARN: the `.clear` blend mode erases what's there, so the eye becomes a see-through hole.
+        ctx.setBlendMode(.clear); ctx.addPath(circle(eye, 30)); ctx.fillPath(); ctx.setBlendMode(.normal)
+    } else {
+        ctx.setFillColor(eyeInk); ctx.addPath(circle(eye, 30)); ctx.fillPath()
+        ctx.setFillColor(rgb(0xFFFFFF, 0.9)); ctx.addPath(circle(CGPoint(x: eye.x + 10, y: eye.y - 10), 9)); ctx.fillPath()
+    }
 
     ctx.restoreGState()
 }
@@ -189,3 +205,24 @@ save(render(background: true), to: "\(iconFolder)/AppIcon.png")                 
 save(render(background: false), to: "\(iconFolder)/AppIcon-Dark.png")                  // dark: iOS draws the dark background
 save(render(background: false, grayscale: true), to: "\(iconFolder)/AppIcon-Tinted.png")
 save(render(background: true, pixels: 512), to: "\(logoFolder)/AppLogo.png")           // in-app logo
+
+// Widget marks: the rooster alone, cropped to the bird (no background), small files for the widget extension.
+// WHY cropped: the icon leaves room around the bird; in a widget header every point counts.
+func renderMark(pixels: Int) -> CGImage {
+    let full = render(background: false, pixels: 1024)
+    let crop = CGRect(x: 196, y: 250, width: 720, height: 600)            // the bird + its sound waves
+    let cropped = full.cropping(to: crop)!
+    let ctx = CGContext(data: nil, width: pixels, height: pixels * 600 / 720, bitsPerComponent: 8, bytesPerRow: 0,
+                        space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    ctx.interpolationQuality = .high
+    ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: pixels, height: pixels * 600 / 720))
+    return ctx.makeImage()!
+}
+let widgetAssets = "RiseUpWidgets/Assets.xcassets"
+for name in ["RoosterMark", "RoosterGlyph"] {
+    try FileManager.default.createDirectory(atPath: "\(widgetAssets)/\(name).imageset", withIntermediateDirectories: true)
+}
+save(renderMark(pixels: 360), to: "\(widgetAssets)/RoosterMark.imageset/RoosterMark.png")
+silhouette = true
+save(renderMark(pixels: 360), to: "\(widgetAssets)/RoosterGlyph.imageset/RoosterGlyph.png")
+silhouette = false

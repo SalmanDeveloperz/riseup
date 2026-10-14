@@ -146,16 +146,14 @@ struct NextAlarmWidgetView: View {
                 .containerBackground(for: .widget) { Color.clear }
         case .accessoryCircular, .accessoryRectangular:
             VStack(spacing: 2) {
-                Image(systemName: icon).font(.title3)
+                RoosterGlyph(height: 16)
                 Text(title).font(.caption).lineLimit(1)
             }
             .widgetURL(link)
             .containerBackground(for: .widget) { AccessoryWidgetBackground() }
         default:
             VStack(spacing: Theme.Spacing.xs) {
-                Image(systemName: icon)
-                    .font(.title)
-                    .foregroundStyle(Theme.Gradients.sunrise)
+                RoosterMark(height: 40)
                 Text(title).font(.headline).foregroundStyle(Theme.Colors.textPrimary)
                 Text(detail)
                     .font(.caption)
@@ -290,8 +288,7 @@ private struct CircularView: View {
     var body: some View {
         let time = TimeText.parts(event.fireDate)
         VStack(spacing: 0) {
-            Image(systemName: "alarm.fill")
-                .font(.caption)
+            RoosterGlyph(height: 11)
             Text(time.main)
                 .font(.system(.title3, design: .rounded, weight: .bold))
                 .minimumScaleFactor(0.6)
@@ -312,8 +309,12 @@ private struct RectangularView: View {
     var body: some View {
         let time = TimeText.parts(event.fireDate)
         VStack(alignment: .leading, spacing: 0) {
-            Label("\(time.main) \(time.suffix)", systemImage: "alarm.fill")
-                .font(.headline)
+            Label {
+                Text("\(time.main) \(time.suffix)")
+            } icon: {
+                RoosterGlyph(height: 14)
+            }
+            .font(.headline)
             Text("\(TimeText.dayLabel(event.fireDate, now: now)) · \(event.title)")
                 .font(.caption)
                 .lineLimit(1)
@@ -342,15 +343,14 @@ private struct InlineView: View {
 
 // MARK: - Pieces
 
-/// "⏰ Tomorrow ······ ∑ 🚶": day of the next ring and its missions.
+/// "🐓 Tomorrow ······ ∑ 🚶": our rooster, the day of the next ring and its missions.
 private struct HeaderRow: View {
     let event: WidgetAlarmEvent
     let now: Date
 
     var body: some View {
         HStack(spacing: Theme.Spacing.xxs) {
-            Image(systemName: "alarm.fill")
-                .foregroundStyle(Theme.Gradients.sunrise)
+            RoosterMark(height: 16)                       // our logo, like a signature on every widget
             Text(TimeText.dayLabel(event.fireDate, now: now).uppercased())
                 .font(.caption2.weight(.bold))
                 .tracking(0.5)
@@ -482,6 +482,32 @@ private struct WallpaperBackground: View {
     private var picture: UIImage? {
         guard let file, let folder = WidgetShared.wallpaperFolder else { return nil }
         return UIImage(contentsOfFile: folder.appending(path: file).path())
+    }
+}
+
+/// The RiseUp rooster in colour (home-screen widgets). Made by Tools/generate_app_icon.swift.
+private struct RoosterMark: View {
+    let height: CGFloat
+    var body: some View {
+        Image("RoosterMark")
+            .resizable()
+            .scaledToFit()
+            .frame(height: height)
+            .accessibilityHidden(true)
+    }
+}
+
+/// The rooster as a one-colour silhouette (lock-screen widgets).
+/// LEARN: the image is marked "template" in its asset catalog, so iOS ignores its colour and paints it
+/// in the lock screen's tint, exactly like an SF Symbol. A colour picture there would become a grey blob.
+private struct RoosterGlyph: View {
+    let height: CGFloat
+    var body: some View {
+        Image("RoosterGlyph")
+            .resizable()
+            .scaledToFit()
+            .frame(height: height)
+            .accessibilityHidden(true)
     }
 }
 
