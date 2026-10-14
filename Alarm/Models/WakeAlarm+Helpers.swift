@@ -16,23 +16,23 @@ import Foundation
 extension WakeAlarm {
     /// Repeat days as typed `Weekday` values. Reading and writing both work.
     var repeatDays: Set<Weekday> {
-        get { Set(repeatDayNumbers.compactMap(Weekday.init(rawValue:))) }
-        set { repeatDayNumbers = newValue.map(\.rawValue).sorted() }
+        get { Set(repeatDayNumbers.compactMap(Weekday.init(rawValue:))) }   //converting numbers into weekdays
+        set { repeatDayNumbers = newValue.map(\.rawValue).sorted() }    // converting back weekdays into numbers MEANS TRANSLATOR
     }
 
     /// True when the alarm rings on specific weekdays; false = one-time alarm.
-    var isRepeating: Bool { !repeatDayNumbers.isEmpty }
+    var isRepeating: Bool { !repeatDayNumbers.isEmpty }         // check if the repeatdays are selected or not
 
     /// True when at least one mission must be completed to dismiss the alarm.
-    var hasMissions: Bool { !missions.isEmpty }
+    var hasMissions: Bool { !missions.isEmpty }         //check if any mission linked with the alarm or not
 
     /// Missions in the order they should run.
-    var sortedMissions: [MissionConfig] {
+    var sortedMissions: [MissionConfig] {           // sorted according to the mission like first math then typing
         missions.sorted { $0.sortOrder < $1.sortOrder }
     }
 
     /// The label, or a friendly fallback when it's empty.
-    var displayTitle: String {
+    var displayTitle: String {          // if user didn't set the alarm set it as "Alarm"
         label.isEmpty ? "Alarm" : label
     }
 
@@ -55,7 +55,7 @@ extension WakeAlarm {
             return "Weekends"
         default:
             // Keep the user's calendar order (Mon-first in Pakistan, Sun-first in the US).
-            return Weekday.orderedForCurrentLocale
+            return Weekday.orderedForCurrentLocale  // keep the locale 
                 .filter { days.contains($0) }
                 .map(\.shortName)
                 .joined(separator: ", ")

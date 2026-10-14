@@ -33,7 +33,7 @@ nonisolated enum Weekday: Int, CaseIterable, Codable, Identifiable, Sendable {
     ///
     /// WHY: a backup alarm at 23:59 + 2 minutes lands on the NEXT day, so its weekday must shift too.
     var next: Weekday {
-        Weekday(rawValue: rawValue % 7 + 1)!
+        Weekday(rawValue: rawValue % 7 + 1)!        // force unwrap !
     }
 
     /// The same day as AlarmKit's type (`Locale.Weekday`).

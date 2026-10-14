@@ -380,7 +380,7 @@ final class AlarmKitScheduler: AlarmScheduling {
                 : nil,
             sound: Self.sound(named: alarm.soundName)
         )
-        _ = try await AlarmManager.shared.schedule(id: alarm.id, configuration: configuration)
+        _ = try await AlarmManager.shared.schedule(id: alarm.id, configuration: configuration) //sAve the alarm in iOS
     }
 
     // MARK: - Backup chain

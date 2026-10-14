@@ -43,6 +43,36 @@
 
 /* Begin PBXFileReference section */
 		220634AC307507BF00067D67 /* Alarm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Alarm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		22E60541307F5744002FEBA8 /* 00-foundation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "00-foundation.md"; sourceTree = "<group>"; };
+		22E60542307F5744002FEBA8 /* 01-04-onboarding.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "01-04-onboarding.md"; sourceTree = "<group>"; };
+		22E60543307F5744002FEBA8 /* 06-alarm-list.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "06-alarm-list.md"; sourceTree = "<group>"; };
+		22E60544307F5744002FEBA8 /* 07-quick-alarm.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "07-quick-alarm.md"; sourceTree = "<group>"; };
+		22E60545307F5744002FEBA8 /* 08-alarm-editor.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "08-alarm-editor.md"; sourceTree = "<group>"; };
+		22E60546307F5744002FEBA8 /* 09-10-mission-picker.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "09-10-mission-picker.md"; sourceTree = "<group>"; };
+		22E60547307F5744002FEBA8 /* 11-15g-camera.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "11-15g-camera.md"; sourceTree = "<group>"; };
+		22E60548307F5744002FEBA8 /* 13-sound-picker.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "13-sound-picker.md"; sourceTree = "<group>"; };
+		22E60549307F5744002FEBA8 /* 14-16-ringing-flow.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "14-16-ringing-flow.md"; sourceTree = "<group>"; };
+		22E6054A307F5744002FEBA8 /* 15d-h-phase3-missions.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "15d-h-phase3-missions.md"; sourceTree = "<group>"; };
+		22E6054B307F5744002FEBA8 /* 17-23-25-morning-records-stats.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "17-23-25-morning-records-stats.md"; sourceTree = "<group>"; };
+		22E6054C307F5744002FEBA8 /* 18-wake-up-check-and-time-pressure.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "18-wake-up-check-and-time-pressure.md"; sourceTree = "<group>"; };
+		22E6054D307F5744002FEBA8 /* 19-20-sleep-sounds.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "19-20-sleep-sounds.md"; sourceTree = "<group>"; };
+		22E6054E307F5744002FEBA8 /* 26-29-settings.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "26-29-settings.md"; sourceTree = "<group>"; };
+		22E6054F307F5744002FEBA8 /* 30-lock-screen-alarm-ui.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "30-lock-screen-alarm-ui.md"; sourceTree = "<group>"; };
+		22E60550307F5744002FEBA8 /* 31-widgets.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "31-widgets.md"; sourceTree = "<group>"; };
+		22E60551307F5744002FEBA8 /* 32-alarm-wallpapers.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "32-alarm-wallpapers.md"; sourceTree = "<group>"; };
+		22E60552307F5744002FEBA8 /* 33-scene-player.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "33-scene-player.md"; sourceTree = "<group>"; };
+		22E60553307F5744002FEBA8 /* 34-wake-up-guarantee.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "34-wake-up-guarantee.md"; sourceTree = "<group>"; };
+		22E60555307F5744002FEBA8 /* APP_STORE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = APP_STORE.md; sourceTree = "<group>"; };
+		22E60556307F5744002FEBA8 /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ARCHITECTURE.md; sourceTree = "<group>"; };
+		22E60557307F5744002FEBA8 /* ASSETS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ASSETS.md; sourceTree = "<group>"; };
+		22E60558307F5744002FEBA8 /* HOW_IT_WORKS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = HOW_IT_WORKS.md; sourceTree = "<group>"; };
+		22E60559307F5744002FEBA8 /* LEARNING_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LEARNING_GUIDE.md; sourceTree = "<group>"; };
+		22E6055A307F5744002FEBA8 /* LEARNING_LOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LEARNING_LOG.md; sourceTree = "<group>"; };
+		22E6055B307F5744002FEBA8 /* PRIVACY_POLICY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY_POLICY.md; sourceTree = "<group>"; };
+		22E6055C307F5744002FEBA8 /* ROADMAP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ROADMAP.md; sourceTree = "<group>"; };
+		22E6055D307F5744002FEBA8 /* SPIKE_RESULTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SPIKE_RESULTS.md; sourceTree = "<group>"; };
+		22E6055E307F5744002FEBA8 /* TALKING_POINTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TALKING_POINTS.md; sourceTree = "<group>"; };
+		22E60560307F5744002FEBA8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RiseUpWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E570A02307507BF00067D67 /* RiseUpTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RiseUpTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -51,6 +81,11 @@
 		220634AE307507BF00067D67 /* Alarm */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Alarm;
+			sourceTree = "<group>";
+		};
+		22E605B6307F58D1002FEBA8 /* Tools */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tools;
 			sourceTree = "<group>";
 		};
 		5E1D0A05307507BF00067D67 /* RiseUpWidgets */ = {
@@ -100,6 +135,9 @@
 			children = (
 				220634AE307507BF00067D67 /* Alarm */,
 				5E1D0A06307507BF00067D67 /* Shared */,
+				22E605B6307F58D1002FEBA8 /* Tools */,
+				22E6055F307F5744002FEBA8 /* docs */,
+				22E60560307F5744002FEBA8 /* README.md */,
 				5E1D0A05307507BF00067D67 /* RiseUpWidgets */,
 				7E570A05307507BF00067D67 /* RiseUpTests */,
 				220634AD307507BF00067D67 /* Products */,
@@ -114,6 +152,50 @@
 				7E570A02307507BF00067D67 /* RiseUpTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		22E60554307F5744002FEBA8 /* screens */ = {
+			isa = PBXGroup;
+			children = (
+				22E60541307F5744002FEBA8 /* 00-foundation.md */,
+				22E60542307F5744002FEBA8 /* 01-04-onboarding.md */,
+				22E60543307F5744002FEBA8 /* 06-alarm-list.md */,
+				22E60544307F5744002FEBA8 /* 07-quick-alarm.md */,
+				22E60545307F5744002FEBA8 /* 08-alarm-editor.md */,
+				22E60546307F5744002FEBA8 /* 09-10-mission-picker.md */,
+				22E60547307F5744002FEBA8 /* 11-15g-camera.md */,
+				22E60548307F5744002FEBA8 /* 13-sound-picker.md */,
+				22E60549307F5744002FEBA8 /* 14-16-ringing-flow.md */,
+				22E6054A307F5744002FEBA8 /* 15d-h-phase3-missions.md */,
+				22E6054B307F5744002FEBA8 /* 17-23-25-morning-records-stats.md */,
+				22E6054C307F5744002FEBA8 /* 18-wake-up-check-and-time-pressure.md */,
+				22E6054D307F5744002FEBA8 /* 19-20-sleep-sounds.md */,
+				22E6054E307F5744002FEBA8 /* 26-29-settings.md */,
+				22E6054F307F5744002FEBA8 /* 30-lock-screen-alarm-ui.md */,
+				22E60550307F5744002FEBA8 /* 31-widgets.md */,
+				22E60551307F5744002FEBA8 /* 32-alarm-wallpapers.md */,
+				22E60552307F5744002FEBA8 /* 33-scene-player.md */,
+				22E60553307F5744002FEBA8 /* 34-wake-up-guarantee.md */,
+			);
+			path = screens;
+			sourceTree = "<group>";
+		};
+		22E6055F307F5744002FEBA8 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				22E60554307F5744002FEBA8 /* screens */,
+				22E60555307F5744002FEBA8 /* APP_STORE.md */,
+				22E60556307F5744002FEBA8 /* ARCHITECTURE.md */,
+				22E60557307F5744002FEBA8 /* ASSETS.md */,
+				22E60558307F5744002FEBA8 /* HOW_IT_WORKS.md */,
+				22E60559307F5744002FEBA8 /* LEARNING_GUIDE.md */,
+				22E6055A307F5744002FEBA8 /* LEARNING_LOG.md */,
+				22E6055B307F5744002FEBA8 /* PRIVACY_POLICY.md */,
+				22E6055C307F5744002FEBA8 /* ROADMAP.md */,
+				22E6055D307F5744002FEBA8 /* SPIKE_RESULTS.md */,
+				22E6055E307F5744002FEBA8 /* TALKING_POINTS.md */,
+			);
+			path = docs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

@@ -37,12 +37,12 @@ import SwiftData
 /// LEARN: `@Observable` here is NOT about values changing (these are all `let`). It's
 /// needed because `.environment(object)` only accepts @Observable objects.
 /// `final` = nobody can subclass it.
-@Observable
-final class AppDependencies {
-    let modelContainer: ModelContainer
-    let alarmRepository: AlarmRepository
+@Observable         //use observable when values of ViewModel   , and we're required to update the value of UI, change properties when used by Views
+final class AppDependencies {   //use final for really final and stopping to use this class for inheritence
+    let modelContainer: ModelContainer              // store and manage database
+    let alarmRepository: AlarmRepository            // handles access to alarm data
     let wakeRecordRepository: WakeRecordRepository
-    let alarmScheduler: any AlarmScheduling
+    let alarmScheduler: any AlarmScheduling         // schedule alarms
     let alarmSync: AlarmSyncService
     let audio: any AudioPlaying
     let timeAnnouncer: any TimeAnnouncing

@@ -32,7 +32,7 @@ struct RiseUpApp: App {
             RootView()
                 // LEARN: `.environment(object)` makes an @Observable object available to
                 // every view below. They read it with `@Environment(Type.self)`.
-            //We're injecting AppDependencies and AppCoordinator via .environment
+                //We're injecting AppDependencies and AppCoordinator via .environment
                 .environment(dependencies)
                 .environment(coordinator)
                 // WHY: RiseUp is designed dark-only (neon on black).
