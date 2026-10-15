@@ -29,11 +29,11 @@ struct AlarmListView: View {
     @State private var viewModel: AlarmListViewModel
     /// Developer mode (Debug builds only) → shows the debug buttons. → DeveloperTools.swift
     @Environment(\.showsDeveloperTools) private var showsDeveloperTools
-
+    
     init(viewModel: AlarmListViewModel) {
         _viewModel = State(initialValue: viewModel)
     }
-
+    
     var body: some View {
         // LEARN: `Group` wraps an `if/else` so we can attach modifiers to whichever
         // branch is showing.
@@ -66,11 +66,11 @@ struct AlarmListView: View {
             }
             // WHY the #if is HERE and not only inside `debugToolbar` (found when building the App
             // Store version): an empty toolbar builder doesn't compile, so the Release build failed.
-            #if DEBUG
+#if DEBUG
             if showsDeveloperTools {                      // Developer mode only (Settings: tap the version 7×)
                 debugToolbar
             }
-            #endif
+#endif
         }
         // Runs every time this screen becomes visible (first launch, back from the editor,
         // back from another tab) → re-reads alarms and checks them against iOS.
@@ -83,9 +83,9 @@ struct AlarmListView: View {
             Text(viewModel.errorMessage ?? "")
         }
     }
-
+    
     // MARK: - List
-
+    
     private var alarmList: some View {
         // LEARN: we use `List` (not ScrollView) because List gives us the native
         // swipe-to-delete gesture for free. The modifiers below remove List's default
@@ -109,7 +109,7 @@ struct AlarmListView: View {
                 }
             }
             .plainListRow()
-
+            
             // LEARN: `ForEach(viewModel.rows)` works because AlarmRow is `Identifiable`
             // (it has an `id`), so SwiftUI can tell rows apart and animate inserts/deletes.
             // We pass only `row.id` back to the ViewModel; it finds the real alarm itself.
@@ -137,9 +137,9 @@ struct AlarmListView: View {
         // WHY: extra space at the bottom so the last card can scroll above the "+" button.
         .contentMargins(.bottom, 96, for: .scrollContent)
     }
-
+    
     // MARK: - Empty state
-
+    
     private var emptyState: some View {
         VStack(spacing: Theme.Spacing.xl) {
             Spacer()
@@ -147,7 +147,7 @@ struct AlarmListView: View {
                 .font(.system(size: 72, weight: .bold))
                 .foregroundStyle(Theme.Gradients.brand)
                 .symbolEffect(.pulse)
-
+            
             VStack(spacing: Theme.Spacing.xs) {
                 Text("No alarms yet")
                     .font(.riseTitle)
@@ -157,7 +157,7 @@ struct AlarmListView: View {
                     .foregroundStyle(Theme.Colors.textSecondary)
                     .multilineTextAlignment(.center)
             }
-
+            
             VStack(spacing: Theme.Spacing.sm) {
                 Button("Create your first alarm") {
                     viewModel.addAlarmTapped()          // → same path as the "+" button
@@ -175,9 +175,9 @@ struct AlarmListView: View {
         }
         .padding(.horizontal, Theme.Spacing.xl)
     }
-
+    
     // MARK: - Wake-up lock banner
-
+    
     /// "Finish waking up": shown while an alarm's wake-up is pending (ringing or backups due).
     /// Tapping it re-opens the Ringing screen. → viewModel.resumeWakeUp()
     private func pendingWakeUpBanner(_ pending: NextAlarmInfo) -> some View {
@@ -206,10 +206,10 @@ struct AlarmListView: View {
         }
         .buttonStyle(.plain)
     }
-
+    
     // MARK: - Toolbar & alert
-
-    #if DEBUG
+    
+#if DEBUG
     /// Debug-only menu (🐞) to add example alarms quickly.
     @ToolbarContentBuilder
     private var debugToolbar: some ToolbarContent {
@@ -223,8 +223,8 @@ struct AlarmListView: View {
             }
         }
     }
-    #endif
-
+#endif
+    
     /// Turns "is there an error message?" into the true/false the alert needs.
     private var isShowingError: Binding<Bool> {
         Binding(
@@ -257,7 +257,7 @@ private extension View {
     gym.missions = [MissionConfig(type: .math)]
     try? dependencies.alarmRepository.insert(gym)
     try? dependencies.alarmRepository.insert(WakeAlarm(hour: 9, minute: 0, repeatDays: [.saturday, .sunday], isEnabled: false))
-
+    
     return NavigationStack {
         AlarmListView(viewModel: AlarmListViewModel(
             repository: dependencies.alarmRepository,

@@ -60,7 +60,7 @@ nonisolated struct SystemAlarmInfo: Sendable {
 }
 
 /// Schedules and cancels RiseUp alarms with the operating system.
-protocol AlarmScheduling: AnyObject {
+protocol AlarmScheduling: AnyObject {           // AnyObject means just class can conform this protocol
     /// Current permission state (no popup).
     var permission: AlarmPermission { get }
 

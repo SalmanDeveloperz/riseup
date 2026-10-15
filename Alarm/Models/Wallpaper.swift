@@ -25,7 +25,7 @@ import Foundation
 
 /// What the Wallpaper Picker hands back: the wallpaper (nil = "Default"), and optionally the
 /// scene's sound when the user tapped "Use wallpaper + sound" (nil = keep the current sound).
-nonisolated struct WallpaperChoice: Equatable, Sendable {
+nonisolated struct WallpaperChoice: Equatable, Sendable {   //Equatable returns boolean value whether two values are equal or not
     var wallpaper: Wallpaper?
     var sound: AlarmSound?
 }

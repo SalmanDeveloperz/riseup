@@ -14,7 +14,7 @@
 import SwiftUI
 
 /// LEARN: `@main` marks the single starting point of the program.
-@main
+@main   // Entry point
 struct RiseUpApp: App {
     /// LEARN: `@State` here means "create ONCE and keep for the app's whole life".
     @State private var dependencies = AppDependencies.live()
