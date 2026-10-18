@@ -3,7 +3,7 @@
 //  RiseUpTests
 //
 //  LAYER: Unit tests (Swift Testing) for themes (#35)
-//  WHAT:  • Appearance is Dark by default, and System / Light / Dark map to the right colour scheme
+//  WHAT:  • Appearance follows the iPhone (System) by default; System / Light / Dark map to the right colour scheme
 //         • the appearance choice is saved
 //         • picking a palette changes Theme.palette (every colour) and saves it for the widgets
 //         • every palette is complete and different from the others
@@ -24,10 +24,10 @@ struct ThemeTests {
         AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!)
     }
 
-    @Test("Dark by default; System follows the iPhone")
+    @Test("System by default: it follows the iPhone")
     func appearanceDefaults() {
         let settings = freshSettings()
-        #expect(settings.appearance == .dark)
+        #expect(settings.appearance == .system)
         #expect(AppearanceMode.system.colorScheme == nil)
         #expect(AppearanceMode.light.colorScheme == .light)
         #expect(AppearanceMode.dark.colorScheme == .dark)

@@ -4,7 +4,7 @@
 
 ## What it does
 Settings → **Appearance** (the first section):
-- **System / Light / Dark.** Dark stays the default (RiseUp's neon look); Light is a soft lavender-white with
+- **System / Light / Dark.** System is the default (follows the iPhone; changed 2026-10-18); Light is a soft lavender-white with
   white cards; System follows the iPhone.
 - **Colours:** five palettes: **Sunrise** (the original purple/pink/orange), **Ocean**, **Aurora**, **Ember**,
   **Lavender**. Buttons, switches, the tab bar, the background glow, the big clocks and the widgets all follow.

@@ -9,7 +9,7 @@ when a feature, framework or number changes); `docs/DEBUGGING_GUIDE.md` teaches 
 function names valid when renaming).
 
 ## Tech
-- iOS 26.0+, iPhone only, portrait. Dark by default; Settings offers System/Light/Dark + 5 colour palettes (#35). Swift 6 language mode, default actor isolation = MainActor.
+- iOS 26.0+, iPhone only, portrait. System appearance by default; Settings offers System/Light/Dark + 5 colour palettes (#35). Swift 6 language mode, default actor isolation = MainActor.
 - SwiftUI + SwiftData + AlarmKit. MVVM + Coordinator.
 - Xcode project uses file-system-synchronized folders: new files under `Alarm/` join the app target automatically.
 - Two targets: `Alarm` (the app) and `RiseUpWidgets` (widget extension: lock screen / Dynamic Island alarm UI).

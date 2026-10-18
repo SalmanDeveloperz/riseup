@@ -22,8 +22,8 @@
 	     so App Store Connect doesn't need to ask the export-compliance questions on every upload. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<!-- Phase 7: the launch screen is our dark navy (Assets: LaunchBackground), not white.
-	     WHY: RiseUp is dark-only; phones in Light mode flashed white for a moment at launch. -->
+	<!-- Phase 7: the launch screen uses our own colour (Assets: LaunchBackground), never plain white.
+	     2026-10-18: LaunchBackground has a light AND a dark version, matching the System appearance default. -->
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

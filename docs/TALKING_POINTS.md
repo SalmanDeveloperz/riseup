@@ -69,7 +69,7 @@ There are **no push notifications** (there's no server to send them).
 👉 `Alarm/Services/Notifications/BedtimeReminder.swift`, `RiseUpWidgets/AlarmLiveActivity.swift`
 
 ## "Does it have dark mode / themes?"
-- Yes: Settings → Appearance. **System / Light / Dark** (dark is the default neon look) and **5 colour palettes**:
+- Yes: Settings → Appearance. **System / Light / Dark** (System is the default: it follows the iPhone) and **5 colour palettes**:
   Sunrise, Ocean, Aurora, Ember, Lavender.
 - **How it works:** every colour in the app comes from one file, `Theme.swift`, so themes only had to change that
   file. Each colour is "adaptive": it holds a light AND a dark value, and iOS picks while drawing. Accent colours come

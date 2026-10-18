@@ -156,7 +156,8 @@ final class AppSettings {
         didSet { store.set(guaranteesWakeUp, forKey: Key.guaranteesWakeUp) }
     }
 
-    /// Settings → Appearance: System / Light / Dark (#35). Dark by default: RiseUp's signature neon look.
+    /// Settings → Appearance: System / Light / Dark (#35). System by default: RiseUp follows the iPhone's own
+    /// light/dark setting until the user picks one here (Salman's choice, 2026-10-18).
     /// → RiseUpApp `.preferredColorScheme(appearance.colorScheme)`
     var appearance: AppearanceMode {
         didSet { store.set(appearance.rawValue, forKey: Key.appearance) }
@@ -187,7 +188,9 @@ final class AppSettings {
         showsDeveloperTools = store.bool(forKey: Key.showsDeveloperTools)
         savedWallpapers = store.stringArray(forKey: Key.savedWallpapers) ?? []
         guaranteesWakeUp = store.object(forKey: Key.guaranteesWakeUp) as? Bool ?? true
-        appearance = store.string(forKey: Key.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .dark
+        // LEARN: `?? .system` is only used when nothing was ever saved. Someone who already picked
+        // Light or Dark keeps their choice; only new users (and people who never touched it) get System.
+        appearance = store.string(forKey: Key.appearance).flatMap(AppearanceMode.init(rawValue:)) ?? .system
         palette = Theme.palette                                    // loaded by ThemeStorage at launch
     }
 }
