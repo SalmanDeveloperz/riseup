@@ -33,7 +33,7 @@ import os
 nonisolated enum Trace {
     /// Which feature a line belongs to: the word in [brackets] you can filter on.
     enum Area: String {
-        case editor, scheduler, ring, nav, sync, widget, wallpaper, audio, theme
+        case editor, scheduler, ring, nav, sync, widget, wallpaper, audio, theme, database
     }
 
     /// Writes one trace line. Keep messages short: "Type.method() → what happens next".

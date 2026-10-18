@@ -122,7 +122,7 @@ Key junctions print one line each, so you can watch a whole feature without stop
 🔎 [nav]    open(nap(minutes: 10)) ← a widget link
 ```
 - In Xcode's console, type `🔎` (or `[ring]`, `[editor]`…) in the **filter box** at the bottom right.
-- The areas: `editor`, `scheduler`, `ring`, `nav`, `sync`, `widget`, `wallpaper`, `audio`, `theme`.
+- The areas: `editor`, `scheduler`, `ring`, `nav`, `sync`, `widget`, `wallpaper`, `audio`, `theme`, `database`.
 - Code: `Alarm/Services/Logging/Trace.swift`. To add your own: `Trace.log(.ring, "my message")`.
 - **Try it:** run the app and read the first lines. You'll see `sync()` twice at launch: once for the app
   becoming active (RootView) and once for the Alarm List loading. The second one finds nothing to do, which is

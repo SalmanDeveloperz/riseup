@@ -4,7 +4,12 @@
 //
 //  LAYER: Model (SwiftData setup)
 //  WHAT:  Creates the ModelContainer, which owns the database file.
-//  USED BY: AppDependencies (real app + previews + tests).
+//  DATA:  <App Group folder>/Library/Application Support/RiseUp.store (+ -shm, -wal)
+//
+//  CONNECTIONS:
+//    ← USED BY: AppDependencies (real app + previews + tests)
+//    → CALLS:   StoreRelocation.moveLegacyStoreIfNeeded (an update from a pre-widget build)
+//    → READS:   SchemaV4 + RiseUpMigrationPlan
 //
 
 import Foundation
@@ -18,9 +23,13 @@ enum ModelContainerFactory {
     static func make(inMemory: Bool = false) throws -> ModelContainer {
         let schema = Schema(versionedSchema: SchemaV4.self)   // ← the CURRENT schema
         let configuration = makeConfiguration(schema: schema, inMemory: inMemory)
-        // WHY: in Phase 4 the home-screen widget needs to read alarms. The database will
-        // then move into a shared "App Group" folder. No users exist yet, so moving it
-        // then is safe; after launch it would need a careful file move.
+        // WHY: since the widgets added an App Group, SwiftData keeps the file in the GROUP
+        // folder (`configuration.url`). Builds from before that kept it in the app's own folder,
+        // so move it across first, or an update would open an empty database.
+        // → StoreRelocation: a no-op on every launch except the first one after such an update
+        if !inMemory {
+            try StoreRelocation.moveLegacyStoreIfNeeded(to: configuration.url)
+        }
         return try ModelContainer(
             for: schema,
             migrationPlan: RiseUpMigrationPlan.self,

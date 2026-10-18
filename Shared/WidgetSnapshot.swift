@@ -13,9 +13,10 @@
 //    ← WRITTEN BY: WidgetBridge (app) after every sync and when RiseUp goes to the background
 //    → READ BY:    RiseUpWidgets/NextAlarmWidget (home + lock screen widgets)
 //
-//  WHY not share the SwiftData database: the widget would need the whole model layer and a
-//  database moved into the group folder (a risky migration). A snapshot is tiny, can't be
-//  corrupted by the widget, and is all a widget needs. iOS also wakes widgets rarely, so they
+//  WHY not share the SwiftData database: the widget would need the whole model layer and would
+//  open the file while the app writes to it. (The file DOES sit in the group folder since the
+//  App Group was added, see StoreRelocation, but the widget never opens it.) A snapshot is tiny,
+//  can't be corrupted by the widget, and is all a widget needs. iOS also wakes widgets rarely, so they
 //  must never do slow work: everything here is ready to draw.
 //
 
