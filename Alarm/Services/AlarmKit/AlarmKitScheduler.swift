@@ -32,7 +32,12 @@
 //  4. Backup IDs are calculated from the alarm ID (see `backupID`), so we never need
 //     to store them in the database. We can always work out which ones to cancel.
 //
-//  5. WAKE-UP CHECK (optional, per alarm): one more `.fixed` alarm a few minutes after the
+//  5. "ONCE + DAYS" (#36): an alarm that repeats (e.g. every Wednesday) can ALSO ring one extra time
+//     (e.g. today at 12:00). That extra ring is one more `.fixed` alarm, ID = `onceRingID`, scheduled
+//     only while it's still to come and only if it isn't already one of the weekly rings
+//     (`WakeAlarm.separateOnceRing`). Once it has rung, iOS removes it and the weekly ones go on.
+//
+//  6. WAKE-UP CHECK (optional, per alarm): one more `.fixed` alarm a few minutes after the
 //     user got up ("Are you up?"), ID = `wakeUpCheckID`. Just stopping it is enough:
 //     reacting at all proves you're awake.
 //
@@ -119,6 +124,13 @@ final class AlarmKitScheduler: AlarmScheduling {
             // the alarm off or deleted it. Then whatever we just scheduled must go.
             guard Self.isStillWanted(alarm) else { cancel(alarmID: id); return }
 
+            // "Once + days" (#36): the extra one-time ring, when it needs its own iOS alarm.
+            if let onceDate = alarm.separateOnceRing(after: .now) {
+                Trace.log(.scheduler, "schedule(\(Trace.short(id))) + once-ring at \(onceDate.formatted(date: .abbreviated, time: .shortened))")
+                try await scheduleOnceRing(for: alarm, at: onceDate)
+                guard Self.isStillWanted(alarm) else { cancel(alarmID: id); return }
+            }
+
             if isGuarded(alarm), let ringDate = alarm.nextFireDate(after: .now) {
                 try await serially(id) { try await self.scheduleBackupChain(for: alarm, after: ringDate) }
                 guard Self.isStillWanted(alarm) else { cancel(alarmID: id); return }
@@ -144,13 +156,14 @@ final class AlarmKitScheduler: AlarmScheduling {
         cancel(alarmID: alarm.id)
     }
 
-    /// Removes the main alarm, its snooze, wake-up check and backups from iOS.
+    /// Removes the main alarm, its snooze, wake-up check, once-ring and backups from iOS.
     private func cancel(alarmID: UUID) {
         // WHY `try?`: `cancel` throws if the alarm isn't scheduled (already fired, never
         // scheduled…). That's fine for us; the goal "make sure it's gone" is reached either way.
         try? AlarmManager.shared.cancel(id: alarmID)
         try? AlarmManager.shared.cancel(id: Self.snoozeID(for: alarmID))
         try? AlarmManager.shared.cancel(id: Self.wakeUpCheckID(for: alarmID))
+        try? AlarmManager.shared.cancel(id: Self.onceRingID(for: alarmID))
         cancelBackupChain(alarmID: alarmID)
     }
 
@@ -203,7 +216,12 @@ final class AlarmKitScheduler: AlarmScheduling {
     }
 
     func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
-        backupSystemAlarmIDs(for: alarm).union([alarm.id, Self.snoozeID(for: alarm.id)])
+        // The once-ring (#36) is a real wake-up too: ringing → Ringing screen, mission lock, etc.
+        backupSystemAlarmIDs(for: alarm).union([alarm.id, Self.snoozeID(for: alarm.id), Self.onceRingID(for: alarm.id)])
+    }
+
+    func onceRingSystemAlarmID(for alarm: WakeAlarm) -> UUID {
+        Self.onceRingID(for: alarm.id)
     }
 
     func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> {
@@ -367,6 +385,27 @@ final class AlarmKitScheduler: AlarmScheduling {
             ))
         }
 
+        let configuration = ringConfiguration(for: alarm, schedule: schedule, systemAlarmID: alarm.id)
+        _ = try await AlarmManager.shared.schedule(id: alarm.id, configuration: configuration) //sAve the alarm in iOS
+    }
+
+    /// "Once + days" (#36): the extra one-time ring, at one exact moment. Same title, sound and buttons
+    /// as the main alarm; only the WHEN and the ID differ.
+    private func scheduleOnceRing(for alarm: WakeAlarm, at date: Date) async throws {
+        let id = Self.onceRingID(for: alarm.id)
+        let configuration = ringConfiguration(for: alarm, schedule: .fixed(date), systemAlarmID: id)
+        _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
+    }
+
+    /// The package iOS gets for a "real" ring of this alarm (the main one or its once-ring):
+    /// snooze countdown (if any), WHEN, what it looks like, the second button and the sound.
+    /// `systemAlarmID` = the iOS alarm that will be ringing, so "Wake up" can silence exactly that one.
+    ///
+    /// LEARN: `sending` (Swift 6) promises the compiler that the returned box is brand new and nobody
+    /// else holds it, so it may safely be handed to AlarmKit, which works on another thread. Without it,
+    /// Swift refuses ("sending 'configuration' risks causing data races").
+    private func ringConfiguration(for alarm: WakeAlarm, schedule: Alarm.Schedule,
+                                   systemAlarmID: UUID) -> sending AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata> {
         // iOS's own Snooze button only for alarms WITHOUT a chain: with one, the backups would ring
         // in the middle of the snooze. Guarded alarms snooze inside RiseUp (Ringing screen), and
         // get "Start Mission" / "Wake up" here instead.
@@ -376,16 +415,15 @@ final class AlarmKitScheduler: AlarmScheduling {
             ? Alarm.CountdownDuration(preAlert: nil, postAlert: TimeInterval(alarm.snoozeMinutes * 60))
             : nil
 
-        let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
+        return AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
             countdownDuration: countdown,
             schedule: schedule,
             attributes: makeAttributes(for: alarm, isBackup: false, usesSnooze: usesSnooze),
             secondaryIntent: guarded
-                ? StartMissionIntent(wakeAlarmID: alarm.id, ringingSystemAlarmID: alarm.id)
+                ? StartMissionIntent(wakeAlarmID: alarm.id, ringingSystemAlarmID: systemAlarmID)
                 : nil,
             sound: Self.sound(named: alarm.soundName)
         )
-        _ = try await AlarmManager.shared.schedule(id: alarm.id, configuration: configuration) //sAve the alarm in iOS
     }
 
     // MARK: - Backup chain
@@ -487,6 +525,13 @@ final class AlarmKitScheduler: AlarmScheduling {
     static func wakeUpCheckID(for alarmID: UUID) -> UUID {
         var bytes = alarmID.uuid
         bytes.14 ^= 0xC4                       // "C" for check: yet another family
+        return UUID(uuid: bytes)
+    }
+
+    /// The ID of this alarm's extra one-time ring ("Once + days", #36). Derived like backups.
+    static func onceRingID(for alarmID: UUID) -> UUID {
+        var bytes = alarmID.uuid
+        bytes.14 ^= 0x0E                       // "O" for once: its own family again
         return UUID(uuid: bytes)
     }
 

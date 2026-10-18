@@ -398,6 +398,11 @@ final class RingingViewModel {
             } else if !alarm.isRepeating {
                 alarm.isEnabled = false              // one-time alarm: done, like the iOS Clock app
                 try? repository.save()
+            } else if let once = alarm.extraOnceDate, once <= now {
+                // "Once + days" (#36): that was (or came after) the extra ring. It's done; the weekly
+                // days go on. (The sync would clear it too, but the editor should be right at once.)
+                alarm.extraOnceDate = nil
+                try? repository.save()
             }
         }
 

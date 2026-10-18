@@ -118,8 +118,20 @@ struct AlarmEditorView: View {
                 sectionHeader("Repeat", value: viewModel.repeatSummary)
                 RepeatDaysPicker(
                     selection: $viewModel.draft.repeatDays,          // two-way binding into the draft
+                    alsoOnce: $viewModel.draft.alsoOnce,             // "Once + days" (#36)
                     onPreset: { viewModel.applyRepeatPreset($0) }    // → ViewModel
                 )
+                // "Once + days": say exactly what will happen ("Rings once today at 12:00 PM, then every Wed.").
+                // Re-read every minute: at midnight "today" becomes "tomorrow".
+                TimelineView(.everyMinute) { _ in
+                    if let detail = viewModel.onceAndDaysDetail(now: .now) {
+                        Label(detail, systemImage: "1.circle.fill")
+                            .font(.riseCaption)
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: viewModel.hasOnceAndDays)
             }
         }
     }

@@ -22,11 +22,11 @@ import SwiftData
 /// ← USED BY: ModelContainerFactory.make()
 enum RiseUpMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4]
     }
 
     /// V1 → V2: adds `WakeAlarm.fixedFireDate` (nil for existing alarms) and the empty
@@ -41,5 +41,12 @@ enum RiseUpMigrationPlan: SchemaMigrationPlan {
     static let migrateV2toV3 = MigrationStage.lightweight(
         fromVersion: SchemaV2.self,
         toVersion: SchemaV3.self
+    )
+
+    /// V3 → V4 (2026-10-18): adds `WakeAlarm.extraOnceDate` ("Once + days"). Existing alarms get `nil`,
+    /// which means "no extra ring": nothing changes for them. Lightweight again.
+    static let migrateV3toV4 = MigrationStage.lightweight(
+        fromVersion: SchemaV3.self,
+        toVersion: SchemaV4.self
     )
 }

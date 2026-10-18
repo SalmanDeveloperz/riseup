@@ -58,6 +58,8 @@ final class MockAlarmScheduler: AlarmScheduling {
 
     func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [alarm.id] }
     func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID> { [] }
+    /// The fake keeps every ring of an alarm under its main ID, so "present" = the main ID is scheduled.
+    func onceRingSystemAlarmID(for alarm: WakeAlarm) -> UUID { alarm.id }
 
     /// Alarms that got a wake-up check, with its minutes (tests can check it).
     private(set) var wakeUpChecks: [UUID: Int] = [:]

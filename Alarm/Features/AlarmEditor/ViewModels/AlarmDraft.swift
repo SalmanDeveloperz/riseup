@@ -30,6 +30,9 @@ nonisolated struct AlarmDraft: Equatable {
     var minute: Int
     /// Empty = rings once.
     var repeatDays: Set<Weekday>
+    /// "Once + days" (#36): with repeat days, ALSO ring one extra time at the next hour:minute
+    /// (today, or tomorrow if that time has passed). Ignored when `repeatDays` is empty (already "once").
+    var alsoOnce: Bool = false
     /// Optional name, e.g. "Gym".
     var label: String
     /// The alarm sound (→ AlarmSound.swift). Chosen in the Sound Picker.

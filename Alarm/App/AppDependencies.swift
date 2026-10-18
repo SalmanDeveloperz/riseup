@@ -16,7 +16,7 @@
 //   • you can see every dependency of a ViewModel in its `init`
 //
 //  CONNECTIONS (what's inside the toolbox):
-//    modelContainer        → the SwiftData database file (SchemaV2)
+//    modelContainer        → the SwiftData database file (SchemaV4)
 //    alarmRepository       → WakeAlarm rows        (AlarmRepository)
 //    wakeRecordRepository  → wake-up history rows  (WakeRecordRepository)
 //    alarmScheduler        → iOS system alarms     (AlarmKitScheduler / MockAlarmScheduler)

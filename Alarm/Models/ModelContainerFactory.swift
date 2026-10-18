@@ -16,7 +16,7 @@ enum ModelContainerFactory {
     /// - Parameter inMemory: `true` keeps everything in RAM and throws it away when the
     ///   app closes. Used by SwiftUI Previews and unit tests so they never touch real data.
     static func make(inMemory: Bool = false) throws -> ModelContainer {
-        let schema = Schema(versionedSchema: SchemaV3.self)   // ← the CURRENT schema
+        let schema = Schema(versionedSchema: SchemaV4.self)   // ← the CURRENT schema
         let configuration = makeConfiguration(schema: schema, inMemory: inMemory)
         // WHY: in Phase 4 the home-screen widget needs to read alarms. The database will
         // then move into a shared "App Group" folder. No users exist yet, so moving it
@@ -38,7 +38,7 @@ enum ModelContainerFactory {
     ///
     /// LEARN: SQLite keeps a database in up to 3 files: `.store`, `.store-shm` and `.store-wal`.
     static func setAsideDamagedStore() throws {
-        let url = makeConfiguration(schema: Schema(versionedSchema: SchemaV3.self), inMemory: false).url
+        let url = makeConfiguration(schema: Schema(versionedSchema: SchemaV4.self), inMemory: false).url
         let stamp = Int(Date.now.timeIntervalSince1970)
         let files = FileManager.default
         for suffix in ["", "-shm", "-wal"] {

@@ -53,6 +53,29 @@ nonisolated enum AlarmScheduleCalculator {
             .min()
     }
 
+    // MARK: - "Once + days" (#36)
+
+    /// The moment of the extra one-time ring: the next hour:minute strictly after `date`
+    /// (today if that time is still ahead, otherwise tomorrow).
+    ///
+    /// WHY "strictly after": saving at exactly 12:00:00 for a 12:00 alarm means the NEXT 12:00
+    /// (tomorrow), never "right now" (iOS can't ring in the past).
+    /// ← USED BY: AlarmEditorViewModel (on Save)
+    static func onceRingDate(hour: Int, minute: Int, after date: Date, calendar: Calendar = .current) -> Date? {
+        nextOccurrence(hour: hour, minute: minute, weekdays: [], after: date, calendar: calendar)
+    }
+
+    /// Is this once-ring ALSO one of the weekly rings? Then it must ring only once, not twice.
+    /// Example: Once + Wednesday saved on a Wednesday morning for 12:00 → "once today" IS "this Wednesday".
+    ///
+    /// ← USED BY: WakeAlarm.separateOnceRing → AlarmKitScheduler (no second iOS alarm for it)
+    static func isCoveredByWeekly(_ onceDate: Date, hour: Int, minute: Int, weekdays: Set<Weekday>,
+                                  calendar: Calendar = .current) -> Bool {
+        let parts = calendar.dateComponents([.weekday, .hour, .minute], from: onceDate)
+        guard let number = parts.weekday, let weekday = Weekday(rawValue: number) else { return false }
+        return weekdays.contains(weekday) && parts.hour == hour && parts.minute == minute
+    }
+
     /// Ring times for the backup chain: one date per offset (in SECONDS) after a ring.
     ///
     /// Example: ring = 06:30:00, offsets = [30, 60, 120] → [06:30:30, 06:31:00, 06:32:00].

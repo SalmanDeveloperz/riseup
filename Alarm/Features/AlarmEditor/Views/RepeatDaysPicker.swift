@@ -5,7 +5,11 @@
 //  LAYER: View (part of the Alarm Editor)
 //  WHAT:  Seven round day chips (M T W T F S S) plus quick presets
 //         ("Weekdays", "Weekends", "Every day", "Once").
-//  DATA:  none stored. It edits a `Set<Weekday>` through a Binding.
+//  DATA:  none stored. It edits a `Set<Weekday>` (and, in the editor, the "Once + days" flag) through Bindings.
+//
+//  "ONCE + DAYS" (#36): with no days, "Once" = a one-time alarm (as always). With days selected, tapping
+//  "Once" ADDS one extra ring at the next time (today/tomorrow) on top of them: Once + Wed = today 12:00
+//  and then every Wednesday 12:00. Tap it again to remove the extra ring.
 //
 //  CONNECTIONS:
 //    ← USED BY:    AlarmEditorView → `RepeatDaysPicker(selection: $viewModel.draft.repeatDays, …)`
@@ -21,6 +25,8 @@ import SwiftUI
 
 struct RepeatDaysPicker: View {
     @Binding var selection: Set<Weekday>
+    /// "Once + days" (#36). `nil` (onboarding) = the classic behaviour: "Once" just clears the days.
+    var alsoOnce: Binding<Bool>? = nil
     var onPreset: (Set<Weekday>) -> Void
 
     /// LEARN: `@ScaledMetric` grows a number with the user's text size (Settings → Display →
@@ -64,6 +70,8 @@ struct RepeatDaysPicker: View {
         return Button {
             // LEARN: a Set can't hold duplicates. Insert/remove toggles membership.
             if isOn { selection.remove(day) } else { selection.insert(day) }
+            // No days left = a plain one-time alarm; the "Once + days" extra no longer means anything.
+            if selection.isEmpty { alsoOnce?.wrappedValue = false }
         } label: {
             Text(day.veryShortName)
                 .font(.riseHeadline)
@@ -87,8 +95,16 @@ struct RepeatDaysPicker: View {
     }
 
     private func presetChip(_ title: String, days: Set<Weekday>) -> some View {
-        let isActive = selection == days
-        return Button(title) { onPreset(days) }
+        let isOncePreset = days.isEmpty
+        // "Once" is lit for a one-time alarm AND for "Once + days"; other presets when their days match.
+        let isActive = isOncePreset ? (selection.isEmpty || (alsoOnce?.wrappedValue ?? false)) : selection == days
+        return Button(title) {
+            if isOncePreset, let alsoOnce, !selection.isEmpty {
+                alsoOnce.wrappedValue.toggle()            // Once + days: add / remove the extra ring
+            } else {
+                onPreset(days)                            // → ViewModel (classic presets)
+            }
+        }
             .font(.riseCaption)
             .foregroundStyle(isActive ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
             .padding(.horizontal, Theme.Spacing.xs + 2)
@@ -98,6 +114,9 @@ struct RepeatDaysPicker: View {
             .frame(minHeight: 44)                 // finger-sized tap area; the capsule still looks small
             .contentShape(Rectangle())
             .buttonStyle(.plain)
+            .accessibilityAddTraits(isActive ? .isSelected : [])
+            .accessibilityHint(isOncePreset && alsoOnce != nil && !selection.isEmpty
+                               ? "Also rings one extra time, at the next alarm time" : "")
     }
 }
 

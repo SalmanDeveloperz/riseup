@@ -106,6 +106,10 @@ protocol AlarmScheduling: AnyObject {           // AnyObject means just class ca
     /// ← USED BY: AlarmSyncService.ringingAlarmID, stopRinging, hasPendingWakeUp
     func ringingSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>
 
+    /// The ID of this alarm's extra one-time ring ("Once + days", #36).
+    /// ← USED BY: AlarmSyncService (re-create it if iOS lost it while it's still to come)
+    func onceRingSystemAlarmID(for alarm: WakeAlarm) -> UUID
+
     /// Only the backup-chain IDs (+30 s … +12 min) of this alarm.
     /// ← USED BY: AlarmSyncService (drops a switched-off alarm's backups unless its mission is pending)
     func backupSystemAlarmIDs(for alarm: WakeAlarm) -> Set<UUID>

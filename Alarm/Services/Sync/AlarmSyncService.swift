@@ -30,6 +30,10 @@
 //   3. System alarms that belong to no alarm (or the main alarm of a switched-off one)
 //      → cancel them. Backups of existing alarms are kept: a mission may be pending.
 //   4. A wake-up check ringing while the user opens RiseUp → stop it (they're clearly awake).
+//   5. "Once + days" (#36):
+//        • the extra ring is still to come but iOS lost it → schedule the alarm again (part of rule 1)
+//        • the extra ring's moment has passed → forget it (`extraOnceDate = nil`): the editor then shows
+//          plain repeat days again. This also covers "pressed Stop and never opened the app".
 //
 
 import Foundation
@@ -84,8 +88,14 @@ final class AlarmSyncService {
             // Race-condition guard (see HOW_IT_WORKS.md, Bug 3).
             if scheduler.isScheduling(alarm) { continue }
 
+            // Rule 5a ("Once + days"): its extra ring should be in iOS but isn't.
+            // WHY also check hasPendingWakeUp: never re-schedule (which resets the chain) mid-wake-up.
+            let onceRingMissing = alarm.isEnabled && alarm.separateOnceRing(after: .now) != nil
+                && system[scheduler.onceRingSystemAlarmID(for: alarm)] == nil
+                && !scheduler.hasPendingWakeUp(alarm)
+
             // Rule 1: on in our database but missing in iOS.
-            if alarm.isEnabled && system[alarm.id] == nil {
+            if alarm.isEnabled && (system[alarm.id] == nil || onceRingMissing) {
                 if alarm.isQuickAlarm {
                     if !scheduler.hasPendingWakeUp(alarm) { finishedQuickAlarms.append(alarm) }
                 } else if alarm.isRepeating {
@@ -109,6 +119,14 @@ final class AlarmSyncService {
 
             // Rule 4: opening RiseUp answers "are you up?".
             scheduler.stopWakeUpCheckIfRinging(for: alarm)
+
+            // Rule 5b ("Once + days"): the extra ring's moment has passed → it's done, forget it.
+            // (Harmless even mid-wake-up: the backups in iOS don't depend on this date.)
+            if let once = alarm.extraOnceDate, once <= .now {
+                Trace.log(.sync, "sync: once-ring of \(Trace.short(alarm.id)) has passed → cleared")
+                alarm.extraOnceDate = nil
+                didChange = true
+            }
         }
 
         for alarm in finishedQuickAlarms {

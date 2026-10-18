@@ -3,7 +3,7 @@
 //  RiseUp
 //
 //  LAYER: Model (SwiftData)
-//  WHAT:  Version 3 of the database: the CURRENT shape.
+//  WHAT:  Version 3 of the database. FROZEN since SchemaV4 (2026-10-18): never edit it, the migration needs it.
 //         Change from V2:
 //           • WakeAlarm gets `wallpaperID` (the animated wallpaper or photo behind the Ringing screen)
 //  DATA:  WakeAlarm, MissionConfig, WakeRecord.
@@ -204,10 +204,4 @@ enum SchemaV3: VersionedSchema {
     }
 }
 
-// MARK: - Current model names
-
-// LEARN: the rest of the app writes `WakeAlarm`, never `SchemaV3.WakeAlarm`. When a
-// SchemaV4 arrives, only these lines change.
-typealias WakeAlarm = SchemaV3.WakeAlarm
-typealias MissionConfig = SchemaV3.MissionConfig
-typealias WakeRecord = SchemaV3.WakeRecord
+// The short names `WakeAlarm` / `MissionConfig` / `WakeRecord` now point at the newest schema (see SchemaV4.swift).

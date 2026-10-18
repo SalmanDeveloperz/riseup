@@ -134,19 +134,73 @@ final class AlarmEditorViewModel {
         set { draft.label = String(newValue.prefix(Self.maxLabelLength)) }
     }
 
-    /// "Weekdays", "Once", "Mon, Wed"… shown under the day chips.
-    /// → Weekday.summary(for:) in Weekday+Summary.swift
+    /// "Weekdays", "Once", "Once + Wed", "Mon, Wed"… shown above the day chips.
+    /// → Weekday.summary(for:alsoOnce:) in Weekday+Summary.swift
     var repeatSummary: String {
-        Weekday.summary(for: draft.repeatDays)
+        Weekday.summary(for: draft.repeatDays, alsoOnce: draft.alsoOnce)
     }
+
+    /// True when "Once" is combined with repeat days (#36).
+    var hasOnceAndDays: Bool { draft.alsoOnce && !draft.repeatDays.isEmpty }
 
     /// "Rings in 7h 20m": recomputed by the View once a minute (TimelineView).
     /// → AlarmScheduleCalculator.nextOccurrence + countdownText (the same maths as the list header)
     func ringsInText(now: Date) -> String {
-        guard let fireDate = AlarmScheduleCalculator.nextOccurrence(
+        let weekly = AlarmScheduleCalculator.nextOccurrence(
             hour: draft.hour, minute: draft.minute, weekdays: draft.repeatDays, after: now
-        ) else { return "" }
+        )
+        // "Once + days": the extra ring comes first if it's earlier.
+        let once = hasOnceAndDays
+            ? AlarmScheduleCalculator.onceRingDate(hour: draft.hour, minute: draft.minute, after: now)
+            : nil
+        guard let fireDate = [weekly, once].compactMap({ $0 }).min() else { return "" }
         return "Rings in " + AlarmScheduleCalculator.countdownText(from: now, to: fireDate)
+    }
+
+    /// The sentence under the day chips for "Once + days" (#36), e.g.
+    /// "Rings once today at 12:00 PM, then every Wed." `nil` when Once isn't combined with days.
+    /// WHY a full sentence: "Once + Wed" alone is easy to misread; this says exactly what will happen.
+    func onceAndDaysDetail(now: Date, calendar: Calendar = .current) -> String? {
+        guard hasOnceAndDays,
+              let once = AlarmScheduleCalculator.onceRingDate(hour: draft.hour, minute: draft.minute,
+                                                              after: now, calendar: calendar)
+        else { return nil }
+        let day = calendar.isDate(once, inSameDayAs: now) ? "today" : "tomorrow"
+        let time = once.formatted(date: .omitted, time: .shortened)
+        let weekly = Self.weeklyPhrase(for: draft.repeatDays)
+        if AlarmScheduleCalculator.isCoveredByWeekly(once, hour: draft.hour, minute: draft.minute,
+                                                     weekdays: draft.repeatDays, calendar: calendar) {
+            // Once + Wed on a Wednesday: it's the same ring, so say it rings ONCE, not twice.
+            return "Rings \(day) at \(time) (one of your days anyway), then \(weekly)."
+        }
+        return "Rings once \(day) at \(time), then \(weekly)."
+    }
+
+    /// "every Wed" / "every day" / "on weekdays" / "every Mon, Wed".
+    private static func weeklyPhrase(for days: Set<Weekday>) -> String {
+        switch Weekday.summary(for: days) {
+        case "Every day": "every day"
+        case "Weekdays": "on weekdays"
+        case "Weekends": "on weekends"
+        case let list: "every \(list)"
+        }
+    }
+
+    /// The moment of the extra ring to SAVE for "Once + days" (#36), or `nil` for none.
+    ///
+    /// WHY not simply "the next hour:minute" every time (found while designing): if the once-ring rang
+    /// while this editor was open, saving afterwards without changes would quietly create a NEW one for
+    /// tomorrow. So when the user asked for the same thing as before (same time, Once already on), we
+    /// keep the stored moment, and if it has passed, the once-ring is simply done.
+    /// ← CALLED BY: save()   (tests: OnceAndDaysTests)
+    func resolvedExtraOnceDate(stored: Date?, now: Date, calendar: Calendar = .current) -> Date? {
+        guard hasOnceAndDays else { return nil }
+        let sameRequest = originalDraft.alsoOnce
+            && draft.hour == originalDraft.hour && draft.minute == originalDraft.minute
+        if sameRequest, let stored {
+            return stored > now ? stored : nil
+        }
+        return AlarmScheduleCalculator.onceRingDate(hour: draft.hour, minute: draft.minute, after: now, calendar: calendar)
     }
 
     /// Mission alarms use "Start Mission" instead of the system Snooze button
@@ -282,7 +336,9 @@ final class AlarmEditorViewModel {
                     return
                 }
                 alarm = existing
+                let onceDate = resolvedExtraOnceDate(stored: existing.extraOnceDate, now: .now)   // before apply changes it
                 Self.apply(draft, to: alarm)
+                alarm.extraOnceDate = onceDate                    // "Once + days" (#36)
                 // A quick alarm stays "exact" only if its time wasn't changed; otherwise
                 // it becomes a normal hour:minute alarm.
                 alarm.fixedFireDate = staysQuickAlarm ? originalFixedFireDate : nil
@@ -293,6 +349,7 @@ final class AlarmEditorViewModel {
                 try repository.save()                  // → refreshes repository.alarms
             } else {
                 alarm = Self.makeAlarm(from: draft)
+                alarm.extraOnceDate = resolvedExtraOnceDate(stored: nil, now: .now)   // "Once + days" (#36)
                 alarm.isEnabled = isAllowed
                 try repository.insert(alarm)           // → refreshes repository.alarms
                 repository.replaceMissions(of: alarm, with: draft.missions)
@@ -398,6 +455,8 @@ final class AlarmEditorViewModel {
             hour: alarm.hour,
             minute: alarm.minute,
             repeatDays: alarm.repeatDays,
+            // "Once + days": only if the extra ring is still to come (once it has rung, it's done).
+            alsoOnce: alarm.upcomingOnceRing(after: .now) != nil,
             label: alarm.label,
             sound: AlarmSound.from(alarm.soundName),
             isSnoozeEnabled: alarm.isSnoozeEnabled,

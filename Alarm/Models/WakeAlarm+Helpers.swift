@@ -41,6 +41,8 @@ extension WakeAlarm {
     ///
     /// ← USED BY: AlarmCardView (subtitle under the time)
     var repeatSummary: String {
+        // "Once + days" (#36): while the extra ring is still to come, say so ("Once + Wed").
+        if upcomingOnceRing(after: .now) != nil { return Weekday.summary(for: repeatDays, alsoOnce: true) }
         let days = repeatDays
         // LEARN: `switch` on a Set compares it with each `case` value using `==`.
         // The first matching case wins, so the order of the cases matters.

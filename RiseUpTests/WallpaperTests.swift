@@ -132,7 +132,8 @@ struct WallpaperTests {
         let v3 = Schema(versionedSchema: SchemaV3.self)
         let container = try ModelContainer(for: v3, migrationPlan: RiseUpMigrationPlan.self,
                                            configurations: [ModelConfiguration(schema: v3, url: url)])
-        let alarms = try ModelContext(container).fetch(FetchDescriptor<WakeAlarm>())
+        // WHY `SchemaV3.WakeAlarm` (not `WakeAlarm`): `WakeAlarm` now means the V4 model.
+        let alarms = try ModelContext(container).fetch(FetchDescriptor<SchemaV3.WakeAlarm>())
         let alarm = try #require(alarms.first)
         #expect(alarms.count == 1)
         #expect(alarm.id == id && alarm.hour == 6 && alarm.minute == 45 && alarm.label == "Gym")
