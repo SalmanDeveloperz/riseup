@@ -471,6 +471,48 @@ Two things still needed care:
   asset) that means "morning" and "alarm" at once, and that no alarm app owns. **Rules:** judge an icon at 29 px next
   to other icons, not at 1024 px alone; check what the market leader looks like; one idea, few shapes.
 
+### Trace R: "Once + Wed" at 12:00, saved on a Monday morning (#36)
+```
+AlarmEditorView: tap Wed, tap Once → RepeatDaysPicker → draft.alsoOnce = true
+  sentence: onceAndDaysDetail(now:) → "Rings once today at 12:00 PM, then every Wed."
+Save → AlarmEditorViewModel.save()
+  alarm.extraOnceDate = resolvedExtraOnceDate(stored: nil, now: Mon 09:00) → onceRingDate → Mon 12:00
+  → AlarmRepository.save → AlarmKitScheduler.schedule(alarm)
+       scheduleMainAlarm   .relative(12:00, weekly [Wed])   ID = alarm.id
+       separateOnceRing    Mon 12:00 is not a Wednesday → scheduleOnceRing .fixed(Mon 12:00)  ID = onceRingID
+       backup chain after nextFireDate = min(Wed 12:00, Mon 12:00) = Mon 12:00
+Mon 12:00 rings → "I'm up" → RingingViewModel.finish(): extraOnceDate = nil, alarm stays ON
+  → wakeUpCompleted → chain re-armed after the next ring: Wed 12:00
+(Only pressed Stop? Next launch → AlarmSyncService rule 5b: the date passed → extraOnceDate = nil)
+```
+
+### Bug 47: Saving the editor after the extra ring rang would add ANOTHER one (found while designing #36)
+- **The trap:** open a Once + Wed alarm at 11:55, the extra ring rings at 12:00, then tap Save at 12:01 without
+  changing anything. "Next 12:00" is now TOMORROW, so a naive save quietly creates a brand-new extra ring.
+- **Fix:** `resolvedExtraOnceDate` keeps the STORED moment when the request didn't change (Once was already on, same
+  time). A passed moment means "done" → `nil`. Only a new time or newly ticked Once calculates a new moment.
+- **Rule:** saving without changes must change nothing. Test `editorRoundTrip` saves after the ring on purpose.
+
+### Bug 48: Updating from a pre-widget build showed "No alarms yet" (found 2026-10-18, Simulator)
+- **What happened:** a Simulator with the build from just before widgets, then today's build installed on top (a
+  normal update): the alarm list was empty. The old database file was still there, untouched.
+- **Why:** `ModelConfiguration("RiseUp", …)` lets SwiftData choose the folder, and SwiftData chooses the App Group
+  folder as soon as the app HAS an App Group. Adding the group for the widgets silently moved where the database
+  is looked for. An empty one was created, and the sync then cancelled the iOS alarms that had no row any more.
+- **Fix:** `StoreRelocation` moves `RiseUp.store` + `-shm` + `-wal` + `.RiseUp_SUPPORT` into the group folder before
+  the container opens. Main file last, so a crash halfway is simply finished next launch; two databases → nothing
+  is overwritten. 8 tests, including a real V3 database with an alarm that must survive the move AND the V4 upgrade.
+- **How it was proven:** a throwaway Simulator: old build → today's build (bug: new empty store in the group folder)
+  → fixed build (the old file moved and upgraded to V4).
+- **Rule:** after adding an entitlement or capability, test an UPDATE, not only a fresh install.
+
+### Lesson: negative testing means listing the cases BEFORE writing code (#36)
+The lead's "ring once AND on Wednesday" sounded like one checkbox. Writing the cases down first found the hard ones:
+saved ON a Wednesday (one ring, not two), Tuesday evening (tomorrow IS Wednesday), exactly 12:00:00, the extra ring
+already rang (Bug 47), pressed Stop and never opened the app, unticking every day, widgets planning 8 days ahead.
+Each became a test named after the sentence it proves (`OnceAndDaysTests`). **Rule:** if you can't say what happens
+in a case, the code can't either.
+
 ### Bug 26: Day letters sat half a day left of their dots (Salman spotted it)
 A dot or bar drawn with `unit: .day` sits in the MIDDLE of its day (noon), but `.stride(by: .day)` labels sit at
 MIDNIGHT (the start). Fix: `ChartDays` (in `WakeTimeChart.swift`) puts labels at noon, and every chart uses it, so

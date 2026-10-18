@@ -207,7 +207,7 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | Metaballs | blur + alpha threshold = blobs that melt together | `LavaLampRenderer` |
 | `MeshGradient` | colours blended across a moving grid of points | `BreatheWallpaper` |
 | Integrals in code | speed changes smoothly when time is the area under the speed curve | `WallpaperEnergy.clock` |
-| `VersionedSchema` upgrade | copy the schema, add the field, add a lightweight stage, move typealiases | `SchemaV3`, migration test |
+| `VersionedSchema` upgrade | copy the schema, add the field, add a lightweight stage, move typealiases | `SchemaV3`, `SchemaV4`, migration tests |
 | `NSCache` | an in-memory cache that empties itself when memory is low | `FileWallpaperStore` |
 | `preparingForDisplay()` | decode an image in the background, not on the first frame | `FileWallpaperStore.decode` |
 | `.photosPicker` modifier | system photo library without camera permission | `WallpaperPickerView` |
@@ -255,3 +255,14 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | Semantic tokens | name colours by role (`accent`, `onAccent`), not by look (`neonPink`) | `Theme.Colors` |
 | HSB colour maths | change brightness/saturation to derive a deeper shade | `Color.accent` |
 
+## Learned building Once + days (#36) and the database move
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Store a moment, not a flag | a `Date` answers "still to come or done?" by itself; a `Bool` needs someone to switch it off | `WakeAlarm.extraOnceDate` |
+| `[a, b].compactMap { $0 }.min()` | the earliest of some optional dates, ignoring the missing ones | `nextFireDate`, `ringsInText` |
+| `sending` (Swift 6) | promises a returned value is brand new, so it may cross to another thread | `AlarmKitScheduler.ringConfiguration` |
+| Derived IDs | an extra iOS alarm's ID is worked out from the alarm's ID, so nothing new is stored | `onceRingID`, `backupID` |
+| Testing with a fixed "now" | pass `now:` and `calendar:` in, so a test can be "Wednesday 09:00" forever | `OnceAndDaysTests` |
+| App sandbox + App Group folders | each app has private folders; an App Group adds one shared folder, and SwiftData prefers it | `StoreRelocation` |
+| SQLite's 3 files | `.store`, `-shm`, `-wal` (+ `.RiseUp_SUPPORT`) must always move together | `StoreRelocation.helperNames` |
+| Resumable steps | do the step that means "finished" LAST, so a crash halfway is simply continued next time | `StoreRelocation.moveIfNeeded` |

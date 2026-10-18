@@ -25,7 +25,10 @@ function names valid when renaming).
 - ViewModels are `@Observable final class`, owned by the View with `@State`, created in `Coordinator/ScreenFactory.swift`.
 - Navigation only through `AppCoordinator` (routes in `Coordinator/Routes.swift`). Views get closures or a ViewModel; they never push screens themselves.
 - Services have a protocol (`AlarmScheduling`) + real impl + mock (`MockAlarmScheduler`) for previews/tests. Only `AlarmKitScheduler`, `StartMissionIntent`, `Shared/RiseUpAlarmMetadata`, the widget extension and the debug Lab may `import AlarmKit`.
-- SwiftData models live inside the latest schema (`SchemaV3`, VersionedSchema) with typealiases at the bottom of that file; older schemas are frozen. Changing a model after release = new schema version + migration stage. Never rename stored enum raw values.
+- SwiftData models live inside the latest schema (`SchemaV4`, VersionedSchema) with typealiases at the bottom of that file; older schemas are frozen. Changing a model after release = new schema version + migration stage. Never rename stored enum raw values.
+- The database file lives in the App Group folder (SwiftData picks it because of the entitlement). `StoreRelocation` moves
+  pre-widget installs there before the container opens. Never change the store name or `ModelConfiguration` location
+  without a matching move + test.
 - Our alarm model is `WakeAlarm` (Apple already owns the name `Alarm`).
 - Call `AlarmManager.shared` directly at each use (don't store it): Swift 6 Sendable rule.
 - Use `Theme.*` tokens and DesignSystem components; no raw colours/numbers in screens.
@@ -41,6 +44,9 @@ function names valid when renaming).
   Actions come back with an ID; the ViewModel looks up the live object. (A deleted @Model read by a View crashes.)
 - Code that compares our database with iOS must skip alarms where `scheduler.isScheduling(alarm)` (race condition).
   Database ↔ iOS sync lives in `AlarmSyncService` (runs on launch, foreground and list load).
+- Once + days (#36): `WakeAlarm.extraOnceDate` is the exact moment of ONE extra ring (system ID `onceRingID`), scheduled
+  only via `separateOnceRing` (never a double ring on a chosen weekday). A passed date means "done": clear it, never
+  roll it forward.
 - Wake-up lock: while `scheduler.hasPendingWakeUp(alarm)` is true, the alarm can't be switched off, deleted or edited.
 - Re-ring chain: mission alarms, and every alarm while `AppSettings.guaranteesWakeUp` is on, get backups at
   `AlarmKitScheduler.backupOffsets`. Every chain change goes through `serially` (one job at a time per alarm).

@@ -15,7 +15,7 @@ wallpaper with its own sound, there are home and lock screen widgets, sleep soun
 stats. It's free, has no account, no server and no tracking: everything stays on the phone.
 
 **In numbers:** ~140 Swift files, 8 missions, 36 alarm sounds, 10 sleep sounds, 25 live wallpapers,
-6 widget sizes, light & dark themes with 5 colour palettes, 101 unit tests, 0 build warnings.
+6 widget sizes, light & dark themes with 5 colour palettes, 126 unit tests, 0 build warnings.
 
 ---
 
@@ -32,12 +32,13 @@ stats. It's free, has no account, no server and no tracking: everything stays on
 
 ## "Where is the data stored?"
 - **SwiftData** (Apple's database) for alarms, their missions and the wake-up history. It's versioned
-  (`SchemaV1 → V2 → V3`) with a migration plan, so updates never lose anyone's alarms.
+  (`SchemaV1 → V2 → V3 → V4`) with a migration plan, so updates never lose anyone's alarms. The file sits in the
+  App Group folder; installs from before the widgets are moved there on first launch (`StoreRelocation`).
 - **UserDefaults** (`AppSettings`) for small preferences: default sound, Time Pressure, Wake-up guarantee…
 - **Files** for big things: your wallpaper photos, mission reference photos.
 - **App Group** (a folder shared with the widget extension): a small JSON "next alarms" snapshot + wallpaper pictures.
 - **Nothing leaves the phone.** No server, no analytics, no account.
-- 👉 `Alarm/Models/SchemaV3.swift`, `Alarm/Repositories/`, `ARCHITECTURE.md` §5 (data map)
+- 👉 `Alarm/Models/SchemaV4.swift`, `Alarm/Repositories/`, `ARCHITECTURE.md` §5 (data map)
 
 ## "How do the alarms actually ring?" (the most important answer)
 - We don't fake alarms with notifications: we use **AlarmKit** (new in iOS 26), the same system the Clock app
@@ -77,6 +78,16 @@ There are **no push notifications** (there's no server to send them).
   widgets match.
 - **Always dark on purpose:** the ringing screen, the wallpaper player and the widgets sit on night-sky wallpapers.
 - 👉 `Shared/DesignSystem/Theme.swift`, `docs/screens/35-themes.md`
+
+## "Can an alarm ring once AND on certain days?" (#36)
+- Yes: in the editor tick **Once** together with days, e.g. **Once + Wed** at 12:00. It rings one extra time at the
+  next 12:00 (today, or tomorrow if that's passed) and then every Wednesday. A sentence under the days says exactly
+  which: "Rings once today at 12:00 PM, then every Wed."
+- **How:** iOS has no "weekly plus one extra" alarm, so RiseUp schedules two: the weekly one and one exact-time one.
+  We save the extra ring's exact moment (`extraOnceDate`), so once it has passed it's simply ignored.
+- **The tricky cases are tested** (17 tests): on a Wednesday it rings once, not twice; after the extra ring the
+  alarm stays on for its days; saving the editor after the extra ring rang doesn't create a new one.
+- 👉 `docs/screens/36-once-and-days.md`, `RiseUpTests/OnceAndDaysTests.swift`
 
 ## "How are the wallpapers / backgrounds made?"
 - **They're code, not videos or images.** Each of the 25 live wallpapers (Golden Hour, Aurora, Kyoto Blossoms,
@@ -156,7 +167,7 @@ with a ringing alarm. While you work, the alarm goes quiet; stop for 15 s and it
 | UserNotifications | the bedtime reminder |
 | Charts (Swift Charts) | wake-up statistics |
 | UIKit / ImageIO / CoreGraphics | images, haptics, drawing the app icon (tool) |
-| Swift Testing | 101 unit tests |
+| Swift Testing | 126 unit tests |
 
 No third-party libraries at all, so nothing to update and nothing that tracks users.
 
@@ -228,12 +239,12 @@ modern Swift API), and SwiftData needs 17 anyway.
 - 👉 `docs/DEBUGGING_GUIDE.md` (8 hands-on labs), `Alarm/Services/Logging/Trace.swift`
 
 ## "How do you know it works?" (quality)
-- **101 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
+- **126 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
   ViewModels with mocks, widget planning, deep links.
 - **Zero-warning builds** in Swift 6 strict concurrency, Debug and Release.
 - **Real-device test matrix for alarms:** locked, Silent mode, Focus, app killed, reboot, snooze, Stop without
   mission. The Simulator can't ring real alarms, so the iPhone is the only real test.
-- **Code reviews found and fixed ~46 bugs**, each written down with the rule it taught (`HOW_IT_WORKS.md` Part 4).
+- **Code reviews and testing found and fixed ~48 bugs**, each written down with the rule it taught (`HOW_IT_WORKS.md` Part 4).
 
 ## "What about privacy and the App Store?"
 - No account, no server, no analytics, no ads, no tracking. The privacy manifest (`PrivacyInfo.xcprivacy`)

@@ -110,6 +110,8 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | — | `README.md` + `docs/TALKING_POINTS.md` (explain the app to anyone) | 🟡 done 2026-10-14 |
 | 35 | Themes: System / Light / Dark + 5 colour palettes (widgets follow; wake-up screens stay dark) | 🟡 brief: `docs/screens/35-themes.md` · check Light on iPhone |
 | — | Widgets show the rooster logo (`RoosterMark`, lock screen `RoosterGlyph`) | 🟡 done 2026-10-14 |
+| 36 | Once + days: "ring today once AND every Wednesday" (SchemaV4 `extraOnceDate`, 17 tests) | 🟡 brief: `docs/screens/36-once-and-days.md` · run its 3 iPhone checks |
+| — | Fix: updating from a pre-widget build lost the alarms (database moved folder, `StoreRelocation`) | 🟡 done 2026-10-18 (Bug 48) |
 
 ## Phase 8 — Post-launch
 | # | Screen / item | Status |
@@ -146,6 +148,10 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
   Phase 7 became "launch readiness".
 - Alarm wallpapers (#32, 2026-10-13) are drawn live in code instead of videos (instant, tiny, react to the
   alarm). First real schema upgrade after V2: SchemaV3 adds `WakeAlarm.wallpaperID`.
+- Once + days (#36, 2026-10-18): asked for by the lead. SchemaV4 adds `WakeAlarm.extraOnceDate`; the extra ring is
+  one more `.fixed` system alarm (`onceRingID`).
+- Since the widgets' App Group, the database lives in the GROUP folder (SwiftData's own choice). Older installs are
+  moved there on first launch (`StoreRelocation`, Bug 48).
 - The "Try it" preview became the Scene Player (#33): every wallpaper has its own sound, and choosing one can
   set the alarm's sound too (`WallpaperChoice`). Bookmarks are a preference (`AppSettings`), not database data.
 - Widgets (#31, 2026-10-13) didn't wait for the final bundle ID after all: an App Group ID is any `group.…` name
