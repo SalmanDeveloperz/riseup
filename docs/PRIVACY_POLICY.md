@@ -1,6 +1,6 @@
 # RiseUp Privacy Policy
 
-*Last updated: 13 October 2026*
+*Last updated: 19 October 2026*
 
 RiseUp is an alarm clock app. We built it so that **your data never leaves your iPhone**.
 
@@ -10,6 +10,8 @@ RiseUp is an alarm clock app. We built it so that **your data never leaves your 
 - **Photo missions**: when you register a spot, RiseUp keeps a small thumbnail and a mathematical "fingerprint"
   of the photo to recognise the spot later. The full photo is not saved. Morning photos are compared and then discarded.
 - **Barcode missions**: the text of the code you registered.
+- **Your own alarm sounds**: a 30-second copy of the sound you picked from Files or of a video's sound. Only the
+  file you pick is read; RiseUp sees nothing else in Files or Photos.
 - **Settings**: such as your default sound, the bedtime reminder time and your last sleep-sound mix.
 
 ## What RiseUp does NOT do

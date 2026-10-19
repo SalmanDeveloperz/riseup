@@ -15,7 +15,7 @@ wallpaper with its own sound, there are home and lock screen widgets, sleep soun
 stats. It's free, has no account, no server and no tracking: everything stays on the phone.
 
 **In numbers:** ~140 Swift files, 8 missions, 36 alarm sounds, 10 sleep sounds, 25 live wallpapers,
-6 widget sizes, light & dark themes with 5 colour palettes, 126 unit tests, 0 build warnings.
+6 widget sizes, light & dark themes with 5 colour palettes, your own alarm sounds, 155 unit tests, 0 build warnings.
 
 ---
 
@@ -88,6 +88,17 @@ There are **no push notifications** (there's no server to send them).
 - **The tricky cases are tested** (17 tests): on a Wednesday it rings once, not twice; after the extra ring the
   alarm stays on for its days; saving the editor after the extra ring rang doesn't create a new one.
 - 👉 `docs/screens/36-once-and-days.md`, `RiseUpTests/OnceAndDaysTests.swift`
+
+## "Can I use my own song as the alarm?" (#37)
+- Yes: Sound → **Add your own sound** → **From Files** (MP3, M4A, WAV…) or **Sound of a Video** (from Photos).
+  It's ready in about a tenth of a second, selected and playing. There's also a **search bar** for all sounds.
+- **What RiseUp does to it:** keeps up to 30 seconds (Apple's limit for alarm sounds), skips silence at the
+  start, makes quiet recordings loud, repeats short "dings", and saves it in the same format as our own sounds.
+- **Honest limit:** iOS 26 has a reported bug where the lock-screen alarm plays iOS's own tone instead of an app's
+  added sound. Even then the alarm rings, and your sound plays as soon as you open RiseUp.
+- **Negative cases are handled and tested** (29 tests with real generated files): not audio, empty files,
+  silence, a click, a video without sound, Apple Music songs, deleting a sound an alarm still uses…
+- 👉 `docs/screens/37-custom-sounds-and-search.md`, `Alarm/Services/Audio/SoundClipMaker.swift`
 
 ## "How are the wallpapers / backgrounds made?"
 - **They're code, not videos or images.** Each of the 25 live wallpapers (Golden Hour, Aurora, Kyoto Blossoms,
@@ -163,11 +174,13 @@ with a ringing alarm. While you work, the alarm goes quiet; stop for 15 s and it
 | Core Motion | shake, steps and squat missions |
 | Vision | photo mission: comparing two photos |
 | VisionKit | barcode / QR mission scanner |
-| PhotosUI | choosing your own wallpaper photo |
+| PhotosUI | choosing your own wallpaper photo, or a video whose sound becomes an alarm sound |
 | UserNotifications | the bedtime reminder |
 | Charts (Swift Charts) | wake-up statistics |
 | UIKit / ImageIO / CoreGraphics | images, haptics, drawing the app icon (tool) |
-| Swift Testing | 126 unit tests |
+| Swift Testing | 155 unit tests |
+| Accelerate (vDSP) | making your own sounds loud enough, fast (`SoundClipMaker`) |
+| CoreTransferable / UniformTypeIdentifiers | receiving a video from Photos as a file; which files the Files picker offers |
 
 No third-party libraries at all, so nothing to update and nothing that tracks users.
 
@@ -239,7 +252,7 @@ modern Swift API), and SwiftData needs 17 anyway.
 - 👉 `docs/DEBUGGING_GUIDE.md` (8 hands-on labs), `Alarm/Services/Logging/Trace.swift`
 
 ## "How do you know it works?" (quality)
-- **126 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
+- **155 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
   ViewModels with mocks, widget planning, deep links.
 - **Zero-warning builds** in Swift 6 strict concurrency, Debug and Release.
 - **Real-device test matrix for alarms:** locked, Silent mode, Focus, app killed, reboot, snooze, Stop without

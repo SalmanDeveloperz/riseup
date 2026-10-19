@@ -432,6 +432,7 @@ struct AlarmEditorView: View {
             scheduler: dependencies.alarmScheduler,
             settings: dependencies.settings,
             wallpaperStore: dependencies.wallpaperStore,
+            customSounds: dependencies.customSounds,
             coordinator: AppCoordinator()
         ))
     }
@@ -450,6 +451,7 @@ struct AlarmEditorView: View {
             scheduler: dependencies.alarmScheduler,
             settings: dependencies.settings,
             wallpaperStore: dependencies.wallpaperStore,
+            customSounds: dependencies.customSounds,
             coordinator: AppCoordinator()
         ))
     }

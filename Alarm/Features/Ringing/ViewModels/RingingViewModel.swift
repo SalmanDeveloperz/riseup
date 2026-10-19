@@ -51,7 +51,7 @@ final class RingingViewModel {
     struct RingInfo: Equatable {
         let title: String
         let missions: [MissionDraft]
-        let sound: AlarmSound
+        let sound: SoundChoice
         let isSnoozeEnabled: Bool
         let snoozeMinutes: Int
         let maxSnoozeCount: Int
@@ -133,6 +133,8 @@ final class RingingViewModel {
     private let sleepSounds: any SleepSoundPlaying
     private let settings: AppSettings
     private let wallpaperStore: any WallpaperStoring
+    /// The user's own sounds (#37): which file to play for this alarm.
+    private let customSounds: any CustomSoundStoring
     private let coordinator: AppCoordinator
 
     private var record: WakeRecord?
@@ -167,7 +169,8 @@ final class RingingViewModel {
     init(alarmID: UUID, repository: AlarmRepository, records: WakeRecordRepository,
          scheduler: any AlarmScheduling, audio: any AudioPlaying,
          timeAnnouncer: any TimeAnnouncing, sleepSounds: any SleepSoundPlaying, settings: AppSettings,
-         wallpaperStore: any WallpaperStoring, missionServices: MissionServices, coordinator: AppCoordinator) {
+         wallpaperStore: any WallpaperStoring, customSounds: any CustomSoundStoring,
+         missionServices: MissionServices, coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
         self.records = records
@@ -177,6 +180,7 @@ final class RingingViewModel {
         self.sleepSounds = sleepSounds
         self.settings = settings
         self.wallpaperStore = wallpaperStore
+        self.customSounds = customSounds
         self.missionServices = missionServices
         self.coordinator = coordinator
     }
@@ -192,7 +196,7 @@ final class RingingViewModel {
         info = RingInfo(
             title: alarm.displayTitle,
             missions: alarm.sortedMissions.map(MissionDraft.init),  // → MissionDraft.init(_ config:) copies every field, payloads too
-            sound: AlarmSound.from(alarm.soundName),
+            sound: customSounds.choice(for: alarm.soundName),   // ours or the user's own (#37)
             isSnoozeEnabled: alarm.isSnoozeEnabled,
             snoozeMinutes: alarm.snoozeMinutes,
             maxSnoozeCount: alarm.maxSnoozeCount,
@@ -206,7 +210,7 @@ final class RingingViewModel {
         // Rain sounds from the night before must not play over the alarm. → SleepSoundPlayer
         sleepSounds.stopAll()
         scheduler.stopRinging(alarm)
-        audio.startAlarm(AlarmSound.from(alarm.soundName), rampUp: true)
+        audio.startAlarm(customSounds.choice(for: alarm.soundName), rampUp: true)   // → AudioService (a deleted file → Digital)
         startKeepAlive()                              // → the chain stays 75 s ahead while we're on screen
 
         // 2. History: continue an unfinished record (after a snooze) or start a new one.

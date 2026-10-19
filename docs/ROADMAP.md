@@ -112,6 +112,7 @@ Screen numbers (#) match the original feature list. Every screen gets a brief in
 | — | Widgets show the rooster logo (`RoosterMark`, lock screen `RoosterGlyph`) | 🟡 done 2026-10-14 |
 | 36 | Once + days: "ring today once AND every Wednesday" (SchemaV4 `extraOnceDate`, 17 tests) | 🟡 brief: `docs/screens/36-once-and-days.md` · run its 3 iPhone checks |
 | — | Fix: updating from a pre-widget build lost the alarms (database moved folder, `StoreRelocation`) | 🟡 done 2026-10-18 (Bug 48) |
+| 37 | Your own sounds (Files / a video in Photos) + sound search (`CustomSoundLibrary`, `SoundClipMaker`, 29 tests) | 🟡 brief: `docs/screens/37-custom-sounds-and-search.md` · iPhone check 2 decides a warning |
 
 ## Phase 8 — Post-launch
 | # | Screen / item | Status |

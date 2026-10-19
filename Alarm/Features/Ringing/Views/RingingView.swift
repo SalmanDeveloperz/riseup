@@ -290,6 +290,7 @@ struct RingingView: View {
         sleepSounds: dependencies.sleepSounds,
         settings: dependencies.settings,
         wallpaperStore: dependencies.wallpaperStore,
+        customSounds: dependencies.customSounds,
         missionServices: dependencies.missionServices,
         coordinator: AppCoordinator()
     ))

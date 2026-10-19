@@ -32,7 +32,7 @@ final class WallpaperPickerViewModel {
     /// What "Default" means right now (from Settings), for its preview and name.
     let defaultWallpaper: Wallpaper
     /// The alarm's current sound: what plays with your own photos (they have no sound of their own).
-    let currentSound: AlarmSound
+    let currentSound: SoundChoice
     /// The tab on screen.
     var category: WallpaperCategory
 
@@ -59,7 +59,7 @@ final class WallpaperPickerViewModel {
     private let settings: AppSettings
     private let coordinator: AppCoordinator
 
-    init(selected: Wallpaper?, allowsDefault: Bool, defaultWallpaper: Wallpaper, currentSound: AlarmSound,
+    init(selected: Wallpaper?, allowsDefault: Bool, defaultWallpaper: Wallpaper, currentSound: SoundChoice,
          store: any WallpaperStoring, audio: any AudioPlaying, settings: AppSettings, coordinator: AppCoordinator) {
         self.selection = selected
         self.allowsDefault = allowsDefault
@@ -108,9 +108,9 @@ final class WallpaperPickerViewModel {
     }
 
     /// The sound that plays with a wallpaper: a live scene's own sound, or the alarm's sound for photos.
-    func sound(for wallpaper: Wallpaper) -> AlarmSound {
+    func sound(for wallpaper: Wallpaper) -> SoundChoice {
         switch wallpaper.resolved() {
-        case .live(let style): style.signatureSound
+        case .live(let style): .builtIn(style.signatureSound)
         default: currentSound
         }
     }
@@ -147,7 +147,7 @@ final class WallpaperPickerViewModel {
 
     /// Tap a card: open the player on it, with the rest of its tab as the playlist.
     func openPlayer(_ wallpaper: Wallpaper) {
-        Trace.log(.wallpaper, "openPlayer(\(wallpaper.rawValue)) → full screen + \(sound(for: wallpaper).rawValue)")
+        Trace.log(.wallpaper, "openPlayer(\(wallpaper.rawValue)) → full screen + \(sound(for: wallpaper).soundName)")
         var list = wallpapersInCategory
         if !list.contains(wallpaper) { list = [wallpaper] }
         playlist = list
@@ -196,7 +196,8 @@ final class WallpaperPickerViewModel {
         Trace.log(.wallpaper, "use(withSound: \(withSound)) → close player, then coordinator.completeWallpaperPicker")
         guard let wallpaper = playing else { return }
         selection = wallpaper
-        let sound: AlarmSound? = withSound && hasSignatureSound(wallpaper) ? sound(for: wallpaper) : nil
+        // Only live scenes get here with a sound, and their sounds are always ours (`builtIn`).
+        let sound: AlarmSound? = withSound && hasSignatureSound(wallpaper) ? sound(for: wallpaper).builtIn : nil
         closePlayer()
         try? await Task.sleep(for: .milliseconds(350))
         coordinator.completeWallpaperPicker(with: WallpaperChoice(wallpaper: wallpaper, sound: sound))   // → editor / Settings

@@ -102,6 +102,7 @@ struct ScreenFactory {
                 scheduler: dependencies.alarmScheduler,
                 settings: dependencies.settings,          // defaults for NEW alarms
                 wallpaperStore: dependencies.wallpaperStore,  // photo for the Wallpaper row's preview
+                customSounds: dependencies.customSounds,      // the user's own sounds (#37)
                 coordinator: coordinator
             ))
         }
@@ -154,11 +155,14 @@ struct ScreenFactory {
     @ViewBuilder
     func makeScreen(for route: SheetRoute) -> some View {
         switch route {
-        case .soundPicker(let selected):
-            // Screen #13. The result goes back through coordinator.completeSoundPicker.
+        case .soundPicker(let selected, let allowsCustom):
+            // Screen #13 (+ #37 My sounds, search). The result goes back through coordinator.completeSoundPicker.
             SoundPickerView(viewModel: SoundPickerViewModel(
                 selected: selected,
+                allowsCustom: allowsCustom,
                 audio: dependencies.audio,
+                customSounds: dependencies.customSounds,       // the user's own sounds (files)
+                alarmRepository: dependencies.alarmRepository, // "is this sound used by an alarm?" before deleting
                 coordinator: coordinator
             ))
         case .quickAlarm(let minutes):
@@ -215,6 +219,7 @@ struct ScreenFactory {
                 sleepSounds: dependencies.sleepSounds,   // the alarm stops last night's sleep sounds
                 settings: dependencies.settings,
                 wallpaperStore: dependencies.wallpaperStore,
+                customSounds: dependencies.customSounds,   // plays the user's own sound if they chose one (#37)
                 missionServices: dependencies.missionServices,
                 coordinator: coordinator
             ))

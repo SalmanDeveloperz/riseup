@@ -585,9 +585,15 @@ final class AlarmKitScheduler: AlarmScheduling {
 
     // MARK: - Helpers
 
-    /// "default" → the system alarm sound; anything else → a sound file in the app bundle.
+    /// "default" → the system alarm sound; anything else → a sound file in the app bundle, or
+    /// (the user's own sounds) in Library/Sounds.
+    ///
+    /// WHY the file check for custom sounds: a user can delete their sound while an alarm still
+    /// uses it. Handing iOS the name of a file that doesn't exist risks an error beep instead of an
+    /// alarm (reported on Apple's forums), so a missing custom file becomes iOS's own alarm sound.
     static func sound(named name: String) -> AlertConfiguration.AlertSound {
-        name == "default" ? .default : .named(name)
+        AlarmSoundRule.usesSystemSound(name, fileExists: { FileManager.default.fileExists(atPath: $0) })
+            ? .default : .named(name)
     }
 
     private static func map(_ state: AlarmManager.AuthorizationState) -> AlarmPermission {

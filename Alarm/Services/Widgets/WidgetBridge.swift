@@ -45,11 +45,12 @@ enum WidgetBridge {
     /// Each picture is drawn ONCE (the file is kept), so this is quick after the first time.
     @MainActor
     static func update(alarms: [WakeAlarm], settings: AppSettings, wallpaperStore: any WallpaperStoring,
-                       now: Date = .now) async {
+                       customSounds: any CustomSoundStoring, now: Date = .now) async {
         // No App Group (e.g. not set up for this Apple Account yet): nothing to share with.
         guard let folder = WidgetShared.wallpaperFolder else { return }
 
-        let planned = plan(alarms: alarms, defaultWallpaper: settings.defaultWallpaper, now: now)
+        let planned = plan(alarms: alarms, defaultWallpaper: settings.defaultWallpaper, now: now,
+                           soundTitle: { customSounds.choice(for: $0).title })   // "Radar", or the user's own name
 
         // 1. Pictures first: the widget may redraw the moment the snapshot changes.
         var drewNewPicture = false
@@ -88,8 +89,11 @@ enum WidgetBridge {
     /// with the wallpaper it will show (its own, or the Settings default; "Surprise" resolved per day).
     ///
     /// ← USED BY: update(), WidgetTests
+    /// `soundTitle`: a stored sound name → what the widget shows (the user's own sounds have their own names).
     static func plan(alarms: [WakeAlarm], defaultWallpaper: Wallpaper, now: Date,
-                     calendar: Calendar = .current) -> [(event: WidgetAlarmEvent, wallpaper: Wallpaper)] {
+                     calendar: Calendar = .current,
+                     soundTitle: (String) -> String = { AlarmSound.from($0).title })
+        -> [(event: WidgetAlarmEvent, wallpaper: Wallpaper)] {
         let horizon = now.addingTimeInterval(TimeInterval(daysAhead) * 24 * 3600)
         var result: [(event: WidgetAlarmEvent, wallpaper: Wallpaper)] = []
 
@@ -107,7 +111,7 @@ enum WidgetBridge {
                     fireDate: next,
                     title: alarm.displayTitle,
                     missionSymbols: alarm.sortedMissions.map(\.type.systemImage),
-                    soundTitle: AlarmSound.from(alarm.soundName).title,
+                    soundTitle: soundTitle(alarm.soundName),
                     wallpaperTitle: wallpaper.title,
                     wallpaperFile: WidgetShared.wallpaperFileName(for: wallpaper.rawValue)
                 )

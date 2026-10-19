@@ -35,8 +35,9 @@ nonisolated struct AlarmDraft: Equatable {
     var alsoOnce: Bool = false
     /// Optional name, e.g. "Gym".
     var label: String
-    /// The alarm sound (→ AlarmSound.swift). Chosen in the Sound Picker.
-    var sound: AlarmSound
+    /// The alarm sound: one of ours (→ AlarmSound.swift) or the user's own (→ CustomSound.swift, #37).
+    /// Chosen in the Sound Picker.
+    var sound: SoundChoice
     var isSnoozeEnabled: Bool
     var snoozeMinutes: Int
     var maxSnoozeCount: Int
@@ -53,7 +54,7 @@ nonisolated struct AlarmDraft: Equatable {
     /// TRY: change `maxSnoozeCount: 3` to `5` and create a new alarm.
     /// (Exercise 4 in docs/screens/08-alarm-editor.md: start at the next full hour instead.)
     static func newAlarm(now: Date = .now, calendar: Calendar = .current,
-                         sound: AlarmSound = .radar, snoozeMinutes: Int = 5) -> AlarmDraft {
+                         sound: SoundChoice = .builtIn(.radar), snoozeMinutes: Int = 5) -> AlarmDraft {
         let parts = calendar.dateComponents([.hour, .minute], from: now)
         return AlarmDraft(
             hour: parts.hour ?? 7,

@@ -169,7 +169,7 @@ struct WallpaperTests {
     func editorSavesWallpaper() async throws {
         let (repository, settings) = try makeRepositoryAndSettings()
         let editor = AlarmEditorViewModel(alarmID: nil, repository: repository, scheduler: MockAlarmScheduler(),
-                                          settings: settings, wallpaperStore: MockWallpaperStore(), coordinator: AppCoordinator())
+                                          settings: settings, wallpaperStore: MockWallpaperStore(), customSounds: MockCustomSoundLibrary(), coordinator: AppCoordinator())
         #expect(editor.wallpaperTitle == "Golden Hour")
         #expect(editor.wallpaperSubtitle == "Default from Settings")
         editor.draft.wallpaper = .live(.synthwave)
@@ -192,7 +192,7 @@ struct WallpaperTests {
             let viewModel = RingingViewModel(
                 alarmID: alarm.id, repository: repository, records: records, scheduler: MockAlarmScheduler(),
                 audio: MockAudioService(), timeAnnouncer: MockTimeAnnouncer(), sleepSounds: MockSleepSoundPlayer(),
-                settings: settings, wallpaperStore: MockWallpaperStore(), missionServices: .preview(),
+                settings: settings, wallpaperStore: MockWallpaperStore(), customSounds: MockCustomSoundLibrary(), missionServices: .preview(),
                 coordinator: AppCoordinator())
             viewModel.start()
             return viewModel.info?.wallpaper
@@ -236,7 +236,7 @@ struct ScenePlayerTests {
     let coordinator = AppCoordinator()
     let settings = AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!)
 
-    func makePicker(selected: Wallpaper? = nil, sound: AlarmSound = .radar) -> WallpaperPickerViewModel {
+    func makePicker(selected: Wallpaper? = nil, sound: SoundChoice = .builtIn(.radar)) -> WallpaperPickerViewModel {
         WallpaperPickerViewModel(selected: selected, allowsDefault: true, defaultWallpaper: .standard, currentSound: sound,
                                  store: MockWallpaperStore(), audio: audio, settings: settings, coordinator: coordinator)
     }
@@ -247,7 +247,7 @@ struct ScenePlayerTests {
         picker.category = .world
         picker.openPlayer(.live(.kyotoBlossoms))
         #expect(picker.isShowingPlayer)
-        #expect(audio.previewedSound == .koto)
+        #expect(audio.previewedSound == .builtIn(.koto))
         #expect(audio.isPreviewLooping)
         #expect(picker.playlist.count == 11, "the whole tab is the playlist")
     }
@@ -259,10 +259,10 @@ struct ScenePlayerTests {
         picker.openPlayer(.live(.cityLights))                 // the last world scene
         picker.next()
         #expect(picker.playing == .live(.kyotoBlossoms), "wraps to the first")
-        #expect(audio.previewedSound == .koto)
+        #expect(audio.previewedSound == .builtIn(.koto))
         picker.previous()
         #expect(picker.playing == .live(.cityLights))
-        #expect(audio.previewedSound == .jazzPiano)
+        #expect(audio.previewedSound == .builtIn(.jazzPiano))
     }
 
     @Test("Pause stops the sound; changing scene while paused stays quiet")
@@ -276,7 +276,7 @@ struct ScenePlayerTests {
         picker.next()
         #expect(audio.previewedSound == nil)
         picker.togglePlay()
-        #expect(audio.previewedSound == .accordion, "Paris comes after Himalaya")
+        #expect(audio.previewedSound == .builtIn(.accordion), "Paris comes after Himalaya")
     }
 
     @Test("♥ saves a scene into the Saved tab, and again removes it")
@@ -293,10 +293,10 @@ struct ScenePlayerTests {
 
     @Test("Your own photos play the alarm's current sound and never change it")
     func photosKeepTheSound() async {
-        let picker = makePicker(sound: .bell)
+        let picker = makePicker(sound: .builtIn(.bell))
         let photo = Wallpaper.photo(id: UUID())
         picker.openPlayer(photo)
-        #expect(audio.previewedSound == .bell)
+        #expect(audio.previewedSound == .builtIn(.bell))
         #expect(!picker.hasSignatureSound(photo))
     }
 
@@ -305,7 +305,7 @@ struct ScenePlayerTests {
         let container = try ModelContainerFactory.make(inMemory: true)
         let editor = AlarmEditorViewModel(alarmID: nil, repository: AlarmRepository(context: container.mainContext),
                                           scheduler: MockAlarmScheduler(), settings: settings,
-                                          wallpaperStore: MockWallpaperStore(), coordinator: coordinator)
+                                          wallpaperStore: MockWallpaperStore(), customSounds: MockCustomSoundLibrary(), coordinator: coordinator)
         let originalSound = editor.draft.sound
 
         editor.chooseWallpaper()                               // registers the editor's callback
@@ -321,6 +321,6 @@ struct ScenePlayerTests {
         picker.openPlayer(.live(.saharaDunes))
         await picker.use(withSound: true)
         #expect(editor.draft.wallpaper == .live(.saharaDunes))
-        #expect(editor.draft.sound == .desertOud)
+        #expect(editor.draft.sound == .builtIn(.desertOud))
     }
 }

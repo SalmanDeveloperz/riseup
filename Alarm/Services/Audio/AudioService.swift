@@ -5,12 +5,12 @@
 //  LAYER: Service (protocol + real implementation + mock)
 //  WHAT:  Plays sounds INSIDE RiseUp: short previews in the Sound Picker, and the looping
 //         alarm sound on the Ringing screen (with a gentle volume ramp and a mute button).
-//  DATA:  none. Reads sound files from the app bundle.
+//  DATA:  none. Reads sound files from the app bundle, and the user's own from Library/Sounds.
 //
 //  CONNECTIONS:
 //    ← CREATED BY: AppDependencies (live → AudioService, preview → MockAudioService)
 //    ← USED BY:    SoundPickerViewModel (preview), RingingViewModel (alarm loop, mute)
-//    → USES:       AVFoundation (AVAudioSession + AVAudioPlayer), AlarmSound (file names)
+//    → USES:       AVFoundation (AVAudioSession + AVAudioPlayer), SoundChoice → AlarmSound / CustomSound files
 //
 //  LEARN: AlarmKit vs. this service
 //  ────────────────────────────────
@@ -26,13 +26,13 @@ import Foundation
 /// Everything the app needs from audio.
 protocol AudioPlaying: AnyObject {
     /// Plays a sound once (stops any other preview first).
-    func preview(_ sound: AlarmSound)
+    func preview(_ sound: SoundChoice)
     /// Plays a sound over and over until `stopPreview()` (the wallpaper scene player).
-    func previewLooping(_ sound: AlarmSound)
+    func previewLooping(_ sound: SoundChoice)
     /// Stops the preview, if any.
     func stopPreview()
     /// Starts looping an alarm sound. `rampUp` starts quiet and reaches full volume after ~15 s.
-    func startAlarm(_ sound: AlarmSound, rampUp: Bool)
+    func startAlarm(_ sound: SoundChoice, rampUp: Bool)
     /// Stops the alarm loop.
     func stopAlarm()
     /// Temporarily silences the alarm loop without stopping it.
@@ -72,7 +72,7 @@ final class AudioService: AudioPlaying {
 
     // MARK: - Preview
 
-    func preview(_ sound: AlarmSound) {
+    func preview(_ sound: SoundChoice) {
         stopPreview()
         guard let player = makePlayer(for: sound) else { return }
         player.numberOfLoops = 0
@@ -82,7 +82,7 @@ final class AudioService: AudioPlaying {
         previewPlayer = player
     }
 
-    func previewLooping(_ sound: AlarmSound) {
+    func previewLooping(_ sound: SoundChoice) {
         preview(sound)
         // LEARN: -1 = loop forever. The 12-second sounds are made to loop without a gap.
         previewPlayer?.numberOfLoops = -1
@@ -95,8 +95,9 @@ final class AudioService: AudioPlaying {
 
     // MARK: - Alarm loop
 
-    func startAlarm(_ sound: AlarmSound, rampUp: Bool) {
-        Trace.log(.audio, "AudioService.startAlarm(\(sound.rawValue)) rampUp: \(rampUp)")
+    func startAlarm(_ sound: SoundChoice, rampUp: Bool) {
+        // (`soundName` is a file name, never the user's own words, so it's fine in the trace.)
+        Trace.log(.audio, "AudioService.startAlarm(\(sound.soundName)) rampUp: \(rampUp)")
         stopAlarm()
         stopPreview()
         guard let player = makePlayer(for: sound) else { return }
@@ -142,15 +143,30 @@ final class AudioService: AudioPlaying {
 
     // MARK: - Helpers
 
-    private func makePlayer(for sound: AlarmSound) -> AVAudioPlayer? {
-        let name = sound.playableFileName
-        // "riseup_radar.caf" → resource "riseup_radar", extension "caf"
-        let base = (name as NSString).deletingPathExtension
-        let ext = (name as NSString).pathExtension
-        guard let url = Bundle.main.url(forResource: base, withExtension: ext),
+    private func makePlayer(for sound: SoundChoice) -> AVAudioPlayer? {
+        guard let url = Self.fileURL(for: sound),
               let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
         player.prepareToPlay()          // loads the first audio now, so `play()` starts instantly
         return player
+    }
+
+    /// Where a sound's file is: inside the app (ours) or in Library/Sounds (the user's).
+    /// WHY the fallback: if a custom sound's file is gone (deleted while an alarm still used it),
+    /// the alarm must still make noise. The Digital beeps are our stand-in for "iPhone Alarm".
+    nonisolated static func fileURL(for sound: SoundChoice) -> URL? {
+        if case .custom(let custom) = sound {
+            let url = CustomSoundLibrary.soundsFolder.appendingPathComponent(custom.fileName)
+            if FileManager.default.fileExists(atPath: url.path) { return url }
+            return bundleURL(for: .digital)
+        }
+        return sound.builtIn.flatMap(bundleURL(for:))
+    }
+
+    /// "riseup_radar.caf" → resource "riseup_radar", extension "caf" in the app.
+    nonisolated private static func bundleURL(for sound: AlarmSound) -> URL? {
+        let name = sound.playableFileName
+        return Bundle.main.url(forResource: (name as NSString).deletingPathExtension,
+                               withExtension: (name as NSString).pathExtension)
     }
 
     /// WHY `.playback`: this category plays sound even when the iPhone's Silent switch is
@@ -169,15 +185,15 @@ final class AudioService: AudioPlaying {
 
 /// Fake audio for Previews and tests: remembers what it was asked to do, plays nothing.
 final class MockAudioService: AudioPlaying {
-    private(set) var previewedSound: AlarmSound?
+    private(set) var previewedSound: SoundChoice?
     private(set) var isPreviewLooping = false
-    private(set) var alarmSound: AlarmSound?
+    private(set) var alarmSound: SoundChoice?
     private(set) var isMuted = false
 
-    func preview(_ sound: AlarmSound) { previewedSound = sound; isPreviewLooping = false }
-    func previewLooping(_ sound: AlarmSound) { previewedSound = sound; isPreviewLooping = true }
+    func preview(_ sound: SoundChoice) { previewedSound = sound; isPreviewLooping = false }
+    func previewLooping(_ sound: SoundChoice) { previewedSound = sound; isPreviewLooping = true }
     func stopPreview() { previewedSound = nil; isPreviewLooping = false }
-    func startAlarm(_ sound: AlarmSound, rampUp: Bool) { alarmSound = sound }
+    func startAlarm(_ sound: SoundChoice, rampUp: Bool) { alarmSound = sound }
     func stopAlarm() { alarmSound = nil }
     func setAlarmMuted(_ isMuted: Bool) { self.isMuted = isMuted }
     var outputVolume: Float = 1

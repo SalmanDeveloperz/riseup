@@ -266,3 +266,17 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | App sandbox + App Group folders | each app has private folders; an App Group adds one shared folder, and SwiftData prefers it | `StoreRelocation` |
 | SQLite's 3 files | `.store`, `-shm`, `-wal` (+ `.RiseUp_SUPPORT`) must always move together | `StoreRelocation.helperNames` |
 | Resumable steps | do the step that means "finished" LAST, so a crash halfway is simply continued next time | `StoreRelocation.moveIfNeeded` |
+
+## Learned building your own sounds + search (#37)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| Enum with associated values | one type that is EITHER our sound OR the user's, and `switch` makes you handle both | `SoundChoice` |
+| `AVAssetReader` + time range | decode only the part of a file you need (the speed trick) | `SoundClipMaker.readSamples` |
+| `AVAudioFile` writing | save samples as a file in a chosen format (CAF, IMA4) | `SoundClipMaker.write` |
+| Accelerate / vDSP | maths on a whole array at once, far faster than a loop | `SoundClipMaker.shape` |
+| `.fileImporter` + security-scoped URLs | let the user pick ONE file; start/stop accessing it | `SoundPickerView`, `CustomSoundLibrary.add` |
+| `Transferable` + `FileRepresentation` | receive a picked video as a file, not as bytes in memory | `PickedMovie` |
+| `.searchable` | the standard search bar under a navigation title | `SoundPickerView` |
+| `localizedStandardContains` | Finder-style search: any case, ignores accents | `SoundPickerViewModel.matches` |
+| `ContentUnavailableView.search` | Apple's ready-made "No Results" screen | `SoundPickerView` |
+| Atomic finish | write to a temporary name, then rename: a file is either complete or absent | `CustomSoundLibrary.add` |

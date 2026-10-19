@@ -121,7 +121,7 @@ struct OnceAndDaysTests {
     func makeEditor(alarmID: UUID? = nil) -> AlarmEditorViewModel {
         AlarmEditorViewModel(alarmID: alarmID, repository: repository, scheduler: scheduler,
                              settings: AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!),
-                             wallpaperStore: MockWallpaperStore(), coordinator: AppCoordinator())
+                             wallpaperStore: MockWallpaperStore(), customSounds: MockCustomSoundLibrary(), coordinator: AppCoordinator())
     }
 
     @Test("Editor: only Once WITH days gives an extra ring")
@@ -190,7 +190,7 @@ struct OnceAndDaysTests {
             alarmID: alarm.id, repository: repository, records: records, scheduler: scheduler,
             audio: MockAudioService(), timeAnnouncer: MockTimeAnnouncer(), sleepSounds: MockSleepSoundPlayer(),
             settings: AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!),
-            wallpaperStore: MockWallpaperStore(), missionServices: .preview(), coordinator: AppCoordinator())
+            wallpaperStore: MockWallpaperStore(), customSounds: MockCustomSoundLibrary(), missionServices: .preview(), coordinator: AppCoordinator())
         ringing.start()
         await ringing.dismiss()
         #expect(alarm.extraOnceDate == nil)

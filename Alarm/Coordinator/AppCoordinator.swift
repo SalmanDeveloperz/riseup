@@ -63,7 +63,7 @@ final class AppCoordinator {
     // Routes are plain values and can't carry functions, so the coordinator keeps the
     // "call me back with the answer" closure until the sheet finishes.
     // `@ObservationIgnored`: no view displays these, so SwiftUI needn't watch them.
-    @ObservationIgnored private var onSoundPicked: ((AlarmSound) -> Void)?
+    @ObservationIgnored private var onSoundPicked: ((SoundChoice) -> Void)?
     @ObservationIgnored private var onMissionPicked: ((MissionDraft) -> Void)?
     @ObservationIgnored private var onWallpaperPicked: ((WallpaperChoice) -> Void)?
 
@@ -111,14 +111,16 @@ final class AppCoordinator {
     // MARK: - Sheets
 
     /// Opens the Sound Picker. `onPick` runs with the chosen sound when the user taps Done.
-    /// ← CALLED BY: AlarmEditorViewModel.chooseSound()
-    func presentSoundPicker(selected: AlarmSound, onPick: @escaping (AlarmSound) -> Void) {
+    /// `allowsCustom`: offer the user's own sounds too (the editor yes, Settings' default no).
+    /// ← CALLED BY: AlarmEditorViewModel.chooseSound(), SettingsViewModel.chooseDefaultSound()
+    func presentSoundPicker(selected: SoundChoice, allowsCustom: Bool = true,
+                            onPick: @escaping (SoundChoice) -> Void) {
         onSoundPicked = onPick
-        sheet = .soundPicker(selected: selected)
+        sheet = .soundPicker(selected: selected, allowsCustom: allowsCustom)
     }
 
     /// ← CALLED BY: SoundPickerViewModel.done() → delivers the result, closes the sheet.
-    func completeSoundPicker(with sound: AlarmSound) {
+    func completeSoundPicker(with sound: SoundChoice) {
         onSoundPicked?(sound)
         dismissSheet()
     }
@@ -139,7 +141,7 @@ final class AppCoordinator {
     /// Opens the Wallpaper Picker. `onPick` gets the choice when the user confirms: the wallpaper
     /// (`nil` = "Default") and, after "Use wallpaper + sound", the scene's sound.
     /// ← CALLED BY: AlarmEditorViewModel.chooseWallpaper(), SettingsViewModel.chooseDefaultWallpaper()
-    func presentWallpaperPicker(selected: Wallpaper?, allowsDefault: Bool, sound: AlarmSound,
+    func presentWallpaperPicker(selected: Wallpaper?, allowsDefault: Bool, sound: SoundChoice,
                                 onPick: @escaping (WallpaperChoice) -> Void) {
         onWallpaperPicked = onPick
         sheet = .wallpaperPicker(selected: selected, allowsDefault: allowsDefault, sound: sound)

@@ -506,6 +506,36 @@ Mon 12:00 rings → "I'm up" → RingingViewModel.finish(): extraOnceDate = nil,
   → fixed build (the old file moved and upgraded to V4).
 - **Rule:** after adding an entitlement or capability, test an UPDATE, not only a fresh install.
 
+### Trace S: "Add your own sound" → a video from Photos → it rings (#37)
+```
+SoundPickerView Menu "Sound of a Video" → viewModel.chooseFromPhotos() → .photosPicker(.videos, .current)
+  user picks → .onChange(pickedVideo) → viewModel.addVideo(item)
+    item.loadTransferable(PickedMovie.self)  → tmp/riseup-video-….mov (an APFS clone: instant)
+    → addSound → CustomSoundLibrary.add → SoundClipMaker.makeClip   (@concurrent: background thread)
+         readSamples: AVAssetReader, first ≤ 60 s only → skip silence → keep ≤ 30 s
+         shape: trim tail, vDSP normalise, repeat if short, fades → write: CAF IMA4
+       → rename .importing-… → riseup_custom_<UUID>.caf → JSON name list
+    → select(.custom(sound)) → AudioService.preview → you hear it (~0.1 s after picking)
+Done → draft.sound → Save → soundName = "riseup_custom_<UUID>.caf"
+  → AlarmKitScheduler.sound(named:) → AlarmSoundRule: file exists → .named(…) (missing → .default)
+```
+
+### Bug 49: A test crashed the whole test run (found while writing #37's tests)
+- `AlarmRepository(context: try ModelContainerFactory.make(inMemory: true).mainContext)`: nobody kept the
+  container, so Swift freed it, and its context crashed on first use. **Rule:** whoever needs a context keeps its
+  container alive too (`let container` in the test).
+
+### Bug 50: An old, innocent test started failing (the Memory mission timer)
+- The new tests made minutes of audio ON THE MAIN THREAD. The Memory test waits for a real 2-second timer that
+  also needs the main thread, so it ran late and failed. **Fix:** test audio is made `@concurrent` (background).
+  **Rule:** a test that hogs the main thread can break OTHER tests; slow work goes to the background, in tests too.
+
+### Lesson: measure before you optimise (#37)
+"Very very fast" was the requirement. The first version took 2.4 s for a 4-minute song in the full test run. A
+timing probe split it up: reading 0.25 s the first time (iOS loads its decoder once), 0.04 s after; shaping 0.005 s;
+writing 0.015 s. The rest was 150 other tests running at the same time. Still, copying chunks instead of single
+samples and using vDSP made it ~2× faster in Debug builds. **Rule:** time each step; fix the slow one, not a guess.
+
 ### Lesson: negative testing means listing the cases BEFORE writing code (#36)
 The lead's "ring once AND on Wednesday" sounded like one checkbox. Writing the cases down first found the hard ones:
 saved ON a Wednesday (one ring, not two), Tuesday evening (tomorrow IS Wednesday), exactly 12:00:00, the extra ring

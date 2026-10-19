@@ -105,8 +105,9 @@ final class SettingsViewModel {
 
     /// ← CALLED BY: "Default sound" row → Sound Picker sheet → result saved in AppSettings
     func chooseDefaultSound() {
-        coordinator.presentSoundPicker(selected: settings.defaultSound) { [weak self] sound in
-            self?.settings.defaultSound = sound
+        // WHY allowsCustom: false: the default is for NEW alarms; the user's own sounds are picked per alarm.
+        coordinator.presentSoundPicker(selected: .builtIn(settings.defaultSound), allowsCustom: false) { [weak self] sound in
+            if let builtIn = sound.builtIn { self?.settings.defaultSound = builtIn }
         }
     }
 
@@ -114,7 +115,7 @@ final class SettingsViewModel {
     /// → saved in AppSettings; every alarm without its own wallpaper uses it.
     func chooseDefaultWallpaper() {
         coordinator.presentWallpaperPicker(selected: settings.defaultWallpaper, allowsDefault: false,
-                                           sound: settings.defaultSound) { [weak self] choice in
+                                           sound: .builtIn(settings.defaultSound)) { [weak self] choice in
             self?.settings.defaultWallpaper = choice.wallpaper ?? .standard
             if let sound = choice.sound { self?.settings.defaultSound = sound }   // "Use wallpaper + sound"
         }

@@ -164,7 +164,8 @@ struct RootView: View {
     private func updateWidgets() async {
         await WidgetBridge.update(alarms: dependencies.alarmRepository.alarms,
                                   settings: dependencies.settings,
-                                  wallpaperStore: dependencies.wallpaperStore)
+                                  wallpaperStore: dependencies.wallpaperStore,
+                                  customSounds: dependencies.customSounds)
     }
 
     /// LEARN: `#if DEBUG` picks code at BUILD time; this turns it into a normal Bool.

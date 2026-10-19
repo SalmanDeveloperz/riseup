@@ -47,6 +47,7 @@ struct RingingFlowTests {
             sleepSounds: sleepSounds,
             settings: AppSettings(store: UserDefaults(suiteName: "RiseUpTests-\(UUID().uuidString)")!),
             wallpaperStore: MockWallpaperStore(),
+            customSounds: MockCustomSoundLibrary(),
             missionServices: .preview(),
             coordinator: AppCoordinator()
         )

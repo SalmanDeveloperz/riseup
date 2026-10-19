@@ -96,7 +96,8 @@ enum SettingsRoute: Hashable {
 ///   → the editor's `onPick` callback receives the sound → sheet closes.
 enum SheetRoute: Hashable, Identifiable {
     /// Choose an alarm sound (Screen #13). Starts with `selected` highlighted.
-    case soundPicker(selected: AlarmSound)
+    /// `allowsCustom`: show "My sounds" (the user's own, #37). False for Settings' default sound.
+    case soundPicker(selected: SoundChoice, allowsCustom: Bool)
     /// "Ring in 10 minutes" (Screen #7). `minutes`: preset from a widget's nap button (nil = the usual 10).
     case quickAlarm(minutes: Int?)
     /// Choose a mission and its settings (Screens #9 + #10). `editing` = change an existing one.
@@ -106,7 +107,7 @@ enum SheetRoute: Hashable, Identifiable {
     /// Choose the wallpaper (and optionally its sound) behind the Ringing screen (Screens #32/#33).
     /// `selected == nil` = "Default". `allowsDefault`: true from the alarm editor, false when choosing
     /// Settings' default itself. `sound`: the current alarm sound (played with your own photos).
-    case wallpaperPicker(selected: Wallpaper?, allowsDefault: Bool, sound: AlarmSound)
+    case wallpaperPicker(selected: Wallpaper?, allowsDefault: Bool, sound: SoundChoice)
 
     var id: Self { self }
 }

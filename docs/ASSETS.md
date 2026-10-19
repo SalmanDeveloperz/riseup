@@ -56,6 +56,10 @@ sound of a wallpaper (`LiveWallpaper.signatureSound`).
 **Important:** the file names are stored in the database (`WakeAlarm.soundName`). Never rename a shipped file.
 Add a new one instead (see `AlarmSound.swift`).
 
+### Not bundled: the user's own sounds (#37)
+Sounds a user adds (from Files or a video) are NOT assets: they're made on the iPhone by `SoundClipMaker` into
+`Library/Sounds/riseup_custom_<UUID>.caf` and belong to that user. Nothing ships with the app.
+
 ## Icons
 | Asset | Source | Licence |
 |---|---|---|

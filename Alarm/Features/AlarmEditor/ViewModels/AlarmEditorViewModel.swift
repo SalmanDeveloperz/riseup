@@ -71,6 +71,8 @@ final class AlarmEditorViewModel {
     private let coordinator: AppCoordinator
     private let settings: AppSettings
     private let wallpaperStore: any WallpaperStoring
+    /// The user's own sounds: turns the stored `soundName` back into a SoundChoice. (#37)
+    private let customSounds: any CustomSoundStoring
     /// The photo for a `.photo` wallpaper, for the little preview in the Wallpaper row.
     private(set) var wallpaperPhoto: UIImage?
 
@@ -83,13 +85,15 @@ final class AlarmEditorViewModel {
     private let originalFixedFireDate: Date?
 
     init(alarmID: UUID?, repository: AlarmRepository, scheduler: any AlarmScheduling,
-         settings: AppSettings, wallpaperStore: any WallpaperStoring, coordinator: AppCoordinator) {
+         settings: AppSettings, wallpaperStore: any WallpaperStoring, customSounds: any CustomSoundStoring,
+         coordinator: AppCoordinator) {
         self.alarmID = alarmID
         self.repository = repository
         self.scheduler = scheduler
         self.coordinator = coordinator
         self.settings = settings
         self.wallpaperStore = wallpaperStore
+        self.customSounds = customSounds
 
         // Fill the draft. LEARN: in an `init`, every stored property must get a value
         // before we can call methods on `self`, so we use `static` helpers here.
@@ -97,12 +101,12 @@ final class AlarmEditorViewModel {
         // so we build the draft in a local constant first and assign it twice.
         let startingDraft: AlarmDraft
         if let alarmID, let existing = try? repository.fetch(id: alarmID) {
-            startingDraft = Self.makeDraft(from: existing)
+            startingDraft = Self.makeDraft(from: existing, customSounds: customSounds)
             isEditing = true
             originalFixedFireDate = existing.fixedFireDate
         } else {
             // Defaults chosen in Settings → "New alarms". → AppSettings
-            startingDraft = .newAlarm(sound: settings.defaultSound, snoozeMinutes: settings.defaultSnoozeMinutes)
+            startingDraft = .newAlarm(sound: .builtIn(settings.defaultSound), snoozeMinutes: settings.defaultSnoozeMinutes)
             isEditing = false
             originalFixedFireDate = nil
         }
@@ -260,7 +264,7 @@ final class AlarmEditorViewModel {
     func chooseWallpaper() {
         coordinator.presentWallpaperPicker(selected: draft.wallpaper, allowsDefault: true, sound: draft.sound) { [weak self] choice in
             self?.draft.wallpaper = choice.wallpaper
-            if let sound = choice.sound { self?.draft.sound = sound }   // "Use wallpaper + sound"
+            if let sound = choice.sound { self?.draft.sound = .builtIn(sound) }   // "Use wallpaper + sound"
             Task { await self?.loadWallpaperPhoto() }
         }
     }
@@ -450,7 +454,7 @@ final class AlarmEditorViewModel {
     }
 
     /// Live WakeAlarm → editable draft (copying values out).
-    private static func makeDraft(from alarm: WakeAlarm) -> AlarmDraft {
+    private static func makeDraft(from alarm: WakeAlarm, customSounds: any CustomSoundStoring) -> AlarmDraft {
         AlarmDraft(
             hour: alarm.hour,
             minute: alarm.minute,
@@ -458,7 +462,7 @@ final class AlarmEditorViewModel {
             // "Once + days": only if the extra ring is still to come (once it has rung, it's done).
             alsoOnce: alarm.upcomingOnceRing(after: .now) != nil,
             label: alarm.label,
-            sound: AlarmSound.from(alarm.soundName),
+            sound: customSounds.choice(for: alarm.soundName),   // → CustomSoundLibrary: ours or the user's own
             isSnoozeEnabled: alarm.isSnoozeEnabled,
             snoozeMinutes: alarm.snoozeMinutes,
             maxSnoozeCount: alarm.maxSnoozeCount,
@@ -475,7 +479,7 @@ final class AlarmEditorViewModel {
         alarm.minute = draft.minute
         alarm.repeatDays = draft.repeatDays
         alarm.label = draft.label.trimmingCharacters(in: .whitespaces)
-        alarm.soundName = draft.sound.rawValue
+        alarm.soundName = draft.sound.soundName
         alarm.isSnoozeEnabled = draft.isSnoozeEnabled
         alarm.snoozeMinutes = draft.snoozeMinutes
         alarm.maxSnoozeCount = draft.maxSnoozeCount
@@ -490,7 +494,7 @@ final class AlarmEditorViewModel {
             minute: draft.minute,
             repeatDays: draft.repeatDays,
             label: draft.label.trimmingCharacters(in: .whitespaces),
-            soundName: draft.sound.rawValue,
+            soundName: draft.sound.soundName,
             isSnoozeEnabled: draft.isSnoozeEnabled,
             snoozeMinutes: draft.snoozeMinutes,
             maxSnoozeCount: draft.maxSnoozeCount,

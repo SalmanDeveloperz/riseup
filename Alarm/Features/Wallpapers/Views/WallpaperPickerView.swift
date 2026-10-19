@@ -274,7 +274,7 @@ struct WallpaperPickerView: View {
 #Preview {
     Color.black.sheet(isPresented: .constant(true)) {
         WallpaperPickerView(viewModel: WallpaperPickerViewModel(
-            selected: .live(.aurora), allowsDefault: true, defaultWallpaper: .standard, currentSound: .radar,
+            selected: .live(.aurora), allowsDefault: true, defaultWallpaper: .standard, currentSound: .builtIn(.radar),
             store: MockWallpaperStore(), audio: MockAudioService(),
             settings: AppSettings(store: UserDefaults(suiteName: "preview")!), coordinator: AppCoordinator()
         ))
