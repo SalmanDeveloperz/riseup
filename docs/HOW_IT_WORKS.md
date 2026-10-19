@@ -457,6 +457,13 @@ Two things still needed care:
   ON an accent; a small script found the 6 places.
 **Rule:** name colours by what they're FOR, not what they look like.
 
+### Lesson: fill the icon like the apps around it (2026-10-19)
+On the Home Screen the rooster looked small next to WhatsApp, Mail or Fitness: it was only ~65 % of the icon's width
+and ~50 % of its height. Those apps fill ~75–80 %. `Tools/generate_app_icon.swift` now MEASURES the bird (every pixel
+that isn't see-through) and scales it to `iconFill` = 80 % of the width, centred, inside Apple's icon grid so the rounded
+corners never cut it. The widget marks keep the old size (they crop the bird themselves). **Rule:** judge an icon
+next to other icons, at real size; measure instead of eyeballing a number.
+
 ### Lesson: an icon must say what the app is, AND be ownable (the logo journey)
 - **v1, a sunrise with an up-arrow:** beautiful, but it didn't say "alarm" (Salman noticed). It's also almost
   Apple's own "sunrise" SF Symbol, which anyone can use.

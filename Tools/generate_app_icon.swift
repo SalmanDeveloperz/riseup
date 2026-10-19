@@ -41,6 +41,14 @@ let headRadius: CGFloat = 190
 let tilt: CGFloat = 10                 // degrees the whole rooster leans back to crow at the sky
 let lift: CGFloat = 20                 // moves the bird down a little, so the tilted mark sits centred
 
+/// How wide the rooster (comb to sound waves) is on the app icon, as a share of the icon's width.
+/// WHY 0.80 (Salman, 2026-10-19: "fill it like WhatsApp, Mail, Google Keep"): the bird used to be
+/// only ~65 % wide and ~50 % tall, so it looked small next to other apps. Apple's icon grid keeps
+/// artwork inside a circle of ~81 % of the icon, and WhatsApp's bubble / Mail's envelope are ~76–80 %
+/// wide. 80 % fills the icon like theirs, while the rounded corners still never touch the bird.
+/// TRY: 0.72 (more air) or 0.86 (bolder), run the script, rebuild, and compare on the Home Screen.
+let iconFill: CGFloat = 0.80
+
 func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> CGColor {
     CGColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
             green: CGFloat((hex >> 8) & 0xFF) / 255,
@@ -106,7 +114,8 @@ func roundedTriangle(_ ctx: CGContext, _ points: [CGPoint], _ color: CGColor, ro
 // MARK: - Drawing
 
 /// Draws the logo. `background: false` leaves the background transparent (for the dark icon).
-func drawLogo(in ctx: CGContext, background: Bool) {
+/// `fit`: moves and scales the bird (not the sky) so it fills the icon; nil = the original drawing size.
+func drawLogo(in ctx: CGContext, background: Bool, fit: CGAffineTransform? = nil) {
     // LEARN: CoreGraphics measures y from the BOTTOM. Flipping once lets us think "from the top".
     ctx.translateBy(x: 0, y: size)
     ctx.scaleBy(x: 1, y: -1)
@@ -123,6 +132,7 @@ func drawLogo(in ctx: CGContext, background: Bool) {
     // 2. Lean the whole bird back by `tilt` degrees around its head (crowing at the sky).
     // LEARN: translate → rotate → translate back = "rotate around this point".
     ctx.saveGState()
+    if let fit { ctx.concatenate(fit) }      // grow the bird to `iconFill` and centre it (see iconFitTransform)
     ctx.translateBy(x: head.x, y: head.y + lift)
     ctx.rotate(by: -tilt * .pi / 180)
     ctx.translateBy(x: -head.x, y: -head.y)
@@ -169,9 +179,44 @@ func drawLogo(in ctx: CGContext, background: Bool) {
     ctx.restoreGState()
 }
 
+// MARK: - Fitting the bird to the icon
+
+/// The box around everything the bird draws (comb, beak, waves), measured from a test drawing.
+/// LEARN: we draw the bird without a background and look for the first and last pixels that aren't
+/// see-through. Measuring beats guessing: change the bird, and the fit adjusts by itself.
+func birdBounds() -> CGRect {
+    let n = Int(size)
+    var pixels = [UInt8](repeating: 0, count: n * n * 4)
+    let ctx = CGContext(data: &pixels, width: n, height: n, bitsPerComponent: 8, bytesPerRow: n * 4,
+                        space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    drawLogo(in: ctx, background: false)
+    var minX = n, minY = n, maxX = 0, maxY = 0
+    for y in 0..<n {
+        for x in 0..<n where pixels[(y * n + x) * 4 + 3] > 8 {      // alpha: not (almost) transparent
+            minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
+        }
+    }
+    // The bitmap's rows start at the top here, which is how drawLogo thinks too (it flips the y axis).
+    return CGRect(x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1)
+}
+
+/// Scales the bird so it's `iconFill` of the icon's width, with its box centred in the icon.
+/// LEARN: read the steps bottom-up: move the box's centre to (0,0) → scale → move it to the icon's centre.
+func iconFitTransform() -> CGAffineTransform {
+    let box = birdBounds()
+    let scale = size * iconFill / max(box.width, box.height)
+    print("bird box before: \(Int(box.width)) × \(Int(box.height)) px → scale ×\(String(format: "%.2f", scale))")
+    return CGAffineTransform(translationX: size / 2, y: size / 2)
+        .scaledBy(x: scale, y: scale)
+        .translatedBy(x: -box.midX, y: -box.midY)
+}
+let iconFit = iconFitTransform()
+
 // MARK: - Saving
 
-func render(background: Bool, grayscale: Bool = false, pixels: Int = 1024) -> CGImage {
+/// `fitted: true` = the app icon and in-app logo (the bird fills the icon); false = the original size
+/// (the widget marks below crop the bird out of that).
+func render(background: Bool, grayscale: Bool = false, pixels: Int = 1024, fitted: Bool = true) -> CGImage {
     let ctx = CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0,
                         space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     ctx.scaleBy(x: CGFloat(pixels) / size, y: CGFloat(pixels) / size)
@@ -179,7 +224,7 @@ func render(background: Bool, grayscale: Bool = false, pixels: Int = 1024) -> CG
         // Tinted icon: black background (iOS adds the tint colour on top of the light parts).
         ctx.setFillColor(rgb(0x000000)); ctx.fill(CGRect(x: 0, y: 0, width: size, height: size))
     }
-    drawLogo(in: ctx, background: background)
+    drawLogo(in: ctx, background: background, fit: fitted ? iconFit : nil)
     let image = ctx.makeImage()!
     guard grayscale else { return image }
     // Grayscale copy for the "tinted" Home Screen style.
@@ -209,7 +254,7 @@ save(render(background: true, pixels: 512), to: "\(logoFolder)/AppLogo.png")    
 // Widget marks: the rooster alone, cropped to the bird (no background), small files for the widget extension.
 // WHY cropped: the icon leaves room around the bird; in a widget header every point counts.
 func renderMark(pixels: Int) -> CGImage {
-    let full = render(background: false, pixels: 1024)
+    let full = render(background: false, pixels: 1024, fitted: false)   // the crop below is for the original size
     let crop = CGRect(x: 196, y: 250, width: 720, height: 600)            // the bird + its sound waves
     let cropped = full.cropping(to: crop)!
     let ctx = CGContext(data: nil, width: pixels, height: pixels * 600 / 720, bitsPerComponent: 8, bytesPerRow: 0,
