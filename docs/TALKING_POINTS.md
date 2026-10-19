@@ -15,7 +15,7 @@ wallpaper with its own sound, there are home and lock screen widgets, sleep soun
 stats. It's free, has no account, no server and no tracking: everything stays on the phone.
 
 **In numbers:** ~140 Swift files, 8 missions, 36 alarm sounds, 10 sleep sounds, 25 live wallpapers,
-6 widget sizes, light & dark themes with 5 colour palettes, your own alarm sounds, 155 unit tests, 0 build warnings.
+6 widget sizes, light & dark themes with 5 colour palettes, your own alarm sounds, 167 unit tests, 0 build warnings.
 
 ---
 
@@ -155,6 +155,11 @@ There are **no push notifications** (there's no server to send them).
 | Photo | photograph the same place you registered (e.g. your sink) | **AVFoundation** camera + **Vision** (image "feature prints": a fingerprint of a photo; small distance = same place) |
 | Barcode / QR | scan the code you registered (toothpaste, coffee…) | **VisionKit** (`DataScannerViewController`) |
 
+**Choosing one is one tap (#38, after a UX review):** the mission card is right under the time in the editor,
+with a strip of tiles: tap Math and it's added with sensible settings, no extra screen. Alarms without a mission
+show "+ Add mission" on their card and on the widget, which saves it straight away.
+👉 `docs/screens/38-missions-you-cant-miss.md`
+
 **Safety net:** if a sensor or the camera can't work, the mission turns into Math, so nobody can ever be stuck
 with a ringing alarm. While you work, the alarm goes quiet; stop for 15 s and it comes back.
 "Time Pressure" reads the time aloud with **AVSpeechSynthesizer**.
@@ -178,7 +183,7 @@ with a ringing alarm. While you work, the alarm goes quiet; stop for 15 s and it
 | UserNotifications | the bedtime reminder |
 | Charts (Swift Charts) | wake-up statistics |
 | UIKit / ImageIO / CoreGraphics | images, haptics, drawing the app icon (tool) |
-| Swift Testing | 155 unit tests |
+| Swift Testing | 167 unit tests |
 | Accelerate (vDSP) | making your own sounds loud enough, fast (`SoundClipMaker`) |
 | CoreTransferable / UniformTypeIdentifiers | receiving a video from Photos as a file; which files the Files picker offers |
 
@@ -243,6 +248,8 @@ modern Swift API), and SwiftData needs 17 anyway.
   buttons.
 - The app writes a small snapshot into a shared App Group folder; the widget reads it.
 - The widget moves to the next alarm by itself after each ring. Taps open the app via `riseup://` links.
+- Every size shows the alarm's mission ("⚡ Steps"), or a button "+ Add a wake-up mission" that opens the Mission
+  Picker for that alarm (#38).
 - 👉 `docs/screens/31-widgets.md`
 
 ## "How would you debug or trace a feature?"
@@ -252,7 +259,7 @@ modern Swift API), and SwiftData needs 17 anyway.
 - 👉 `docs/DEBUGGING_GUIDE.md` (8 hands-on labs), `Alarm/Services/Logging/Trace.swift`
 
 ## "How do you know it works?" (quality)
-- **155 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
+- **167 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
   ViewModels with mocks, widget planning, deep links.
 - **Zero-warning builds** in Swift 6 strict concurrency, Debug and Release.
 - **Real-device test matrix for alarms:** locked, Silent mode, Focus, app killed, reboot, snooze, Stop without

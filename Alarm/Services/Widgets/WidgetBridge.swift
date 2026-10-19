@@ -111,6 +111,7 @@ enum WidgetBridge {
                     fireDate: next,
                     title: alarm.displayTitle,
                     missionSymbols: alarm.sortedMissions.map(\.type.systemImage),
+                    missionTitles: alarm.sortedMissions.map(\.type.shortTitle),
                     soundTitle: soundTitle(alarm.soundName),
                     wallpaperTitle: wallpaper.title,
                     wallpaperFile: WidgetShared.wallpaperFileName(for: wallpaper.rawValue)

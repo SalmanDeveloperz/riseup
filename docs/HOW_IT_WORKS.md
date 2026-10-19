@@ -506,6 +506,31 @@ Mon 12:00 rings → "I'm up" → RingingViewModel.finish(): extraOnceDate = nil,
   → fixed build (the old file moved and upgraded to V4).
 - **Rule:** after adding an entitlement or capability, test an UPDATE, not only a fresh install.
 
+### Trace T: A widget's "+ Add mission" → saved to that alarm (#38)
+```
+NextAlarmWidget MissionLine → Link riseup://alarm/<id>/mission   (its own Link: links can't nest)
+RootView .onOpenURL → DeepLink(url:) = .addMission(id) → AppCoordinator.open
+   selectedTab = .alarms · alarmsPath = [] · missionRequestAlarmID = id
+AlarmListView .task(id: missionRequestAlarmID) → AlarmListViewModel.handleMissionRequest()
+   takeMissionRequest() (once) → addMission(toAlarm:) → lock? → presentMissionPicker(editing: nil)
+Mission Picker → "Add mission" → completeMissionPicker → callback → save(mission, toAlarm:)
+   replaceMissions(before + [mission]) → repository.save → scheduler.schedule (if on)
+   iOS refuses? → replaceMissions(before) → message.   Back home → WidgetBridge → "⚡ Memory"
+```
+
+### Bugs 51–53: found by looking at #38 in the Simulator
+- **No swipe hint:** inside the card's padding exactly 4 tiles fitted, so nothing said "there are 8". Fix: the
+  strip runs to the card's edges (`contentMargins` + negative padding); the 5th tile peeks.
+- **Gappy chips:** `Label` put a wide gap between icon and "Math". Fix: `HStack(spacing: 3)`.
+- **"Tomorrow · Al…" on the widget:** mission icons at the row's end squeezed the text. Fix: icons next to the time.
+**Rule:** a screen isn't done until you've looked at it with real data, at real size.
+
+### Lesson: the best feature is the one people find (#38)
+The missions were all there and tested; the problem was the PATH to them: below the fold, then a sheet, then
+settings. The fix wasn't new code in the missions, it was fewer steps: the card moved up, the common choice became
+one tap, and the places people already look (the alarm card, the widget) offer it. **Rule:** count the taps to a
+feature's value, and put the entry where the eyes already are.
+
 ### Trace S: "Add your own sound" → a video from Photos → it rings (#37)
 ```
 SoundPickerView Menu "Sound of a Video" → viewModel.chooseFromPhotos() → .photosPicker(.videos, .current)

@@ -8,13 +8,15 @@
 //                        • medium: + the next two alarms and quick-nap buttons (+10/+20/+30 min)
 //                        • large:  + sound, wallpaper, missions and more alarms
 //           Lock screen  • circle, rectangle and one line above the clock
+//         Every home-screen size shows the alarm's MISSION ("⚡ Math · Steps"), or, when it has none,
+//         "+ Add a wake-up mission", which opens the Mission Picker for that alarm (#38).
 //         Tapping opens RiseUp on that alarm; nap buttons open Quick Alarm preset (riseup://…).
 //  DATA:  reads WidgetSnapshot + wallpaper pictures from the App Group. No database, no AlarmKit.
 //
 //  CONNECTIONS:
 //    ← LISTED IN:  RiseUpWidgetsBundle
 //    ← DATA FROM:  WidgetBridge (app) → Shared/WidgetSnapshot.swift → App Group
-//    → LINKS:      WidgetShared.alarmURL / napURL / newAlarmURL → app RootView .onOpenURL → DeepLink
+//    → LINKS:      WidgetShared.alarmURL / addMissionURL / napURL / newAlarmURL → app RootView .onOpenURL → DeepLink
 //
 //  HOW A WIDGET WORKS (read this first!)
 //  ─────────────────────────────────────
@@ -63,7 +65,8 @@ struct NextAlarmEntry: TimelineEntry {
     /// Shown in the widget gallery and while iOS loads the real one.
     static let sample = NextAlarmEntry(date: .now, content: .alarms([
         WidgetAlarmEvent(alarmID: UUID(), fireDate: .now.addingTimeInterval(7 * 3600 + 12 * 60), title: "Wake up",
-                         missionSymbols: ["function", "figure.walk"], soundTitle: "Koto Morning",
+                         missionSymbols: ["plus.forwardslash.minus", "figure.walk"], missionTitles: ["Math", "Steps"],
+                         soundTitle: "Koto Morning",
                          wallpaperTitle: "Kyoto Blossoms", wallpaperFile: nil),
         WidgetAlarmEvent(alarmID: UUID(), fireDate: .now.addingTimeInterval(31 * 3600), title: "Gym",
                          missionSymbols: [], soundTitle: "Epic Strings", wallpaperTitle: "Synthwave", wallpaperFile: nil),
@@ -181,15 +184,17 @@ private struct SmallView: View {
         VStack(alignment: .leading, spacing: 2) {
             HeaderRow(event: event, now: now)
             Spacer(minLength: 0)
-            BigTime(date: event.fireDate, size: 44)
+            BigTime(date: event.fireDate, size: 40)
             Text(event.title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.Colors.textPrimary)
                 .lineLimit(1)
             Countdown(date: event.fireDate)
+            MissionLine(event: event)                      // "⚡ Math · Steps" or "+ Add mission"
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .widgetURL(WidgetShared.alarmURL(event.alarmID))
+        // A small widget has ONE link for the whole thing. No mission yet → it adds one (#38).
+        .widgetURL(event.hasMissions ? WidgetShared.alarmURL(event.alarmID) : WidgetShared.addMissionURL(event.alarmID))
         .containerBackground(for: .widget) { WallpaperBackground(file: event.wallpaperFile) }
     }
 }
@@ -202,19 +207,23 @@ private struct MediumView: View {
     var body: some View {
         let next = events[0]
         HStack(alignment: .top, spacing: Theme.Spacing.md) {
-            // LEARN: in medium and large widgets, `Link` makes just this part tappable.
-            Link(destination: WidgetShared.alarmURL(next.alarmID)) {
-                VStack(alignment: .leading, spacing: 2) {
-                    HeaderRow(event: next, now: now)
-                    Spacer(minLength: 0)
-                    BigTime(date: next.fireDate, size: 44)
-                    Text(next.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.Colors.textPrimary)
-                        .lineLimit(1)
-                    Countdown(date: next.fireDate)
+            VStack(alignment: .leading, spacing: 4) {
+                // LEARN: in medium and large widgets, `Link` makes just this part tappable.
+                Link(destination: WidgetShared.alarmURL(next.alarmID)) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HeaderRow(event: next, now: now)
+                        Spacer(minLength: 0)
+                        BigTime(date: next.fireDate, size: 40)
+                        Text(next.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.Colors.textPrimary)
+                            .lineLimit(1)
+                        Countdown(date: next.fireDate)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // Its OWN link (links can't sit inside links): "+ Add a wake-up mission" → Mission Picker.
+                MissionLine(event: next, isLink: true)
             }
 
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
@@ -264,6 +273,7 @@ private struct LargeView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            MissionLine(event: next, isLink: true, isLarge: true)   // its own link, see MediumView
 
             Spacer(minLength: 0)
 
@@ -347,7 +357,7 @@ private struct InlineView: View {
 
 // MARK: - Pieces
 
-/// "🐓 Tomorrow ······ ∑ 🚶": our rooster, the day of the next ring and its missions.
+/// "🐓 TOMORROW": our rooster and the day of the next ring. (Missions moved to `MissionLine`, #38.)
 private struct HeaderRow: View {
     let event: WidgetAlarmEvent
     let now: Date
@@ -363,13 +373,62 @@ private struct HeaderRow: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Spacer(minLength: 0)
-            ForEach(event.missionSymbols.prefix(3), id: \.self) { symbol in
-                Image(systemName: symbol)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Theme.Colors.textPrimary)
-            }
         }
         .font(.caption)
+    }
+}
+
+/// The alarm's mission (#38): "⚡ Math · Steps" on a dark glass pill, or, without one, a bright
+/// "+ Add a wake-up mission" that opens the Mission Picker for this alarm (riseup://alarm/<id>/mission).
+///
+/// WHY on every home-screen widget: the mission is what makes RiseUp different, and the widget is
+/// the place people see most. An alarm without a mission is easy to stop half-asleep, so the widget
+/// offers the fix right where it's noticed.
+private struct MissionLine: View {
+    let event: WidgetAlarmEvent
+    /// Medium/large: the "add" pill is its own `Link`. Small: plain (the whole widget is the link).
+    var isLink = false
+    var isLarge = false
+
+    var body: some View {
+        if event.hasMissions {
+            missions
+        } else if isLink {
+            Link(destination: WidgetShared.addMissionURL(event.alarmID)) { addPill }
+        } else {
+            addPill
+        }
+    }
+
+    private var missions: some View {
+        let titles = event.missionTitles ?? []
+        return HStack(spacing: 4) {
+            Image(systemName: "bolt.shield.fill")
+                .foregroundStyle(Theme.Gradients.brand)
+            if titles.isEmpty {
+                // Snapshot from an older app version: symbols only.
+                ForEach(event.missionSymbols.prefix(3), id: \.self) { Image(systemName: $0) }
+            } else {
+                Text(titles.joined(separator: " · "))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        }
+        .font((isLarge ? Font.caption : .caption2).weight(.bold))
+        .foregroundStyle(Theme.Colors.textPrimary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(.black.opacity(0.4), in: .capsule)
+    }
+
+    private var addPill: some View {
+        Label(isLarge ? "Add a wake-up mission" : "Add mission", systemImage: "plus")
+            .font((isLarge ? Font.caption : .caption2).weight(.bold))
+            .foregroundStyle(Theme.Colors.onAccent)
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Theme.Gradients.brand, in: .capsule)
     }
 }
 
@@ -424,9 +483,19 @@ private struct UpcomingRow: View {
         let layout = isCompact ? AnyLayout(HStackLayout(spacing: Theme.Spacing.xs)) : AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
         HStack(spacing: Theme.Spacing.xs) {
             layout {
-                Text("\(time.main) \(time.suffix)")
-                    .font(.system(.subheadline, design: .rounded, weight: .bold))
-                    .foregroundStyle(Theme.Colors.textPrimary)
+                HStack(spacing: 4) {
+                    Text("\(time.main) \(time.suffix)")
+                        .font(.system(.subheadline, design: .rounded, weight: .bold))
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                    // Its missions as small icons (#38), so every alarm on the widget says how it's protected.
+                    // WHY next to the time (found in the Simulator): at the row's end they squeezed
+                    // "Tomorrow · Alarm" into "Tomorrow · Al…".
+                    ForEach(event.missionSymbols.prefix(2), id: \.self) { symbol in
+                        Image(systemName: symbol)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                }
                 Text("\(TimeText.dayLabel(event.fireDate, now: now)) · \(event.title)")
                     .font(.caption2)
                     .foregroundStyle(Theme.Colors.textSecondary)

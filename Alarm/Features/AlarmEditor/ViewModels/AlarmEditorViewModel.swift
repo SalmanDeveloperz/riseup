@@ -302,6 +302,46 @@ final class AlarmEditorViewModel {
         draft.missions.removeAll { $0.id == mission.id }
     }
 
+    // MARK: - One-tap mission tiles (#38)
+
+    /// The tiles in the mission strip, in display order.
+    let quickMissionTypes = MissionType.quickPickOrder
+
+    /// Is this mission type already on the alarm? (Its tile shows a check.)
+    func hasMission(_ type: MissionType) -> Bool {
+        draft.missions.contains { $0.type == type }
+    }
+
+    /// Can this tile be tapped? Tiles of chosen missions always can (to adjust them); others only
+    /// while there's room for another mission.
+    func isTileEnabled(_ type: MissionType) -> Bool {
+        hasMission(type) || canAddMission
+    }
+
+    /// One tap on a mission tile.
+    ///   • already chosen → open its settings (to adjust difficulty / count)
+    ///   • Photo / QR     → open the Mission Picker on that mission: a photo or code must be registered first
+    ///   • anything else  → added right away with sensible settings (Normal, 3 problems…). No sheet at all.
+    ///
+    /// WHY (lead's feedback, #38): "Add mission" sat below the fold behind a sheet with two steps, so many
+    /// users never found it. Now it's the second thing in the editor, and one tap.
+    /// ← CALLED BY: a tile in AlarmEditorView's mission strip
+    func quickAddMission(_ type: MissionType) {
+        if let existing = draft.missions.first(where: { $0.type == type }) {
+            editMission(existing)                          // → Mission Picker, settings step
+            return
+        }
+        guard canAddMission else { return }
+        Trace.log(.editor, "quickAddMission(\(type.rawValue)) → \(type.needsSetup ? "Mission Picker (needs setup)" : "added with defaults")")
+        if type.needsSetup {
+            coordinator.presentMissionPicker(editing: nil, startingWith: type) { [weak self] mission in
+                self?.draft.missions.append(mission)
+            }
+        } else {
+            draft.missions.append(.defaults(for: type))
+        }
+    }
+
     // MARK: - Actions
 
     /// Saves the draft to the database and schedules it with iOS, then closes the editor.

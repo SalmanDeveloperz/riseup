@@ -103,6 +103,36 @@ nonisolated extension MissionType {
         }
     }
 
+    /// The order of the one-tap tiles in the editor (#38): the most popular, no-setup missions first,
+    /// the two that need a photo/code registered last.
+    /// TRY: move `.memory` to the front and open the editor.
+    static let quickPickOrder: [MissionType] = [.math, .steps, .shake, .memory, .typing, .squat, .photo, .barcode]
+
+    /// Photo and QR missions can't be added with one tap: the photo/code must be registered first.
+    var needsSetup: Bool { self == .photo || self == .barcode }
+
+    /// A name short enough for a small tile ("QR code" instead of "QR / Barcode").
+    var shortTitle: String {
+        switch self {
+        case .barcode: "QR code"
+        default: title
+        }
+    }
+
+    /// Two or three words under a tile: what you'll DO.
+    var tagline: String {
+        switch self {
+        case .math: "Solve sums"
+        case .typing: "Type a phrase"
+        case .memory: "Match tiles"
+        case .shake: "Shake it"
+        case .steps: "Walk it off"
+        case .squat: "Do squats"
+        case .photo: "Snap a spot"
+        case .barcode: "Scan a code"
+        }
+    }
+
     /// One-line description in the picker.
     var pitch: String {
         switch self {

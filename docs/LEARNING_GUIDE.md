@@ -280,3 +280,14 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | `localizedStandardContains` | Finder-style search: any case, ignores accents | `SoundPickerViewModel.matches` |
 | `ContentUnavailableView.search` | Apple's ready-made "No Results" screen | `SoundPickerView` |
 | Atomic finish | write to a temporary name, then rename: a file is either complete or absent | `CustomSoundLibrary.add` |
+
+## Learned making missions easy to find (#38)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| `.contentMargins(_:for: .scrollContent)` | indent a ScrollView's content without shrinking the scrolling area | `MissionCard.strip` |
+| `.symbolEffect(.pulse, isActive:)` | an SF Symbol that gently breathes while something is still missing | `MissionCard.header` |
+| `.sensoryFeedback(_:trigger:)` | a small haptic each time a value changes | `MissionCard` |
+| `.task(id:)` | re-runs when the id changes: here, a request coming from a widget | `AlarmListView` |
+| Sibling `Link`s in widgets | a widget `Link` can't contain another `Link`; put them side by side | `MediumView`, `MissionLine` |
+| Optional fields in `Codable` | a new field with `?` and `= nil` still decodes data saved by an older version | `WidgetAlarmEvent.missionTitles` |
+| Save + roll back | change, save, ask iOS; if iOS refuses, put the old value back | `AlarmListViewModel.save(_:toAlarm:)` |

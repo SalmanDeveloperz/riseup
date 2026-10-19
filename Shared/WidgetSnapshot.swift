@@ -54,6 +54,8 @@ nonisolated enum WidgetShared {
     /// Links the widgets open (the app handles them in RootView `.onOpenURL` → DeepLink).
     static let newAlarmURL = URL(string: "riseup://new")!
     static func alarmURL(_ id: UUID) -> URL { URL(string: "riseup://alarm/\(id.uuidString)")! }
+    /// "Add a wake-up mission" on a widget (#38) → the app's Mission Picker for that alarm.
+    static func addMissionURL(_ id: UUID) -> URL { URL(string: "riseup://alarm/\(id.uuidString)/mission")! }
     static func napURL(minutes: Int) -> URL { URL(string: "riseup://nap/\(minutes)")! }
 }
 
@@ -96,6 +98,9 @@ nonisolated struct WidgetAlarmEvent: Codable, Equatable, Identifiable, Sendable 
     var title: String
     /// SF Symbol names of the alarm's missions, in order ("function", "figure.walk"…).
     var missionSymbols: [String]
+    /// Their names, in the same order ("Math", "Steps"). (#38)
+    /// WHY optional: snapshots written by an older app version don't have it; decoding must not fail.
+    var missionTitles: [String]? = nil
     var soundTitle: String
     /// "Kyoto Blossoms"
     var wallpaperTitle: String
@@ -103,4 +108,7 @@ nonisolated struct WidgetAlarmEvent: Codable, Equatable, Identifiable, Sendable 
     var wallpaperFile: String?
 
     var id: String { "\(alarmID.uuidString)-\(fireDate.timeIntervalSinceReferenceDate)" }
+
+    /// Does this alarm have a wake-up mission? (The widget shows it, or offers to add one.)
+    var hasMissions: Bool { !missionSymbols.isEmpty }
 }

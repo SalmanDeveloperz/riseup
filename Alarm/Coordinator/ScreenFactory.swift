@@ -173,10 +173,11 @@ struct ScreenFactory {
                 scheduler: dependencies.alarmScheduler,
                 coordinator: coordinator
             ))
-        case .missionPicker(let editing):
+        case .missionPicker(let editing, let startingWith):
             // Screens #9 + #10. The result goes back through coordinator.completeMissionPicker.
             MissionPickerView(viewModel: MissionPickerViewModel(
                 editing: editing,
+                startingWith: startingWith,                // a tile chose the type already (#38)
                 services: dependencies.missionServices,   // sensors for "Try it", Vision for photo registration
                 coordinator: coordinator
             ))

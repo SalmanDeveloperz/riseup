@@ -168,6 +168,61 @@ final class AlarmListViewModel {
         }
     }
 
+    // MARK: - Add a mission without opening the editor (#38)
+
+    /// "+ Add mission" on a card (or a widget's link): the Mission Picker opens, and the chosen mission is
+    /// SAVED to the alarm right away. No editor, no Save button: the card shows the mission a moment later.
+    /// ← CALLED BY: AlarmCardView's "+ Add mission" pill, handleMissionRequest() (widgets)
+    func addMission(toAlarm alarmID: UUID) {
+        guard let alarm = liveAlarm(id: alarmID) else { return }
+        // Wake-up lock: same rule as the editor (a pending wake-up can't be changed).
+        if scheduler.hasPendingWakeUp(alarm) {
+            errorMessage = Self.lockedMessage
+            return
+        }
+        guard alarm.missions.count < AlarmEditorViewModel.maxMissions else { return }
+        Trace.log(.editor, "AlarmListViewModel.addMission(\(Trace.short(alarmID))) → Mission Picker, then save")
+        coordinator.presentMissionPicker(editing: nil) { [weak self] mission in   // → Mission Picker sheet
+            Task { await self?.save(mission, toAlarm: alarmID) }
+        }
+    }
+
+    /// Adds `mission` to the alarm, saves, and re-schedules it (a mission alarm gets its backup chain).
+    /// WHY like `applyEnabled`: if iOS refuses, the alarm goes back to how it was. The card never pretends.
+    /// ← CALLED BY: addMission's picker callback (and tests)
+    func save(_ mission: MissionDraft, toAlarm alarmID: UUID) async {
+        guard let alarm = liveAlarm(id: alarmID) else { return }        // deleted while the sheet was open
+        if scheduler.hasPendingWakeUp(alarm) {                          // started ringing meanwhile
+            errorMessage = Self.lockedMessage
+            return
+        }
+        let before = alarm.sortedMissions.map(MissionDraft.init)        // to roll back
+        repository.replaceMissions(of: alarm, with: before + [mission])
+        do {
+            try repository.save()
+            if alarm.isEnabled {
+                try await scheduler.schedule(alarm)                     // → now protected by the mission + chain
+            }
+        } catch {
+            // After the `await`: the alarm may be gone; only roll back if it's still there.
+            if let alarm = liveAlarm(id: alarmID) {
+                repository.replaceMissions(of: alarm, with: before)
+                try? repository.save()
+            }
+            errorMessage = "Couldn't add the mission. \(error.localizedDescription)"
+        }
+    }
+
+    /// A widget asked for "Add a wake-up mission" (riseup://alarm/<id>/mission → AppCoordinator).
+    /// ← CALLED BY: AlarmListView when `coordinator.missionRequestAlarmID` changes, and on appear
+    func handleMissionRequest() {
+        guard let alarmID = coordinator.takeMissionRequest() else { return }
+        addMission(toAlarm: alarmID)
+    }
+
+    /// The pending widget request, for the View to watch.
+    var missionRequestAlarmID: UUID? { coordinator.missionRequestAlarmID }
+
     /// ← CALLED BY: the "+" floating button and the empty-state button
     func addAlarmTapped() {
         coordinator.showAlarmEditor(alarmID: nil)       // → editor in "create" mode

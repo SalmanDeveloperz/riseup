@@ -50,9 +50,11 @@ struct AlarmEditorView: View {
                         .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
                 }
                 timeCard
+                // WHY second (lead's UX review, #38): the mission is what makes RiseUp different; it must
+                // be seen without scrolling, right after "when".
+                MissionCard(viewModel: viewModel)          // → MissionCard.swift
                 repeatCard
                 labelCard
-                missionCard
                 soundCard
                 wallpaperCard
                 snoozeCard
@@ -155,73 +157,6 @@ struct AlarmEditorView: View {
                     .foregroundStyle(Theme.Colors.textTertiary)
             }
         }
-    }
-
-    /// Missions: a list of rows (tap = edit, − = remove) and "Add mission".
-    /// → viewModel.addMission / editMission / removeMission → Mission Picker sheet
-    private var missionCard: some View {
-        GlowCard(isGlowing: !viewModel.draft.missions.isEmpty) {
-            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                sectionHeader("Wake-up mission", value: viewModel.draft.missions.isEmpty ? "None" : "\(viewModel.draft.missions.count) of \(AlarmEditorViewModel.maxMissions)")
-
-                if viewModel.draft.missions.isEmpty {
-                    Text("Without a mission, the alarm stops with one tap. Add one to make sure you really get up.")
-                        .font(.riseCaption)
-                        .foregroundStyle(Theme.Colors.textSecondary)
-                }
-
-                ForEach(viewModel.draft.missions) { mission in
-                    missionRow(mission)
-                }
-
-                if viewModel.canAddMission {
-                    Button {
-                        viewModel.addMission()            // → coordinator → Mission Picker sheet
-                    } label: {
-                        Label("Add mission", systemImage: "plus.circle.fill")
-                    }
-                    .buttonStyle(.ghost)
-                }
-            }
-        }
-        .animation(.spring(duration: 0.3), value: viewModel.draft.missions)
-    }
-
-    private func missionRow(_ mission: MissionDraft) -> some View {
-        HStack(spacing: Theme.Spacing.sm) {
-            Button {
-                viewModel.editMission(mission)            // → Mission Picker in edit mode
-            } label: {
-                HStack(spacing: Theme.Spacing.sm) {
-                    Image(systemName: mission.type.systemImage)
-                        .font(.headline)
-                        .foregroundStyle(Theme.Colors.onAccent)
-                        .frame(width: 40, height: 40)
-                        .background(Theme.Gradients.brand, in: .rect(cornerRadius: Theme.Radius.chip, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(mission.type.title).font(.riseHeadline).foregroundStyle(Theme.Colors.textPrimary)
-                        Text(mission.summary).font(.riseCaption).foregroundStyle(Theme.Colors.textSecondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right").foregroundStyle(Theme.Colors.textTertiary)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                viewModel.removeMission(mission)
-            } label: {
-                Image(systemName: "minus.circle.fill")
-                    .font(.title3)
-                    .foregroundStyle(Theme.Colors.danger)
-                    .frame(width: 44, height: 44)        // a comfortable finger-sized target
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Remove \(mission.type.title) mission")
-        }
-        .transition(.move(edge: .leading).combined(with: .opacity))
     }
 
     /// Sound: tap to open the Sound Picker. → viewModel.chooseSound()
@@ -336,7 +271,7 @@ struct AlarmEditorView: View {
         GlowCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 HStack {
-                    Label("Wake-up check", systemImage: "eye.fill")
+                    Label("Wake-up check", systemImage: "eyes") 
                         .font(.riseHeadline)
                         .foregroundStyle(Theme.Colors.textPrimary)
                     Spacer()

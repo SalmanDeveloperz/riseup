@@ -101,7 +101,8 @@ enum SheetRoute: Hashable, Identifiable {
     /// "Ring in 10 minutes" (Screen #7). `minutes`: preset from a widget's nap button (nil = the usual 10).
     case quickAlarm(minutes: Int?)
     /// Choose a mission and its settings (Screens #9 + #10). `editing` = change an existing one.
-    case missionPicker(editing: MissionDraft?)
+    /// `startingWith`: open straight on that mission's settings (a one-tap tile for Photo/QR, #38).
+    case missionPicker(editing: MissionDraft?, startingWith: MissionType? = nil)
     /// Now Playing: sleep-sound volumes, sleep timer, pause/stop (Screen #20).
     case sleepPlayer
     /// Choose the wallpaper (and optionally its sound) behind the Ringing screen (Screens #32/#33).

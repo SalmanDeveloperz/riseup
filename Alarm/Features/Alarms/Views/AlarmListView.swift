@@ -77,6 +77,9 @@ struct AlarmListView: View {
         // LEARN: `.task` is like `.onAppear`, but it can `await` async work, and it's
         // cancelled automatically if the screen disappears before the work finishes.
         .task { await viewModel.load() }
+        // A widget's "Add a wake-up mission" (#38): AppCoordinator stores the request, this hands it to the
+        // ViewModel. `.task(id:)` runs on appear AND every time the id changes (a second widget tap).
+        .task(id: viewModel.missionRequestAlarmID) { viewModel.handleMissionRequest() }
         .alert("Something went wrong", isPresented: isShowingError) {
             Button("OK") { viewModel.dismissError() }
         } message: {
@@ -120,7 +123,8 @@ struct AlarmListView: View {
                         // A switch can't `await`, so we start a Task for the async work.
                         Task { await viewModel.setEnabled(isOn, alarmID: row.id) }
                     },
-                    onTap: { viewModel.alarmTapped(alarmID: row.id) }  // → coordinator → editor (edit mode)
+                    onTap: { viewModel.alarmTapped(alarmID: row.id) },  // → coordinator → editor (edit mode)
+                    onAddMission: { viewModel.addMission(toAlarm: row.id) }   // → Mission Picker → saved (#38)
                 )
                 .plainListRow()
                 .swipeActions(edge: .trailing) {

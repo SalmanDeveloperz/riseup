@@ -127,9 +127,11 @@ final class AppCoordinator {
 
     /// Opens the Mission Picker. `editing` = an existing mission to change, `nil` = add a new one.
     /// ← CALLED BY: AlarmEditorViewModel.addMission() / editMission(_:)
-    func presentMissionPicker(editing: MissionDraft?, onPick: @escaping (MissionDraft) -> Void) {
+    /// `startingWith`: skip the type grid and open that mission's settings (#38: Photo/QR tiles).
+    func presentMissionPicker(editing: MissionDraft?, startingWith: MissionType? = nil,
+                              onPick: @escaping (MissionDraft) -> Void) {
         onMissionPicked = onPick
-        sheet = .missionPicker(editing: editing)
+        sheet = .missionPicker(editing: editing, startingWith: startingWith)
     }
 
     /// ← CALLED BY: MissionPickerViewModel.save() → delivers the result, closes the sheet.
@@ -185,7 +187,24 @@ final class AppCoordinator {
         case .nap(let minutes):
             selectedTab = .alarms
             presentQuickAlarm(minutes: minutes)
+        case .addMission(let id):
+            // A widget's "Add a wake-up mission" (#38): the Alarms tab opens the Mission Picker for
+            // that alarm and saves the choice straight away. → AlarmListViewModel.handleMissionRequest
+            selectedTab = .alarms
+            alarmsPath.removeAll()
+            missionRequestAlarmID = id
         }
+    }
+
+    /// An alarm a widget asked to add a mission to. AlarmListView watches it and hands it to its
+    /// ViewModel (which owns the repository and scheduler); `takeMissionRequest()` clears it.
+    /// ← SET BY: open(.addMission)   ← READ BY: AlarmListViewModel.handleMissionRequest
+    private(set) var missionRequestAlarmID: UUID?
+
+    /// Returns the pending request once, and forgets it.
+    func takeMissionRequest() -> UUID? {
+        defer { missionRequestAlarmID = nil }
+        return missionRequestAlarmID
     }
 
     /// Closes any sheet and forgets pending callbacks.

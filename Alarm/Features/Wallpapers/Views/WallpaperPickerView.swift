@@ -147,6 +147,7 @@ struct WallpaperPickerView: View {
                         Label(category.title, systemImage: category.systemImage)
                             .font(.riseCaption.weight(.semibold))
                             .foregroundStyle(isOn ? Theme.Colors.textPrimary : Theme.Colors.textSecondary)
+//                            .foregroundColor(.white)  // this was task assigned by Usama to change font
                             .padding(.horizontal, Theme.Spacing.sm)
                             .frame(minHeight: 40)
                             .background(isOn ? AnyShapeStyle(Theme.Gradients.brand) : AnyShapeStyle(Theme.Colors.surfaceRaised), in: .capsule)
@@ -258,7 +259,8 @@ struct WallpaperPickerView: View {
                     .foregroundStyle(Theme.Colors.textPrimary)
             }
             .frame(maxWidth: .infinity)
-            .aspectRatio(9 / 16, contentMode: .fit)
+            .frame(height: 180)
+//            .aspectRatio(9 / 16, contentMode: .fit)
             .background(Theme.Colors.surface, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous)
@@ -266,6 +268,7 @@ struct WallpaperPickerView: View {
             }
         }
         .buttonStyle(PressScaleButtonStyle())
+        .frame(maxWidth: .infinity)
         .disabled(viewModel.isAddingPhoto)
         .accessibilityLabel("Add your own photo as a wallpaper")
     }

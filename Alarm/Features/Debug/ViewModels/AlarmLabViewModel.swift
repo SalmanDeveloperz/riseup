@@ -90,8 +90,8 @@ final class AlarmLabViewModel {
     /// One-time alarm in ~60 seconds with the chosen sound. Listen to what actually plays.
     func scheduleSoundTest(_ variant: SoundVariant) async {
         await run("Sound test (\(variant.rawValue))") {
-            let fireDate = Date.now.addingTimeInterval(60)
-            let attributes = AlarmAttributes<RiseUpAlarmMetadata>(
+            let fireDate = Date.now.addingTimeInterval(60) // what it would exactly look like when alarm ring, when should the alarm ring
+            let attributes = AlarmAttributes<RiseUpAlarmMetadata>(      //what should the user see
                 presentation: AlarmPresentation(alert: .init(
                     title: LocalizedStringResource(stringLiteral: "Lab · \(variant.rawValue)"),
                     stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill")
@@ -99,12 +99,12 @@ final class AlarmLabViewModel {
                 metadata: RiseUpAlarmMetadata(wakeAlarmID: UUID(), isBackup: false),
                 tintColor: Theme.Colors.accent
             )
-            let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(
+            let configuration = AlarmManager.AlarmConfiguration<RiseUpAlarmMetadata>(   //how do we combine the alarm settings
                 schedule: .fixed(fireDate),
                 attributes: attributes,
                 sound: AlarmKitScheduler.sound(named: variant.rawValue)
             )
-            _ = try await AlarmManager.shared.schedule(id: AlarmKitScheduler.makeLabTestID(), configuration: configuration)
+            _ = try await AlarmManager.shared.schedule(id: AlarmKitScheduler.makeLabTestID(), configuration: configuration) //who actually schedule the alarm
             write("Rings at \(fireDate.formatted(date: .omitted, time: .standard)). Lock the phone and listen.")
         }
     }

@@ -23,8 +23,13 @@ final class MockAlarmScheduler: AlarmScheduling {
 
     /// Tests can make scheduling "slow" like the real AlarmKit, to reproduce race conditions.
     var scheduleDelay: Duration?
+    /// Tests can make iOS "refuse" (e.g. too many alarms): `schedule` then throws this.
+    var scheduleError: (any Error)?
+    /// Tests can pretend these alarms rang and wait for "I'm up" (the wake-up lock).
+    var pendingWakeUpIDs: Set<UUID> = []
 
     func schedule(_ alarm: WakeAlarm) async throws {
+        if let scheduleError { throw scheduleError }
         // Like the real scheduler: decide first; only switching ON waits for iOS
         // (switching off just cancels, instantly).
         let wantsOn = alarm.isEnabled
@@ -84,5 +89,5 @@ final class MockAlarmScheduler: AlarmScheduling {
         scheduledIDs = scheduledIDs.intersection(keeping)
     }
 
-    func hasPendingWakeUp(_ alarm: WakeAlarm, now: Date) -> Bool { false }
+    func hasPendingWakeUp(_ alarm: WakeAlarm, now: Date) -> Bool { pendingWakeUpIDs.contains(alarm.id) }
 }

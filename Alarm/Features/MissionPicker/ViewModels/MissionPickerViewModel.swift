@@ -10,8 +10,9 @@
 //         to the editor's draft, and is saved only when the alarm is saved.
 //
 //  CONNECTIONS:
-//    ← CREATED BY: ScreenFactory.makeScreen(for: .missionPicker(editing:))
-//    ← OPENED BY:  AlarmEditorViewModel.addMission() / editMission(_:)
+//    ← CREATED BY: ScreenFactory.makeScreen(for: .missionPicker(editing:startingWith:))
+//    ← OPENED BY:  AlarmEditorViewModel.addMission() / editMission(_:) / quickAddMission(_:) (Photo/QR tile),
+//                  AlarmListViewModel.addMission(toAlarm:) (the card's "+ Mission" pill, widgets)
 //                  → AppCoordinator.presentMissionPicker(editing:onPick:)
 //    → RESULT:     AppCoordinator.completeMissionPicker(with:) → editor's draft.missions
 //    → CANCEL:     AppCoordinator.dismissSheet()
@@ -70,7 +71,9 @@ final class MissionPickerViewModel {
     /// The registered photo, small, for the settings card.
     private(set) var registeredThumbnail: UIImage?
 
-    init(editing: MissionDraft?, services: MissionServices, coordinator: AppCoordinator) {
+    /// `startingWith`: a type already chosen elsewhere (the editor's Photo/QR tile, #38). The sheet then
+    /// opens on that mission's settings, and Back still shows every mission.
+    init(editing: MissionDraft?, startingWith: MissionType? = nil, services: MissionServices, coordinator: AppCoordinator) {
         self.draft = editing
         self.isEditing = editing != nil
         self.services = services
@@ -79,6 +82,7 @@ final class MissionPickerViewModel {
         if editing != nil { path = [.settings] }
         refreshSample()
         refreshThumbnail()
+        if editing == nil, let startingWith { choose(startingWith) }   // → settings step
     }
 
     // MARK: - Step 1: type
