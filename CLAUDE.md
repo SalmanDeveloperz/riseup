@@ -50,6 +50,10 @@ function names valid when renaming).
 - Missions (#38): the editor's `MissionCard` stays second (right under the time). One-tap tiles add
   `MissionDraft.defaults`; Photo/QR (`needsSetup`) open the picker on their setup. Cards and widgets add missions via
   `AlarmListViewModel.addMission(toAlarm:)` (saves straight away, same lock/rollback rules as the switch).
+- Sleep mini player (#39): `RootView` shows `SleepMiniPlayer` on the tab bar while `SleepMiniPlayerViewModel.isVisible`
+  (sounds on, not on the Sleep tab); `tabViewBottomAccessory(isEnabled:)` on iOS 26.1+, a glass overlay on 26.0.
+- Text fields that a ViewModel clears after a match: give the field a new `.id` and tag writes with what they
+  belong to (`TypingMissionViewModel.type(_:forPhrase:)`); never rely on resetting the bound value alone.
 - Wake-up lock: while `scheduler.hasPendingWakeUp(alarm)` is true, the alarm can't be switched off, deleted or edited.
 - Re-ring chain: mission alarms, and every alarm while `AppSettings.guaranteesWakeUp` is on, get backups at
   `AlarmKitScheduler.backupOffsets`. Every chain change goes through `serially` (one job at a time per alarm).

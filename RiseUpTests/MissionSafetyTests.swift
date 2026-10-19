@@ -51,6 +51,28 @@ struct MissionSafetyTests {
         #expect(completions == 1)
     }
 
+    @Test("Typing: after a phrase, the box starts EMPTY for the next one, even if the old field writes again")
+    func typingNextPhraseStartsEmpty() {
+        var completions = 0
+        let viewModel = TypingMissionViewModel(
+            mission: MissionDraft(type: .typing, difficulty: .veryEasy, repetitions: 2),
+            onInteraction: {}, onComplete: { completions += 1 })
+        let first = viewModel.phrase
+
+        viewModel.type(first, forPhrase: 0)                  // phrase 1 done
+        #expect(viewModel.index == 1 && viewModel.solvedCount == 1)
+        #expect(viewModel.typed.isEmpty)
+
+        // What Salman's iPhone 16 did: the old field wrote its text once more on its way out.
+        viewModel.type(first, forPhrase: 0)
+        viewModel.type(first + "N", forPhrase: 0)
+        #expect(viewModel.typed.isEmpty, "a late write from phrase 1's field is ignored")
+
+        // Typing the second phrase in the new field finishes the mission.
+        viewModel.type(viewModel.phrase, forPhrase: 1)
+        #expect(completions == 1)
+    }
+
     @Test("Typing reports done only once, even if the user keeps typing")
     func typingCompletesOnce() {
         var completions = 0
@@ -59,9 +81,9 @@ struct MissionSafetyTests {
             onInteraction: {}, onComplete: { completions += 1 })
         let phrase = viewModel.phrase
 
-        viewModel.typed = phrase
-        viewModel.typed = phrase + "x"
-        viewModel.typed = phrase
+        viewModel.type(phrase, forPhrase: 0)
+        viewModel.type(phrase + "x", forPhrase: 0)
+        viewModel.type(phrase, forPhrase: 0)
 
         #expect(completions == 1)
     }

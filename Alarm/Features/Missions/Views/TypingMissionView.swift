@@ -35,7 +35,7 @@ struct TypingMissionView: View {
                 .background(Theme.Colors.surface, in: .rect(cornerRadius: Theme.Radius.card, style: .continuous))
                 .animation(.easeOut(duration: 0.15), value: viewModel.correctCount)
 
-            TextField("Start typing…", text: $viewModel.typed, axis: .vertical)
+            TextField("Start typing…", text: typedBinding, axis: .vertical)
                 .font(.riseBody)
                 .foregroundStyle(Theme.Colors.textPrimary)
                 // WHY: autocorrect would "fix" words behind the user's back and break matching.
@@ -48,6 +48,11 @@ struct TypingMissionView: View {
                     RoundedRectangle(cornerRadius: Theme.Radius.chip, style: .continuous)
                         .strokeBorder(Theme.Gradients.brand, lineWidth: 1)
                 }
+                // WHY a new field per phrase (bug found on Salman's iPhone 16): the old field kept showing
+                // the finished phrase, and the next letter was added to it. A new `.id` makes SwiftUI build a
+                // fresh, empty field for every phrase; `typedBinding` ignores the old field's last write.
+                // LEARN: `.id(value)` tells SwiftUI "this is a different view when the value changes".
+                .id(viewModel.index)
 
             Spacer(minLength: 0)
         }
@@ -59,6 +64,27 @@ struct TypingMissionView: View {
             isFocused = true
         }
         .sensoryFeedback(.success, trigger: viewModel.solvedCount)
+        // The fresh field (see `.id` above) gets the keyboard straight away, so typing just continues.
+        // WHY a short wait (found in the Simulator): setting focus in the same instant the old field
+        // disappeared was undone by its removal; 50 ms later the new field is on screen and keeps it.
+        // LEARN: `.task(id:)` runs again every time the id changes (here: each new phrase).
+        .task(id: viewModel.index) {
+            guard viewModel.index > 0 else { return }   // the first phrase: see the `.task` above
+            try? await Task.sleep(for: .milliseconds(50))
+            isFocused = true
+        }
+    }
+
+    /// The text field's connection to the ViewModel. Each write says which phrase it was typed for,
+    /// so a late write from the previous phrase's field can't put old text into the new one.
+    ///
+    /// LEARN: `Binding(get:set:)` builds a two-way connection by hand. `[phrase = viewModel.index]`
+    /// captures the phrase number at the moment this field is created.
+    private var typedBinding: Binding<String> {
+        Binding(
+            get: { viewModel.typed },
+            set: { [phrase = viewModel.index] text in viewModel.type(text, forPhrase: phrase) }   // → ViewModel
+        )
     }
 
     /// The phrase with the correctly-typed part in green and the rest dimmed.

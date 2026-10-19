@@ -33,6 +33,15 @@ struct ScreenFactory {
 
     // MARK: - Tab roots
 
+    /// The sleep-sound mini player above the tab bar (#39). Same player service as the Sleep tab.
+    /// ← CALLED BY: RootView `.sleepMiniPlayer(isVisible:)`
+    func makeSleepMiniPlayer() -> some View {
+        SleepMiniPlayer(viewModel: SleepMiniPlayerViewModel(
+            player: dependencies.sleepSounds,            // the one long-lived mixer (what's playing)
+            coordinator: coordinator                     // tap → Now Playing sheet
+        ))
+    }
+
     /// The first screen of each tab.
     ///
     /// LEARN: `@ViewBuilder` lets a function return DIFFERENT view types from

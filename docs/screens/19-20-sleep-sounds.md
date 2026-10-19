@@ -81,6 +81,8 @@ Nothing new in SwiftData.
 - Bedtime reminder arrives at the set time.
 
 ## Exercises
+Since #39 the mix is also controlled from a mini player on the tab bar, on every tab: `docs/screens/39-sleep-mini-player.md`.
+
 1. **TRY:** change `sleepMixMaxSounds` to 4 (top of `SleepSoundPlayer.swift`).
 2. **TRY:** add 120 to `SleepPlayerViewModel.timerChoices`.
 3. Change the reminder text in `NotificationBedtimeReminder.schedule`.

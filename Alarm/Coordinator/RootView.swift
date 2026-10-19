@@ -28,6 +28,7 @@
 //                  WidgetBridge.update after each sync and when RiseUp goes to the background
 //    ← LINKS:      riseup://… from the widgets → DeepLink → coordinator.open
 //    → SHOWS:      onboarding while AppSettings.hasCompletedOnboarding is false
+//                  the sleep-sound mini player on the tab bar while sounds are on (SleepMiniPlayer, #39)
 //    → ASKS:       ScreenFactory to build every screen
 //
 //  LEARN: "Binding" here means two-way. When code changes `coordinator.alarmsPath`,
@@ -88,6 +89,13 @@ struct RootView: View {
             }
         }
         .tint(Theme.Colors.accent)
+        // Sleep sounds on? A mini player sits on the tab bar, on every tab (#39). → SleepMiniPlayer
+        .sleepMiniPlayer(isVisible: SleepMiniPlayerViewModel.isVisible(
+            activeSounds: dependencies.sleepSounds.activeSounds,
+            selectedTab: coordinator.selectedTab
+        )) {
+            factory.makeSleepMiniPlayer()
+        }
         // Shows a sheet whenever `coordinator.sheet` is not nil (sound picker, quick alarm, missions).
         // `onDismiss` also runs when the user swipes the sheet down → forget pending callbacks.
         .sheet(item: $coordinator.sheet, onDismiss: { coordinator.dismissSheet() }) { route in

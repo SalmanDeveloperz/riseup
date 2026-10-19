@@ -506,6 +506,26 @@ Mon 12:00 rings → "I'm up" → RingingViewModel.finish(): extraOnceDate = nil,
   → fixed build (the old file moved and upgraded to V4).
 - **Rule:** after adding an entitlement or capability, test an UPDATE, not only a fresh install.
 
+### Bug 54: Typing mission: the next phrase started with the OLD text in the box (Salman's iPhone 16)
+- **What happened:** phrase 1 matched, phrase 2 appeared, but the box still said "I am wide awake", and the next
+  letter was added to it. Half asleep, you'd have to delete it all: it felt broken.
+- **Two wrong fixes first (in the Simulator):** clearing a moment later (`Task { typed = "" }`): still stuck. A new
+  field per phrase (`.id`): the NEW field showed the old text. That was the real clue: the model got the old text
+  back. The old field writes its text once more on its way out.
+- **Fix:** every write from the field says which phrase it belongs to (`type(_:forPhrase:)`); a late write from an
+  earlier phrase is ignored. `.id(viewModel.index)` gives each phrase a fresh field, and `.task(id:)` gives it the
+  keyboard 50 ms later (in the same instant, the old field's removal took the focus away again).
+- **Rule:** when a fix doesn't work, don't stack another guess: find what's REALLY in the model (here: the old text).
+  The old test only used ONE phrase; the new test types two and replays the late write.
+
+### Trace U: Sleep sounds on, switch tabs (#39)
+```
+Sleep tab → tap Rain → SleepSoundPlayer.toggle → activeSounds = [rain]
+RootView body → SleepMiniPlayerViewModel.isVisible([rain], .alarms) = true
+   → .tabViewBottomAccessory(isEnabled: true) { SleepMiniPlayer }   (iOS 26.0: glass overlay instead)
+Bar: tap → coordinator.presentSleepPlayer() · ⏸ → player.pause() · ✕ → player.stopAll() → activeSounds = [] → hidden
+```
+
 ### Trace T: A widget's "+ Add mission" → saved to that alarm (#38)
 ```
 NextAlarmWidget MissionLine → Link riseup://alarm/<id>/mission   (its own Link: links can't nest)

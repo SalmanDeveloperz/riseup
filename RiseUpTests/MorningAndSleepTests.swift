@@ -276,3 +276,54 @@ private final class SlowPermissionReminder: BedtimeReminding {
     func schedule(hour: Int, minute: Int) async throws { didSchedule = true }
     func cancel() {}
 }
+
+@Suite("Sleep mini player on the tab bar (#39)")
+struct SleepMiniPlayerTests {
+    let player = MockSleepSoundPlayer()
+    let coordinator = AppCoordinator()
+
+    func makeMiniPlayer() -> SleepMiniPlayerViewModel {
+        SleepMiniPlayerViewModel(player: player, coordinator: coordinator)
+    }
+
+    @Test("Shown on every tab while sounds are on (even paused), but not on the Sleep tab itself")
+    func visibility() {
+        #expect(!SleepMiniPlayerViewModel.isVisible(activeSounds: [], selectedTab: .alarms), "nothing playing")
+        #expect(SleepMiniPlayerViewModel.isVisible(activeSounds: [.rain], selectedTab: .alarms))
+        #expect(SleepMiniPlayerViewModel.isVisible(activeSounds: [.rain], selectedTab: .morning))
+        #expect(SleepMiniPlayerViewModel.isVisible(activeSounds: [.rain], selectedTab: .settings))
+        #expect(!SleepMiniPlayerViewModel.isVisible(activeSounds: [.rain], selectedTab: .sleep),
+                "the Sleep tab has its own bigger card")
+    }
+
+    @Test("Title: one, two, or 'Rain + 2 more'")
+    func titles() {
+        let mini = makeMiniPlayer()
+        player.toggle(.rain)
+        #expect(mini.title == "Rain")
+        player.toggle(.ocean)
+        #expect(mini.title == "Rain + Ocean")
+        player.toggle(.wind)
+        #expect(mini.title == "Rain + 2 more")
+        #expect(mini.systemImage == SleepSound.rain.systemImage)
+    }
+
+    @Test("Pause / play, stop everything, and open the mixer")
+    func actions() {
+        let mini = makeMiniPlayer()
+        player.toggle(.rain)
+        #expect(mini.isPlaying)
+        mini.togglePause()
+        #expect(!mini.isPlaying && player.isPaused)
+        mini.togglePause()
+        #expect(mini.isPlaying)
+
+        mini.open()
+        #expect(coordinator.sheet == .sleepPlayer)
+
+        mini.stop()
+        #expect(player.activeSounds.isEmpty)
+        #expect(!SleepMiniPlayerViewModel.isVisible(activeSounds: player.activeSounds, selectedTab: .alarms),
+                "after ✕ the bar goes away")
+    }
+}

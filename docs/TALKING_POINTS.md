@@ -15,7 +15,7 @@ wallpaper with its own sound, there are home and lock screen widgets, sleep soun
 stats. It's free, has no account, no server and no tracking: everything stays on the phone.
 
 **In numbers:** ~140 Swift files, 8 missions, 36 alarm sounds, 10 sleep sounds, 25 live wallpapers,
-6 widget sizes, light & dark themes with 5 colour palettes, your own alarm sounds, 167 unit tests, 0 build warnings.
+6 widget sizes, light & dark themes with 5 colour palettes, your own alarm sounds, 171 unit tests, 0 build warnings.
 
 ---
 
@@ -175,7 +175,7 @@ with a ringing alarm. While you work, the alarm goes quiet; stop for 15 s and it
 | WidgetKit | home and lock screen widgets |
 | App Intents | the "Start Mission / Wake up" button on a ringing alarm |
 | AVFoundation | sounds (`AVAudioPlayer`, audio session), the camera (`AVCaptureSession`), speech |
-| MediaPlayer | sleep sounds on the lock screen's Now Playing controls |
+| MediaPlayer | sleep sounds on the lock screen's Now Playing controls (in the app: a mini player on the tab bar, #39) |
 | Core Motion | shake, steps and squat missions |
 | Vision | photo mission: comparing two photos |
 | VisionKit | barcode / QR mission scanner |
@@ -183,7 +183,7 @@ with a ringing alarm. While you work, the alarm goes quiet; stop for 15 s and it
 | UserNotifications | the bedtime reminder |
 | Charts (Swift Charts) | wake-up statistics |
 | UIKit / ImageIO / CoreGraphics | images, haptics, drawing the app icon (tool) |
-| Swift Testing | 167 unit tests |
+| Swift Testing | 171 unit tests |
 | Accelerate (vDSP) | making your own sounds loud enough, fast (`SoundClipMaker`) |
 | CoreTransferable / UniformTypeIdentifiers | receiving a video from Photos as a file; which files the Files picker offers |
 
@@ -259,7 +259,7 @@ modern Swift API), and SwiftData needs 17 anyway.
 - 👉 `docs/DEBUGGING_GUIDE.md` (8 hands-on labs), `Alarm/Services/Logging/Trace.swift`
 
 ## "How do you know it works?" (quality)
-- **167 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
+- **171 unit tests** (Swift Testing): date maths, mission logic, the re-ring rules, database migrations, sync,
   ViewModels with mocks, widget planning, deep links.
 - **Zero-warning builds** in Swift 6 strict concurrency, Debug and Release.
 - **Real-device test matrix for alarms:** locked, Silent mode, Focus, app killed, reboot, snooze, Stop without

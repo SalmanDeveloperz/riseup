@@ -291,3 +291,14 @@ Full stories in `docs/HOW_IT_WORKS.md` Part 4.
 | Sibling `Link`s in widgets | a widget `Link` can't contain another `Link`; put them side by side | `MediumView`, `MissionLine` |
 | Optional fields in `Codable` | a new field with `?` and `= nil` still decodes data saved by an older version | `WidgetAlarmEvent.missionTitles` |
 | Save + roll back | change, save, ask iOS; if iOS refuses, put the old value back | `AlarmListViewModel.save(_:toAlarm:)` |
+
+## Learned fixing the typing box and adding the sleep mini player (#39)
+| Concept | In one sentence | See it in |
+|---|---|---|
+| `tabViewBottomAccessory` | iOS 26's mini-player spot on the tab bar (Apple Music style); `isEnabled:` needs 26.1 | `SleepMiniPlayer` |
+| `tabViewBottomAccessoryPlacement` | tells the accessory whether it's full width or squeezed next to a small tab bar | `SleepMiniPlayer.isCompact` |
+| `#available(iOS 26.1, *)` | run newer code only on newer iOS; older iPhones get a fallback | `SleepMiniPlayerPlacement` |
+| `Text(date, style: .timer)` | a live countdown, no timer code needed | `SleepMiniPlayer.subtitle` |
+| `.id(value)` for a fresh view | a new id = a brand-new view (empty text field) | `TypingMissionView` |
+| `Binding(get:set:)` with a capture | `[phrase = viewModel.index]` remembers which phrase a field was made for | `TypingMissionView.typedBinding` |
+| `.task(id:)` + a short wait | do something once the new view is really on screen (here: focus) | `TypingMissionView` |
