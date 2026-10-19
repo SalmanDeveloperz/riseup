@@ -149,7 +149,7 @@ struct ScenePlayerView: View {
                 Spacer()
                 controlButton("forward.fill", label: "Next scene") { viewModel.next() }
                 Spacer()
-                controlButton(showsClock ? "eye.fill" : "eye.slash.fill", label: showsClock ? "Hide clock" : "Show clock") {
+                controlButton(showsClock ? "eyes" : "eyes.inverse", label: showsClock ? "Hide clock" : "Show clock") {
                     showsClock.toggle()
                 }
             }

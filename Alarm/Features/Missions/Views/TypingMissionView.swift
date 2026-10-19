@@ -61,7 +61,7 @@ struct TypingMissionView: View {
         // animation sometimes didn't stick. 0.35 s later the screen is settled.
         .task {
             try? await Task.sleep(for: .milliseconds(350))
-            isFocused = true
+            isFocused = false
         }
         .sensoryFeedback(.success, trigger: viewModel.solvedCount)
         // The fresh field (see `.id` above) gets the keyboard straight away, so typing just continues.
