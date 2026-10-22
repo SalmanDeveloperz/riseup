@@ -100,6 +100,7 @@ struct AlarmEditorView: View {
                 // It respects 12/24-hour from the user's settings automatically.
                 DatePicker("Alarm time", selection: $viewModel.time, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.wheel)
+                    .frame(width: 170, height: 170)
                     .labelsHidden()
                     .frame(maxWidth: .infinity)
 
@@ -271,7 +272,7 @@ struct AlarmEditorView: View {
         GlowCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 HStack {
-                    Label("Wake-up check", systemImage: "eyes") 
+                    Label("Wake-up check", systemImage: "eyes")
                         .font(.riseHeadline)
                         .foregroundStyle(Theme.Colors.textPrimary)
                     Spacer()
@@ -298,6 +299,7 @@ struct AlarmEditorView: View {
     private var deleteButton: some View {
         Button("Delete Alarm", role: .destructive) {
             isConfirmingDelete = true
+            
         }
         .buttonStyle(.ghost)              // role: .destructive → GhostButtonStyle makes it red
         .padding(.top, Theme.Spacing.sm)

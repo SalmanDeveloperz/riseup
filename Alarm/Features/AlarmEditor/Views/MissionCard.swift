@@ -62,7 +62,7 @@ struct MissionCard: View {
                     .font(.riseHeadline)
                     .foregroundStyle(Theme.Colors.textPrimary)
                 Text(missions.isEmpty
-                     ? "Pick one: the alarm won't stop until it's done."
+                     ? "It won't stop till done."
                      : "Stops only after: \(missions.map(\.type.shortTitle).joined(separator: ", ")).")
                     .font(.riseCaption)
                     .foregroundStyle(Theme.Colors.textSecondary)

@@ -45,3 +45,4 @@ struct RiseUpApp: App {
         }
     }
 }
+    
