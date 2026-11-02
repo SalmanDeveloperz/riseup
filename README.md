@@ -7,7 +7,7 @@ a morning check-in and stats. Free, no account, no server: everything stays on t
 
 - **Platform:** iPhone, iOS 26+, portrait, dark UI
 - **Stack:** Swift 6 · SwiftUI · SwiftData · AlarmKit · WidgetKit · MVVM + Coordinator · no third-party libraries
-- **Logo:** the Crowing Rooster, nature's alarm clock
+- **Logo:** the Crowing Rooster, nature's alarm clock⏰ 
 
 ## Build & run
 1. Open `Alarm.xcodeproj` in Xcode 26, scheme **Alarm**.
