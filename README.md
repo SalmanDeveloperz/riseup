@@ -29,7 +29,7 @@ a morning check-in and stats. Free, no account, no server: everything stays on t
 
 ## Documentation, in reading order
 1. **`docs/TALKING_POINTS.md`**: how to explain RiseUp to anyone: how alarms ring, notifications, wallpapers,
-   sounds, frameworks, iOS versions, privacy. **Start here.**
+   sounds, frameworks, iOS versions, privacy. **Start here**
 2. **`docs/DEBUGGING_GUIDE.md`**: how to trace any feature with breakpoints and the 🔎 console trace (8 labs)
 3. `CLAUDE.md`: the project rules (architecture, comment style, git workflow)
 4. `docs/ROADMAP.md`: what's done, what's next
