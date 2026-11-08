@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Disclaimer:** The information provided here is for learning and backup purposes only.
+
 # RiseUp: the mission alarm clock
 
 An iPhone alarm that won't let you sleep through it: to stop it you complete a **mission** (maths, typing,
