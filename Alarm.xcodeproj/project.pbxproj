@@ -6,8 +6,75 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5E1D0A01307507BF00067D67 /* RiseUpWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5E1D0A03307507BF00067D67 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 220634A4307507BF00067D67 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E1D0A10307507BF00067D67;
+			remoteInfo = RiseUpWidgets;
+		};
+		7E570A03307507BF00067D67 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 220634A4307507BF00067D67 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 220634AB307507BF00067D67;
+			remoteInfo = Alarm;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5E1D0A04307507BF00067D67 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				5E1D0A01307507BF00067D67 /* RiseUpWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		220634AC307507BF00067D67 /* Alarm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Alarm.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		22E60541307F5744002FEBA8 /* 00-foundation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "00-foundation.md"; sourceTree = "<group>"; };
+		22E60542307F5744002FEBA8 /* 01-04-onboarding.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "01-04-onboarding.md"; sourceTree = "<group>"; };
+		22E60543307F5744002FEBA8 /* 06-alarm-list.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "06-alarm-list.md"; sourceTree = "<group>"; };
+		22E60544307F5744002FEBA8 /* 07-quick-alarm.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "07-quick-alarm.md"; sourceTree = "<group>"; };
+		22E60545307F5744002FEBA8 /* 08-alarm-editor.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "08-alarm-editor.md"; sourceTree = "<group>"; };
+		22E60546307F5744002FEBA8 /* 09-10-mission-picker.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "09-10-mission-picker.md"; sourceTree = "<group>"; };
+		22E60547307F5744002FEBA8 /* 11-15g-camera.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "11-15g-camera.md"; sourceTree = "<group>"; };
+		22E60548307F5744002FEBA8 /* 13-sound-picker.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "13-sound-picker.md"; sourceTree = "<group>"; };
+		22E60549307F5744002FEBA8 /* 14-16-ringing-flow.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "14-16-ringing-flow.md"; sourceTree = "<group>"; };
+		22E6054A307F5744002FEBA8 /* 15d-h-phase3-missions.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "15d-h-phase3-missions.md"; sourceTree = "<group>"; };
+		22E6054B307F5744002FEBA8 /* 17-23-25-morning-records-stats.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "17-23-25-morning-records-stats.md"; sourceTree = "<group>"; };
+		22E6054C307F5744002FEBA8 /* 18-wake-up-check-and-time-pressure.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "18-wake-up-check-and-time-pressure.md"; sourceTree = "<group>"; };
+		22E6054D307F5744002FEBA8 /* 19-20-sleep-sounds.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "19-20-sleep-sounds.md"; sourceTree = "<group>"; };
+		22E6054E307F5744002FEBA8 /* 26-29-settings.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "26-29-settings.md"; sourceTree = "<group>"; };
+		22E6054F307F5744002FEBA8 /* 30-lock-screen-alarm-ui.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "30-lock-screen-alarm-ui.md"; sourceTree = "<group>"; };
+		22E60550307F5744002FEBA8 /* 31-widgets.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "31-widgets.md"; sourceTree = "<group>"; };
+		22E60551307F5744002FEBA8 /* 32-alarm-wallpapers.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "32-alarm-wallpapers.md"; sourceTree = "<group>"; };
+		22E60552307F5744002FEBA8 /* 33-scene-player.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "33-scene-player.md"; sourceTree = "<group>"; };
+		22E60553307F5744002FEBA8 /* 34-wake-up-guarantee.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "34-wake-up-guarantee.md"; sourceTree = "<group>"; };
+		22E60555307F5744002FEBA8 /* APP_STORE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = APP_STORE.md; sourceTree = "<group>"; };
+		22E60556307F5744002FEBA8 /* ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ARCHITECTURE.md; sourceTree = "<group>"; };
+		22E60557307F5744002FEBA8 /* ASSETS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ASSETS.md; sourceTree = "<group>"; };
+		22E60558307F5744002FEBA8 /* HOW_IT_WORKS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = HOW_IT_WORKS.md; sourceTree = "<group>"; };
+		22E60559307F5744002FEBA8 /* LEARNING_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LEARNING_GUIDE.md; sourceTree = "<group>"; };
+		22E6055A307F5744002FEBA8 /* LEARNING_LOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LEARNING_LOG.md; sourceTree = "<group>"; };
+		22E6055B307F5744002FEBA8 /* PRIVACY_POLICY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PRIVACY_POLICY.md; sourceTree = "<group>"; };
+		22E6055C307F5744002FEBA8 /* ROADMAP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ROADMAP.md; sourceTree = "<group>"; };
+		22E6055D307F5744002FEBA8 /* SPIKE_RESULTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SPIKE_RESULTS.md; sourceTree = "<group>"; };
+		22E6055E307F5744002FEBA8 /* TALKING_POINTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TALKING_POINTS.md; sourceTree = "<group>"; };
+		22E60560307F5744002FEBA8 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RiseUpWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7E570A02307507BF00067D67 /* RiseUpTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RiseUpTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +83,44 @@
 			path = Alarm;
 			sourceTree = "<group>";
 		};
+		22E605B6307F58D1002FEBA8 /* Tools */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		5E1D0A05307507BF00067D67 /* RiseUpWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RiseUpWidgets;
+			sourceTree = "<group>";
+		};
+		5E1D0A06307507BF00067D67 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		7E570A05307507BF00067D67 /* RiseUpTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RiseUpTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		220634A9307507BF00067D67 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5E1D0A07307507BF00067D67 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E570A07307507BF00067D67 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +134,12 @@
 			isa = PBXGroup;
 			children = (
 				220634AE307507BF00067D67 /* Alarm */,
+				5E1D0A06307507BF00067D67 /* Shared */,
+				22E605B6307F58D1002FEBA8 /* Tools */,
+				22E6055F307F5744002FEBA8 /* docs */,
+				22E60560307F5744002FEBA8 /* README.md */,
+				5E1D0A05307507BF00067D67 /* RiseUpWidgets */,
+				7E570A05307507BF00067D67 /* RiseUpTests */,
 				220634AD307507BF00067D67 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,8 +148,54 @@
 			isa = PBXGroup;
 			children = (
 				220634AC307507BF00067D67 /* Alarm.app */,
+				5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */,
+				7E570A02307507BF00067D67 /* RiseUpTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		22E60554307F5744002FEBA8 /* screens */ = {
+			isa = PBXGroup;
+			children = (
+				22E60541307F5744002FEBA8 /* 00-foundation.md */,
+				22E60542307F5744002FEBA8 /* 01-04-onboarding.md */,
+				22E60543307F5744002FEBA8 /* 06-alarm-list.md */,
+				22E60544307F5744002FEBA8 /* 07-quick-alarm.md */,
+				22E60545307F5744002FEBA8 /* 08-alarm-editor.md */,
+				22E60546307F5744002FEBA8 /* 09-10-mission-picker.md */,
+				22E60547307F5744002FEBA8 /* 11-15g-camera.md */,
+				22E60548307F5744002FEBA8 /* 13-sound-picker.md */,
+				22E60549307F5744002FEBA8 /* 14-16-ringing-flow.md */,
+				22E6054A307F5744002FEBA8 /* 15d-h-phase3-missions.md */,
+				22E6054B307F5744002FEBA8 /* 17-23-25-morning-records-stats.md */,
+				22E6054C307F5744002FEBA8 /* 18-wake-up-check-and-time-pressure.md */,
+				22E6054D307F5744002FEBA8 /* 19-20-sleep-sounds.md */,
+				22E6054E307F5744002FEBA8 /* 26-29-settings.md */,
+				22E6054F307F5744002FEBA8 /* 30-lock-screen-alarm-ui.md */,
+				22E60550307F5744002FEBA8 /* 31-widgets.md */,
+				22E60551307F5744002FEBA8 /* 32-alarm-wallpapers.md */,
+				22E60552307F5744002FEBA8 /* 33-scene-player.md */,
+				22E60553307F5744002FEBA8 /* 34-wake-up-guarantee.md */,
+			);
+			path = screens;
+			sourceTree = "<group>";
+		};
+		22E6055F307F5744002FEBA8 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+				22E60554307F5744002FEBA8 /* screens */,
+				22E60555307F5744002FEBA8 /* APP_STORE.md */,
+				22E60556307F5744002FEBA8 /* ARCHITECTURE.md */,
+				22E60557307F5744002FEBA8 /* ASSETS.md */,
+				22E60558307F5744002FEBA8 /* HOW_IT_WORKS.md */,
+				22E60559307F5744002FEBA8 /* LEARNING_GUIDE.md */,
+				22E6055A307F5744002FEBA8 /* LEARNING_LOG.md */,
+				22E6055B307F5744002FEBA8 /* PRIVACY_POLICY.md */,
+				22E6055C307F5744002FEBA8 /* ROADMAP.md */,
+				22E6055D307F5744002FEBA8 /* SPIKE_RESULTS.md */,
+				22E6055E307F5744002FEBA8 /* TALKING_POINTS.md */,
+			);
+			path = docs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -55,13 +208,16 @@
 				220634A8307507BF00067D67 /* Sources */,
 				220634A9307507BF00067D67 /* Frameworks */,
 				220634AA307507BF00067D67 /* Resources */,
+				5E1D0A04307507BF00067D67 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5E1D0A13307507BF00067D67 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				220634AE307507BF00067D67 /* Alarm */,
+				5E1D0A06307507BF00067D67 /* Shared */,
 			);
 			name = Alarm;
 			packageProductDependencies = (
@@ -69,6 +225,52 @@
 			productName = Alarm;
 			productReference = 220634AC307507BF00067D67 /* Alarm.app */;
 			productType = "com.apple.product-type.application";
+		};
+		5E1D0A10307507BF00067D67 /* RiseUpWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5E1D0A16307507BF00067D67 /* Build configuration list for PBXNativeTarget "RiseUpWidgets" */;
+			buildPhases = (
+				5E1D0A11307507BF00067D67 /* Sources */,
+				5E1D0A07307507BF00067D67 /* Frameworks */,
+				5E1D0A12307507BF00067D67 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5E1D0A05307507BF00067D67 /* RiseUpWidgets */,
+				5E1D0A06307507BF00067D67 /* Shared */,
+			);
+			name = RiseUpWidgets;
+			packageProductDependencies = (
+			);
+			productName = RiseUpWidgets;
+			productReference = 5E1D0A02307507BF00067D67 /* RiseUpWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		7E570A10307507BF00067D67 /* RiseUpTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E570A16307507BF00067D67 /* Build configuration list for PBXNativeTarget "RiseUpTests" */;
+			buildPhases = (
+				7E570A11307507BF00067D67 /* Sources */,
+				7E570A07307507BF00067D67 /* Frameworks */,
+				7E570A12307507BF00067D67 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7E570A13307507BF00067D67 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				7E570A05307507BF00067D67 /* RiseUpTests */,
+			);
+			name = RiseUpTests;
+			packageProductDependencies = (
+			);
+			productName = RiseUpTests;
+			productReference = 7E570A02307507BF00067D67 /* RiseUpTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -82,6 +284,13 @@
 				TargetAttributes = {
 					220634AB307507BF00067D67 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					5E1D0A10307507BF00067D67 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					7E570A10307507BF00067D67 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 220634AB307507BF00067D67;
 					};
 				};
 			};
@@ -100,12 +309,28 @@
 			projectRoot = "";
 			targets = (
 				220634AB307507BF00067D67 /* Alarm */,
+				5E1D0A10307507BF00067D67 /* RiseUpWidgets */,
+				7E570A10307507BF00067D67 /* RiseUpTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		220634AA307507BF00067D67 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5E1D0A12307507BF00067D67 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E570A12307507BF00067D67 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +347,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5E1D0A11307507BF00067D67 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E570A11307507BF00067D67 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5E1D0A13307507BF00067D67 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5E1D0A10307507BF00067D67 /* RiseUpWidgets */;
+			targetProxy = 5E1D0A03307507BF00067D67 /* PBXContainerItemProxy */;
+		};
+		7E570A13307507BF00067D67 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 220634AB307507BF00067D67 /* Alarm */;
+			targetProxy = 7E570A03307507BF00067D67 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		220634B5307507C100067D67 /* Debug */ = {
@@ -178,7 +430,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -236,7 +488,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -251,17 +503,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/Alarm.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6UZ27A869C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RiseUp;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "RiseUp uses the camera for the Photo and Barcode wake-up missions: you photograph a spot or scan a code away from your bed to stop the alarm.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "RiseUp counts your steps for the Steps wake-up mission, so walking around stops the alarm.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -274,8 +532,8 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -284,17 +542,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/Alarm.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 6UZ27A869C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = RiseUp;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "RiseUp uses the camera for the Photo and Barcode wake-up missions: you photograph a spot or scan a code away from your bed to stop the alarm.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "RiseUp counts your steps for the Steps wake-up mission, so walking around stops the alarm.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -307,8 +571,116 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		5E1D0A14307507BF00067D67 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/RiseUpWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6UZ27A869C;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/RiseUpWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = RiseUp;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.testProject.Alarm.RiseUpWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		5E1D0A15307507BF00067D67 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/RiseUpWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6UZ27A869C;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Config/RiseUpWidgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = RiseUp;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.testProject.Alarm.RiseUpWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		7E570A14307507BF00067D67 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6UZ27A869C;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.testProject.AlarmTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Alarm.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Alarm";
+			};
+			name = Debug;
+		};
+		7E570A15307507BF00067D67 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 6UZ27A869C;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.testProject.AlarmTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Alarm.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Alarm";
 			};
 			name = Release;
 		};
@@ -329,6 +701,24 @@
 			buildConfigurations = (
 				220634B8307507C100067D67 /* Debug */,
 				220634B9307507C100067D67 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5E1D0A16307507BF00067D67 /* Build configuration list for PBXNativeTarget "RiseUpWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E1D0A14307507BF00067D67 /* Debug */,
+				5E1D0A15307507BF00067D67 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7E570A16307507BF00067D67 /* Build configuration list for PBXNativeTarget "RiseUpTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7E570A14307507BF00067D67 /* Debug */,
+				7E570A15307507BF00067D67 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

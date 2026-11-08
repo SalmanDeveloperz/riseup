@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Entitlements = special permissions iOS checks when the app is installed.
+
+  App Groups: the app and the RiseUpWidgets extension are two separate programs, and each
+  normally has its own private folder. An App Group is a SHARED folder (and UserDefaults)
+  that both may open. The app writes "your next alarms" + wallpaper pictures there
+  (WidgetBridge); the home and lock screen widgets read them (Shared/WidgetSnapshot.swift).
+
+  The same group ID must be in BOTH entitlement files and in `WidgetShared.appGroupID`.
+  Xcode registers it with your Apple Account the first time you build to an iPhone.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.testProject.Alarm</string>
+	</array>
+</dict>
+</plist>
